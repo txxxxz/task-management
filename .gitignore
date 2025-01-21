@@ -1,0 +1,1 @@
+.idea/ *.iml *.iws *.ipr target/ *.jar *.war *.ear *.class node_modules/ dist/ .env .DS_Store .vscode/ *.log .env.local .env.*.local .idea .vscode *.suo *.ntvs* *.njsproj *.sln *.sw? .DS_Store Thumbs.db
