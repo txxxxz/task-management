@@ -1,0 +1,119 @@
+{
+  "groups": [
+    {
+      "name": "guineapig.alioss",
+      "type": "com.taskManagement.properties.AliOssProperties",
+      "sourceType": "com.taskManagement.properties.AliOssProperties"
+    },
+    {
+      "name": "guineapig.jwt",
+      "type": "com.taskManagement.properties.JwtProperties",
+      "sourceType": "com.taskManagement.properties.JwtProperties"
+    },
+    {
+      "name": "guineapig.wechat",
+      "type": "com.taskManagement.properties.WeChatProperties",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "guineapig.alioss.access-key-id",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.AliOssProperties"
+    },
+    {
+      "name": "guineapig.alioss.access-key-secret",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.AliOssProperties"
+    },
+    {
+      "name": "guineapig.alioss.bucket-name",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.AliOssProperties"
+    },
+    {
+      "name": "guineapig.alioss.endpoint",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.AliOssProperties"
+    },
+    {
+      "name": "guineapig.jwt.admin-secret-key",
+      "type": "java.lang.String",
+      "description": "管理端员工生成jwt令牌相关配置",
+      "sourceType": "com.taskManagement.properties.JwtProperties"
+    },
+    {
+      "name": "guineapig.jwt.admin-token-name",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.JwtProperties"
+    },
+    {
+      "name": "guineapig.jwt.admin-ttl",
+      "type": "java.lang.Long",
+      "sourceType": "com.taskManagement.properties.JwtProperties"
+    },
+    {
+      "name": "guineapig.jwt.user-secret-key",
+      "type": "java.lang.String",
+      "description": "用户端微信用户生成jwt令牌相关配置",
+      "sourceType": "com.taskManagement.properties.JwtProperties"
+    },
+    {
+      "name": "guineapig.jwt.user-token-name",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.JwtProperties"
+    },
+    {
+      "name": "guineapig.jwt.user-ttl",
+      "type": "java.lang.Long",
+      "sourceType": "com.taskManagement.properties.JwtProperties"
+    },
+    {
+      "name": "guineapig.wechat.api-v3-key",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    },
+    {
+      "name": "guineapig.wechat.appid",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    },
+    {
+      "name": "guineapig.wechat.mch-serial-no",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    },
+    {
+      "name": "guineapig.wechat.mchid",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    },
+    {
+      "name": "guineapig.wechat.notify-url",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    },
+    {
+      "name": "guineapig.wechat.private-key-file-path",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    },
+    {
+      "name": "guineapig.wechat.refund-notify-url",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    },
+    {
+      "name": "guineapig.wechat.secret",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    },
+    {
+      "name": "guineapig.wechat.we-chat-pay-cert-file-path",
+      "type": "java.lang.String",
+      "sourceType": "com.taskManagement.properties.WeChatProperties"
+    }
+  ],
+  "hints": []
+}

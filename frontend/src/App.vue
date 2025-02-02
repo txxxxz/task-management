@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+// 空的setup，因为这是一个简单的路由容器组件
 </script>
 
 <template>
-  <router-view v-slot="{ Component }">
-    <transition name="fade" mode="out-in">
-      <component :is="Component" />
-    </transition>
-  </router-view>
+  <router-view />
 </template>
 
 <style>
+@import './assets/main.css';
+
 html,
 body {
   height: 100%;

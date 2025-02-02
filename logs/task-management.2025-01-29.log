@@ -1,0 +1,246 @@
+2025-01-29 19:05:06.196 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.4.Final
+2025-01-29 19:05:06.213 [main] INFO  com.taskManagement.Application - Starting Application using Java 21.0.1 on zhouchendideMacBook-Pro.local with PID 23260 (/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes started by txxxxz in /Users/txxxxz/Desktop/斗转星移/final project/task-management)
+2025-01-29 19:05:06.214 [main] INFO  com.taskManagement.Application - The following 1 profile is active: "dev"
+2025-01-29 19:05:06.288 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+2025-01-29 19:05:06.374 [main] ERROR o.s.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:457)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.findCandidateComponents(ClassPathScanningCandidateComponentProvider.java:316)
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.doScan(ClassPathBeanDefinitionScanner.java:276)
+	at org.springframework.context.annotation.ComponentScanAnnotationParser.parse(ComponentScanAnnotationParser.java:128)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:296)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:250)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:207)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:175)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:331)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:247)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:311)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:112)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:746)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:564)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:147)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:734)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:408)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1306)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1295)
+	at com.taskManagement.Application.main(Application.java:16)
+Caused by: org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:60)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.<init>(SimpleMetadataReader.java:49)
+	at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:103)
+	at org.springframework.core.type.classreading.CachingMetadataReaderFactory.getMetadataReader(CachingMetadataReaderFactory.java:123)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:429)
+	... 20 common frames omitted
+Caused by: java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:199)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:180)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:166)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:287)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:57)
+	... 24 common frames omitted
+2025-01-29 19:10:35.931 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.4.Final
+2025-01-29 19:10:35.942 [main] INFO  com.taskManagement.Application - Starting Application using Java 21.0.1 on zhouchendideMacBook-Pro.local with PID 25401 (/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes started by txxxxz in /Users/txxxxz/Desktop/斗转星移/final project/task-management)
+2025-01-29 19:10:35.942 [main] INFO  com.taskManagement.Application - The following 1 profile is active: "dev"
+2025-01-29 19:10:36.013 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+2025-01-29 19:10:36.103 [main] ERROR o.s.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:457)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.findCandidateComponents(ClassPathScanningCandidateComponentProvider.java:316)
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.doScan(ClassPathBeanDefinitionScanner.java:276)
+	at org.springframework.context.annotation.ComponentScanAnnotationParser.parse(ComponentScanAnnotationParser.java:128)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:296)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:250)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:207)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:175)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:331)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:247)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:311)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:112)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:746)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:564)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:147)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:734)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:408)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1306)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1295)
+	at com.taskManagement.Application.main(Application.java:16)
+Caused by: org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:60)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.<init>(SimpleMetadataReader.java:49)
+	at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:103)
+	at org.springframework.core.type.classreading.CachingMetadataReaderFactory.getMetadataReader(CachingMetadataReaderFactory.java:123)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:429)
+	... 20 common frames omitted
+Caused by: java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:199)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:180)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:166)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:287)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:57)
+	... 24 common frames omitted
+2025-01-29 19:13:29.559 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.4.Final
+2025-01-29 19:13:29.579 [main] INFO  com.taskManagement.Application - Starting Application using Java 21.0.1 on zhouchendideMacBook-Pro.local with PID 25700 (/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes started by txxxxz in /Users/txxxxz/Desktop/斗转星移/final project/task-management)
+2025-01-29 19:13:29.580 [main] INFO  com.taskManagement.Application - The following 1 profile is active: "dev"
+2025-01-29 19:13:29.646 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+2025-01-29 19:13:29.728 [main] ERROR o.s.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:457)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.findCandidateComponents(ClassPathScanningCandidateComponentProvider.java:316)
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.doScan(ClassPathBeanDefinitionScanner.java:276)
+	at org.springframework.context.annotation.ComponentScanAnnotationParser.parse(ComponentScanAnnotationParser.java:128)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:296)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:250)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:207)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:175)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:331)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:247)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:311)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:112)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:746)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:564)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:147)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:734)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:408)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1306)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1295)
+	at com.taskManagement.Application.main(Application.java:16)
+Caused by: org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:60)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.<init>(SimpleMetadataReader.java:49)
+	at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:103)
+	at org.springframework.core.type.classreading.CachingMetadataReaderFactory.getMetadataReader(CachingMetadataReaderFactory.java:123)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:429)
+	... 20 common frames omitted
+Caused by: java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:199)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:180)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:166)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:287)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:57)
+	... 24 common frames omitted
+2025-01-29 19:14:36.588 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.4.Final
+2025-01-29 19:14:36.605 [main] INFO  com.taskManagement.Application - Starting Application using Java 21.0.1 on zhouchendideMacBook-Pro.local with PID 26213 (/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes started by txxxxz in /Users/txxxxz/Desktop/斗转星移/final project/task-management)
+2025-01-29 19:14:36.606 [main] INFO  com.taskManagement.Application - The following 1 profile is active: "dev"
+2025-01-29 19:14:36.680 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+2025-01-29 19:14:36.766 [main] ERROR o.s.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:457)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.findCandidateComponents(ClassPathScanningCandidateComponentProvider.java:316)
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.doScan(ClassPathBeanDefinitionScanner.java:276)
+	at org.springframework.context.annotation.ComponentScanAnnotationParser.parse(ComponentScanAnnotationParser.java:128)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:296)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:250)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:207)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:175)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:331)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:247)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:311)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:112)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:746)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:564)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:147)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:734)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:408)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1306)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1295)
+	at com.taskManagement.Application.main(Application.java:16)
+Caused by: org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:60)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.<init>(SimpleMetadataReader.java:49)
+	at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:103)
+	at org.springframework.core.type.classreading.CachingMetadataReaderFactory.getMetadataReader(CachingMetadataReaderFactory.java:123)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:429)
+	... 20 common frames omitted
+Caused by: java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:199)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:180)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:166)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:287)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:57)
+	... 24 common frames omitted
+2025-01-29 19:17:02.581 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.4.Final
+2025-01-29 19:17:02.595 [main] INFO  com.taskManagement.Application - Starting Application using Java 21.0.1 on zhouchendideMacBook-Pro.local with PID 27644 (/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes started by txxxxz in /Users/txxxxz/Desktop/斗转星移/final project/task-management)
+2025-01-29 19:17:02.596 [main] INFO  com.taskManagement.Application - The following 1 profile is active: "dev"
+2025-01-29 19:17:02.678 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+2025-01-29 19:17:02.761 [main] ERROR o.s.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:457)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.findCandidateComponents(ClassPathScanningCandidateComponentProvider.java:316)
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.doScan(ClassPathBeanDefinitionScanner.java:276)
+	at org.springframework.context.annotation.ComponentScanAnnotationParser.parse(ComponentScanAnnotationParser.java:128)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:296)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:250)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:207)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:175)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:331)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:247)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:311)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:112)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:746)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:564)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:147)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:734)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:408)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1306)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1295)
+	at com.taskManagement.Application.main(Application.java:16)
+Caused by: org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:60)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.<init>(SimpleMetadataReader.java:49)
+	at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:103)
+	at org.springframework.core.type.classreading.CachingMetadataReaderFactory.getMetadataReader(CachingMetadataReaderFactory.java:123)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:429)
+	... 20 common frames omitted
+Caused by: java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:199)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:180)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:166)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:287)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:57)
+	... 24 common frames omitted
+2025-01-29 19:38:16.667 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.4.Final
+2025-01-29 19:38:16.680 [main] INFO  com.taskManagement.Application - Starting Application using Java 21.0.1 on zhouchendideMacBook-Pro.local with PID 37659 (/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes started by txxxxz in /Users/txxxxz/Desktop/斗转星移/final project/task-management)
+2025-01-29 19:38:16.680 [main] INFO  com.taskManagement.Application - The following 1 profile is active: "dev"
+2025-01-29 19:38:16.768 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+2025-01-29 19:38:16.876 [main] ERROR o.s.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to read candidate component class: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:457)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.findCandidateComponents(ClassPathScanningCandidateComponentProvider.java:316)
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.doScan(ClassPathBeanDefinitionScanner.java:276)
+	at org.springframework.context.annotation.ComponentScanAnnotationParser.parse(ComponentScanAnnotationParser.java:128)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:296)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:250)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:207)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:175)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:331)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:247)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:311)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:112)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:746)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:564)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:147)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:734)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:408)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1306)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1295)
+	at com.taskManagement.Application.main(Application.java:16)
+Caused by: org.springframework.core.NestedIOException: ASM ClassReader failed to parse class file - probably due to a new Java class file version that isn't supported yet: file [/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-server/target/classes/com/taskManagement/Application.class]; nested exception is java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:60)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.<init>(SimpleMetadataReader.java:49)
+	at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:103)
+	at org.springframework.core.type.classreading.CachingMetadataReaderFactory.getMetadataReader(CachingMetadataReaderFactory.java:123)
+	at org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider.scanCandidateComponents(ClassPathScanningCandidateComponentProvider.java:429)
+	... 20 common frames omitted
+Caused by: java.lang.IllegalArgumentException: Unsupported class file major version 65
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:199)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:180)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:166)
+	at org.springframework.asm.ClassReader.<init>(ClassReader.java:287)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:57)
+	... 24 common frames omitted

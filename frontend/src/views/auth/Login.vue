@@ -1,98 +1,218 @@
 <template>
   <div class="login-container">
-    <el-card class="login-card">
-      <template #header>
-        <h2>任务管理系统</h2>
-      </template>
-      
+    <div class="login-box">
+      <h2 class="title">欢迎登录</h2>
       <el-form
-        ref="loginForm"
+        ref="loginFormRef"
         :model="loginForm"
         :rules="rules"
-        label-position="top"
+        label-width="0"
+        class="login-form"
       >
-        <el-form-item label="用户名" prop="username">
+        <el-form-item prop="username">
           <el-input
             v-model="loginForm.username"
+            prefix-icon="User"
             placeholder="请输入用户名"
           />
         </el-form-item>
-        
-        <el-form-item label="密码" prop="password">
+
+        <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
+            prefix-icon="Lock"
             type="password"
             placeholder="请输入密码"
             show-password
+            @keyup.enter="handleLogin"
           />
         </el-form-item>
-        
+
+        <el-form-item prop="role">
+          <el-radio-group v-model="loginForm.role" class="role-select">
+            <el-radio :label="0">普通成员</el-radio>
+            <el-radio :label="1">项目负责人</el-radio>
+            <el-radio :label="2">管理员</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
         <el-form-item>
-          <el-button type="primary" @click="handleLogin" style="width: 100%">
+          <el-button type="primary" class="login-button" @click="handleLogin">
             登录
           </el-button>
         </el-form-item>
-        
-        <div class="form-footer">
-          <router-link to="/register">还没有账号？立即注册</router-link>
+
+        <div class="register-link">
+          还没有账号？
+          <router-link to="/register">立即注册</router-link>
         </div>
       </el-form>
-    </el-card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import { login } from '@/api/user'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
+const loginFormRef = ref<FormInstance>()
+const rememberMe = ref(false)
 
-const loginForm = reactive({
+const loginForm = ref({
   username: '',
-  password: ''
+  password: '',
+  role: 0
 })
 
-const rules = {
+const rules = reactive<FormRules>({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' }
+  ],
+  role: [
+    { required: true, message: '请选择角色', trigger: 'change' }
   ]
-}
+})
 
 const handleLogin = async () => {
-  try {
-    // TODO: 实现登录逻辑
-    ElMessage.success('登录成功')
-    router.push('/')
-  } catch (error) {
-    ElMessage.error('登录失败')
-  }
+  if (!loginFormRef.value) return
+  
+  await loginFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        await userStore.login(
+          loginForm.value.username,
+          loginForm.value.password,
+          loginForm.value.role
+        )
+        
+        if (rememberMe.value) {
+          localStorage.setItem('rememberedUsername', loginForm.value.username)
+        } else {
+          localStorage.removeItem('rememberedUsername')
+        }
+      } catch (error: any) {
+        ElMessage.error(error.message || '登录失败')
+      }
+    }
+  })
 }
+
+onMounted(() => {
+  // 如果之前记住了用户名，自动填充
+  const rememberedUsername = localStorage.getItem('rememberedUsername')
+  if (rememberedUsername) {
+    loginForm.value.username = rememberedUsername
+    rememberMe.value = true
+  }
+})
 </script>
 
 <style scoped>
 .login-container {
-  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f5f7fa;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
 }
 
-.login-card {
-  width: 400px;
+.login-box {
+  width: 420px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.form-footer {
+.title {
+  text-align: center;
+  color: #333;
+  font-size: 28px;
+  margin-bottom: 30px;
+  font-weight: 600;
+}
+
+.login-form {
+  .el-form-item {
+    margin-bottom: 20px;
+  }
+
+  .el-input {
+    --el-input-hover-border: #66a6ff;
+    --el-input-focus-border: #66a6ff;
+  }
+}
+
+.role-select {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  
+  .el-radio {
+    margin-right: 0;
+  }
+}
+
+.login-button {
+  width: 100%;
+  height: 44px;
+  font-size: 16px;
+  background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+  border: none;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.register-link {
   text-align: center;
   margin-top: 16px;
+  color: #666;
+  
+  a {
+    color: #66a6ff;
+    text-decoration: none;
+    font-weight: 500;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
-.form-footer a {
-  color: #409eff;
-  text-decoration: none;
+:deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+  
+  &:hover {
+    box-shadow: 0 0 0 1px #66a6ff inset;
+  }
+  
+  &.is-focus {
+    box-shadow: 0 0 0 1px #66a6ff inset;
+  }
+}
+
+:deep(.el-radio__input.is-checked .el-radio__inner) {
+  background-color: #66a6ff;
+  border-color: #66a6ff;
+}
+
+:deep(.el-radio__input.is-checked + .el-radio__label) {
+  color: #66a6ff;
+}
+
+:deep(.el-radio__inner:hover) {
+  border-color: #66a6ff;
 }
 </style> 

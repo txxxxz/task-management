@@ -1,24 +1,24 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { UserInfo, login as userLogin, getUserInfo, logout as userLogout } from '../api/user'
+import type { UserInfo } from '@/types/user'
+import { login as userLogin, getUserInfo, logout as userLogout } from '@/api/user'
 import { ElMessage } from 'element-plus'
-import router from '../router'
+import router from '@/router'
 
 export const useUserStore = defineStore('user', () => {
-  const token = ref(localStorage.getItem('token') || '')
+  const token = ref<string | null>(localStorage.getItem('token'))
   const userInfo = ref<UserInfo | null>(null)
   const loading = ref(false)
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string, role: number) => {
     try {
       loading.value = true
-      const res = await userLogin({ username, password })
-      token.value = res.token
-      localStorage.setItem('token', res.token)
-      await fetchUserInfo()
-      router.push('/')
+      const data = await userLogin({ username, password, role })
+      setToken(data.token)
+      setUserInfo(data.user)
       ElMessage.success('登录成功')
-    } catch (error) {
+      router.push('/dashboard')
+    } catch (error: any) {
       console.error('Login failed:', error)
       throw error
     } finally {
@@ -28,9 +28,10 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchUserInfo = async () => {
     try {
-      const res = await getUserInfo()
-      userInfo.value = res
-    } catch (error) {
+      const data = await getUserInfo()
+      setUserInfo(data)
+      return data
+    } catch (error: any) {
       console.error('Fetch user info failed:', error)
       throw error
     }
@@ -39,15 +40,28 @@ export const useUserStore = defineStore('user', () => {
   const logout = async () => {
     try {
       await userLogout()
-      token.value = ''
-      userInfo.value = null
-      localStorage.removeItem('token')
+      clearUserInfo()
       router.push('/login')
       ElMessage.success('退出登录成功')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logout failed:', error)
       throw error
     }
+  }
+
+  const setToken = (newToken: string) => {
+    token.value = newToken
+    localStorage.setItem('token', newToken)
+  }
+
+  const setUserInfo = (info: UserInfo) => {
+    userInfo.value = info
+  }
+
+  const clearUserInfo = () => {
+    token.value = null
+    userInfo.value = null
+    localStorage.removeItem('token')
   }
 
   return {
@@ -56,6 +70,9 @@ export const useUserStore = defineStore('user', () => {
     loading,
     login,
     logout,
-    fetchUserInfo
+    fetchUserInfo,
+    setToken,
+    setUserInfo,
+    clearUserInfo
   }
 }) 

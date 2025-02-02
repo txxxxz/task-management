@@ -113,13 +113,13 @@ const recentTasks = computed(() => {
     .slice(0, 10)
 })
 
-const getStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' | '' => {
+const getStatusType = (status: number) => {
   const types = {
     0: 'primary',
     1: 'warning',
     2: 'success'
   } as const
-  return types[status as keyof typeof types] || ''
+  return types[status as keyof typeof types] as 'success' | 'warning' | 'info' | 'primary' | 'danger'
 }
 
 const getStatusText = (status: number) => {
@@ -131,14 +131,14 @@ const getStatusText = (status: number) => {
   return texts[status as keyof typeof texts]
 }
 
-const getPriorityType = (priority: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' | '' => {
+const getPriorityType = (priority: number) => {
   const types = {
     0: 'info',
     1: 'primary',
     2: 'warning',
     3: 'danger'
   } as const
-  return types[priority as keyof typeof types] || ''
+  return types[priority as keyof typeof types] as 'success' | 'warning' | 'info' | 'primary' | 'danger'
 }
 
 const getPriorityText = (priority: number) => {

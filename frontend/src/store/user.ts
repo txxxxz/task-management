@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { User } from '@/types/models'
+import type { LoginVO, UserVO } from '@/types/user'
 import * as userApi from '@/api/user'
 import { ElMessage } from 'element-plus'
 
 export const useUserStore = defineStore('user', () => {
-  const user = ref<User | null>(null)
-  const token = ref<string | null>(null)
+  const user = ref<UserVO | null>(null)
+  const token = ref<string>('')
 
   const login = async (username: string, password: string) => {
     try {
@@ -32,19 +32,18 @@ export const useUserStore = defineStore('user', () => {
 
   const logout = () => {
     user.value = null
-    token.value = null
+    token.value = ''
     localStorage.removeItem('token')
   }
 
-  const updateInfo = async (data: Partial<User>) => {
-    try {
-      await userApi.updateUserInfo(data)
-      await getUserInfo()
-      ElMessage.success('更新成功')
-      return true
-    } catch (error) {
-      return false
-    }
+  const updateInfo = async (loginData: LoginVO) => {
+    user.value = loginData.user
+    token.value = loginData.token
+  }
+
+  const clearInfo = () => {
+    user.value = null
+    token.value = ''
   }
 
   return {
@@ -53,6 +52,7 @@ export const useUserStore = defineStore('user', () => {
     login,
     logout,
     getUserInfo,
-    updateInfo
+    updateInfo,
+    clearInfo
   }
 }) 

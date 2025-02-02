@@ -87,8 +87,8 @@ const recentTasks = ref([
   }
 ])
 
-const getStatusType = (status: string) => {
-  const statusMap: Record<string, string> = {
+const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+  const statusMap: Record<string, 'success' | 'warning' | 'info' | 'primary' | 'danger'> = {
     'IN_PROGRESS': 'primary',
     'COMPLETED': 'success',
     'PENDING': 'warning'

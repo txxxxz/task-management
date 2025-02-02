@@ -1,0 +1,77 @@
+server:
+  port: 8080
+
+spring:
+  profiles:
+    active: dev
+  main:
+    allow-circular-references: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/task_management?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: TXZ0130hlz
+  redis:
+    host: ${guineapig.redis.host}
+    port: ${guineapig.redis.port}
+    database: ${guineapig.redis.database}
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+
+mybatis:
+  #mapper配置文件
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.taskmanagement.pojo.entity
+  configuration:
+    #开启驼峰命名
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    com:
+      guineapig:
+        mapper: debug
+        service: info
+        controller: info
+
+guineapig:
+  jwt:
+    # JWT存储的请求头
+    tokenHeader: Authorization
+    # JWT加解密使用的密钥
+    secret: task-management-secret
+    # JWT的超期限时间(60*60*24*7)
+    expiration: 604800
+    # JWT负载中拿到开头
+    tokenHead: Bearer
+    # 设置jwt签名加密时使用的秘钥
+    admin-secret-key: guineapig
+    # 设置jwt过期时间
+    admin-ttl: 7200000
+    # 设置前端传递过来的令牌名称
+    admin-token-name: token
+    user-secret-key: guineapig
+    user-ttl: 7200000
+    user-token-name: authentication
+
+  wechat:
+    appid: ${guineapig.wechat.appid}
+    secret: ${guineapig.wechat.secret}
+
+
+  alioss:
+    access-key-id: ${guineapig.alioss.access-key-id}
+    access-key-secret: ${guineapig.alioss.access-key-secret}
+    bucket-name: ${guineapig.alioss.bucket-name}
+    endpoint: ${guineapig.alioss.endpoint}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto

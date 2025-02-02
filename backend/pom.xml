@@ -16,18 +16,16 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>task-management-common</module>
-        <module>task-management-pojo</module>
-        <module>task-management-server</module>
+        <module>guinea-pig-common</module>
+        <module>guinea-pig-pojo</module>
+        <module>guinea-pig-server</module>
     </modules>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring-boot.version>3.2.1</spring-boot.version>
-        <mybatis-plus.version>3.5.4.1</mybatis-plus.version>
-        <fastjson2.version>2.0.14</fastjson2.version>
+        <mybatis-plus.version>3.5.2</mybatis-plus.version>
         <lombok.version>1.18.30</lombok.version>
     </properties>
 
@@ -38,16 +36,37 @@
                 <artifactId>mybatis-plus-boot-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.alibaba.fastjson2</groupId>
-                <artifactId>fastjson2</artifactId>
-                <version>${fastjson2.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.10.1</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>2.7.3</version>
+                    <configuration>
+                        <mainClass>com.taskManagement.Application</mainClass>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project> 

@@ -1,0 +1,22 @@
+guineapig:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    host: localhost
+    port: 3306
+    database: task_management
+    username: root
+    password: TXZ0130hlz
+  redis:
+    host: localhost
+    port: 6379
+    database: 1
+  wechat:
+    appid: wxe522d4f8dded1f5b
+    secret: f1b0d9fd7061c089863901932eaac9f4
+
+  alioss:
+    endpoint: oss-cn-beijing.aliyuncs.com
+    access-key-id: LTAI5tChg8K8ape6bLndpM6x
+    access-key-secret: YffM86lqje1lsmscaD75xc9JubjJGn
+    bucket-name: guineapig-take-out
+
