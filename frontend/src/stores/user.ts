@@ -40,12 +40,12 @@ export const useUserStore = defineStore('user', () => {
   const logout = async () => {
     try {
       await userLogout()
+    } catch (error: any) {
+      console.error('Logout failed:', error)
+    } finally {
       clearUserInfo()
       router.push('/login')
       ElMessage.success('退出登录成功')
-    } catch (error: any) {
-      console.error('Logout failed:', error)
-      throw error
     }
   }
 

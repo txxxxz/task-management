@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, PieChart } from 'echarts/charts'
@@ -98,6 +98,8 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { Clock, Document, Loading, Check } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 
 use([
   CanvasRenderer,
@@ -109,7 +111,8 @@ use([
   GridComponent
 ])
 
-const username = ref('GuineaPig')
+const userStore = useUserStore()
+const username = computed(() => userStore.userInfo?.username || '访客')
 const chartTimeRange = ref('week')
 
 // 任务状态数据
@@ -184,21 +187,47 @@ const taskTrendOption = ref({
 // 优先级分布图表配置
 const priorityOption = ref({
   tooltip: {
-    trigger: 'item'
+    trigger: 'item',
+    formatter: '{b}: {c} ({d}%)'
   },
   legend: {
-    orient: 'vertical',
-    left: 'left'
+    orient: 'horizontal',
+    bottom: 'bottom',
+    left: 'center'
   },
   series: [
     {
       type: 'pie',
       radius: '50%',
       data: [
-        { value: 2, name: '紧急' },
-        { value: 4, name: '高' },
-        { value: 6, name: '中' },
-        { value: 3, name: '低' }
+        { 
+          value: 2, 
+          name: '紧急',
+          itemStyle: {
+            color: '#F56C6C' // 红色，表示紧急
+          }
+        },
+        { 
+          value: 4, 
+          name: '高',
+          itemStyle: {
+            color: '#E6A23C' // 橙色，表示高优先级
+          }
+        },
+        { 
+          value: 6, 
+          name: '中',
+          itemStyle: {
+            color: '#409EFF' // 蓝色，表示中等优先级
+          }
+        },
+        { 
+          value: 3, 
+          name: '低',
+          itemStyle: {
+            color: '#67C23A' // 绿色，表示低优先级
+          }
+        }
       ],
       emphasis: {
         itemStyle: {
@@ -206,6 +235,9 @@ const priorityOption = ref({
           shadowOffsetX: 0,
           shadowColor: 'rgba(0, 0, 0, 0.5)'
         }
+      },
+      label: {
+        formatter: '{b}: {c} ({d}%)'
       }
     }
   ]
@@ -271,7 +303,28 @@ const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'danger
   return types[status] || ''
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // 获取用户信息
+  try {
+    await userStore.fetchUserInfo()
+  } catch (error: any) {
+    let errorMessage = '获取用户信息失败'
+    if (error.response) {
+      // 服务器响应错误
+      const { status, data } = error.response
+      errorMessage += `\n状态码: ${status}`
+      errorMessage += `\n错误信息: ${data.msg || data.message || '未知错误'}`
+    } else if (error.request) {
+      // 请求发送失败
+      errorMessage += '\n网络请求失败，请检查网络连接'
+    } else {
+      // 其他错误
+      errorMessage += `\n${error.message || '未知错误'}`
+    }
+    console.error(errorMessage)
+    ElMessage.error(errorMessage)
+  }
+
   // 在这里可以调用API获取实际数据
 })
 </script>

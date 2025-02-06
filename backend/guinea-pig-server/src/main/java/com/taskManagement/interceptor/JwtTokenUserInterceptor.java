@@ -46,8 +46,13 @@ public class JwtTokenUserInterceptor implements HandlerInterceptor {
 
         //2、校验令牌
         try {
+            // 处理Bearer前缀
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            
             log.info("jwt校验:{}", token);
-            Claims claims = JwtUtil.parseJWT(jwtProperties.getUserSecretKey(), token);
+            Claims claims = JwtUtil.parseJWT(token);
 
             Long userId = Long.valueOf(claims.get(JwtClaimsConstant.USER_ID).toString());
 

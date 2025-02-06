@@ -1,27 +1,26 @@
 package com.taskManagement.config;
 
-import com.taskManagement.properties.AliOssProperties;
 import com.taskManagement.utils.AliOssUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 /**
  * 配置类，用于创建AliOSSUtil对象
  */
+@Data
 @Configuration
-@Slf4j
+@ConfigurationProperties(prefix = "guineapig.alioss")
 public class OSSConfiguration {
 
+    private String endpoint;
+    private String accessKeyId;
+    private String accessKeySecret;
+    private String bucketName;
+
     @Bean
-    @ConditionalOnMissingBean
-    public AliOssUtil aliOssUtil(AliOssProperties aliOssProperties) {
-        log.info("开始创建阿里云文件上传工具类对象:{}", aliOssProperties);
-       return new AliOssUtil(aliOssProperties.getEndpoint(),
-                aliOssProperties.getAccessKeyId(),
-                aliOssProperties.getAccessKeySecret(),
-                aliOssProperties.getBucketName());
+    public AliOssUtil aliOssUtil() {
+        return new AliOssUtil(endpoint, accessKeyId, accessKeySecret, bucketName);
     }
 }

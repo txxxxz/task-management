@@ -15,6 +15,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -39,21 +40,18 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
 
     /**
      * 注册自定义拦截器
-     *
-     * @param registry
      */
-    protected void addInterceptors(InterceptorRegistry registry) {
-        log.info("开始注册员工自定义拦截器...");
-        registry.addInterceptor(jwtTokenAdminInterceptor)
-                .addPathPatterns("/guineapig/admin/**")
-                .excludePathPatterns("/guineapig/admin/employee/login");
-
-        log.info("开始注册用户自定义拦截器...");
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        log.info("开始注册自定义拦截器...");
         registry.addInterceptor(jwtTokenUserInterceptor)
-                .addPathPatterns("/guineapig/user/**")
-                .excludePathPatterns("/guineapig/user/login")
-                .excludePathPatterns("/guineapig/user/register")
-                .excludePathPatterns("/guineapig/user/check/**");
+                .addPathPatterns("/auth/**")
+                .excludePathPatterns(
+                    "/auth/login",
+                    "/auth/register",
+                    "/auth/check/**",
+                    "/auth/logout"
+                );
     }
 
     /**

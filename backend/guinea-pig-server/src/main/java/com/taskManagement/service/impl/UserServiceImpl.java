@@ -6,6 +6,8 @@ import com.taskManagement.utils.JwtUtil;
 import com.taskManagement.utils.PasswordUtil;
 import com.taskManagement.mapper.UserMapper;
 import com.taskManagement.dto.UserLoginDTO;
+import com.taskManagement.dto.UserUpdateDTO;
+import com.taskManagement.dto.PasswordChangeDTO;
 import com.taskManagement.dto.UserRegisterDTO;
 import com.taskManagement.entity.User;
 import com.taskManagement.vo.LoginVO;
@@ -16,12 +18,15 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
+import com.taskManagement.utils.AliOssUtil;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     
     private final UserMapper userMapper;
+    private final AliOssUtil aliOssUtil;
     
     @Override
     public LoginVO login(UserLoginDTO userLoginDTO) {
@@ -61,7 +66,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             claims.put("userId", user.getId());
             claims.put("username", user.getUsername());
             claims.put("role", user.getRole());
-            String token = JwtUtil.createJWT(secretKey, ttlMillis, claims);
+            String token = JwtUtil.createJWT(ttlMillis, claims);
             
             // 6. 转换并返回数据
             UserVO userVO = new UserVO();
@@ -104,11 +109,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Override
     public UserVO getUserById(Long id) {
+        // 1. 查询用户信息
         User user = this.getById(id);
         if (user == null) {
             throw new UserBusinessException("用户不存在");
         }
         
+        // 2. 转换为VO对象
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(user, userVO);
         return userVO;
@@ -118,5 +125,86 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public boolean checkUsernameExist(String username) {
         User user = userMapper.getByUsername(username);
         return user != null;
+    }
+
+    @Override
+    public UserVO updateUserInfo(Long userId, UserUpdateDTO updateDTO) {
+        // 1. 检查用户是否存在
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new UserBusinessException("用户不存在");
+        }
+
+        // 2. 如果修改用户名，检查是否已存在
+        if (updateDTO.getUsername() != null && !updateDTO.getUsername().equals(user.getUsername())) {
+            if (this.checkUsernameExist(updateDTO.getUsername())) {
+                throw new UserBusinessException("用户名已存在");
+            }
+        }
+
+        // 3. 更新用户信息
+        BeanUtils.copyProperties(updateDTO, user);
+        this.updateById(user);
+
+        // 4. 转换并返回更新后的用户信息
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO);
+        return userVO;
+    }
+
+    @Override
+    public void changePassword(Long userId, PasswordChangeDTO passwordDTO) {
+        // 1. 检查用户是否存在
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new UserBusinessException("用户不存在");
+        }
+
+        // 2. 验证原密码
+        if (!PasswordUtil.matches(passwordDTO.getOldPassword(), user.getPassword())) {
+            throw new UserBusinessException("原密码错误");
+        }
+
+        // 3. 更新密码
+        user.setPassword(PasswordUtil.encode(passwordDTO.getNewPassword()));
+        this.updateById(user);
+    }
+
+    @Override
+    public String uploadAvatar(Long userId, MultipartFile file) {
+        // 1. 检查用户是否存在
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new UserBusinessException("用户不存在");
+        }
+
+        try {
+            // 2. 检查文件类型
+            String contentType = file.getContentType();
+            if (contentType == null || (!contentType.startsWith("image/jpeg") && !contentType.startsWith("image/png"))) {
+                throw new UserBusinessException("只支持JPG或PNG格式的图片");
+            }
+
+            // 3. 检查文件大小
+            if (file.getSize() > 2 * 1024 * 1024) {
+                throw new UserBusinessException("图片大小不能超过2MB");
+            }
+
+            // 4. 生成文件名
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null ? originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
+            String fileName = "avatar/" + userId + "_" + System.currentTimeMillis() + extension;
+
+            // 5. 上传文件到阿里云OSS
+            String avatarUrl = aliOssUtil.upload(file.getBytes(), fileName);
+
+            // 6. 更新用户头像URL
+            user.setAvatar(avatarUrl);
+            this.updateById(user);
+
+            return avatarUrl;
+        } catch (Exception e) {
+            throw new UserBusinessException("头像上传失败：" + e.getMessage());
+        }
     }
 }

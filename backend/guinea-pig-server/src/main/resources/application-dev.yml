@@ -16,7 +16,7 @@ guineapig:
 
   alioss:
     endpoint: oss-cn-beijing.aliyuncs.com
-    access-key-id: LTAI5tChg8K8ape6bLndpM6x
-    access-key-secret: YffM86lqje1lsmscaD75xc9JubjJGn
-    bucket-name: guineapig-take-out
+    access-key-id: LTAI5tD7GdrmDNMvzx6PU6eW
+    access-key-secret: XMw7ebPlkEJEdPiqw9lzIIO7wLz2pA
+    bucket-name: guinea-pig-task-management
 

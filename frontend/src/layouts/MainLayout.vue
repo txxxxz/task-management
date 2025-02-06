@@ -21,13 +21,13 @@
           :active-icon="Moon"
           :inactive-icon="Sunny"
         />
-        <el-dropdown>
+        <el-dropdown @command="handleCommand">
           <el-avatar :src="userAvatar" />
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item>个人信息</el-dropdown-item>
-              <el-dropdown-item>设置</el-dropdown-item>
-              <el-dropdown-item divided>退出登录</el-dropdown-item>
+              <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+              <el-dropdown-item command="settings">设置</el-dropdown-item>
+              <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -45,33 +45,17 @@
           <el-icon><DataBoard /></el-icon>
           <span>仪表盘</span>
         </el-menu-item>
-        <el-menu-item index="/workplace">
-          <el-icon><Office /></el-icon>
-          <span>工作台</span>
-        </el-menu-item>
         <el-menu-item index="/data">
           <el-icon><DataLine /></el-icon>
           <span>数据可视化</span>
         </el-menu-item>
         <el-menu-item index="/list">
           <el-icon><List /></el-icon>
-          <span>列表页</span>
+          <span>任务列表</span>
         </el-menu-item>
         <el-menu-item index="/table">
           <el-icon><Grid /></el-icon>
-          <span>表格页</span>
-        </el-menu-item>
-        <el-menu-item index="/detail">
-          <el-icon><Document /></el-icon>
-          <span>详情页</span>
-        </el-menu-item>
-        <el-menu-item index="/result">
-          <el-icon><CircleCheck /></el-icon>
-          <span>结果页</span>
-        </el-menu-item>
-        <el-menu-item index="/exception">
-          <el-icon><Warning /></el-icon>
-          <span>异常页</span>
+          <span>任务处理</span>
         </el-menu-item>
         <el-menu-item index="/profile">
           <el-icon><User /></el-icon>
@@ -90,12 +74,45 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Moon, Sunny } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { ElMessageBox } from 'element-plus'
 
+const router = useRouter()
+const userStore = useUserStore()
 const searchKeyword = ref('')
 const isDark = ref(false)
 const isCollapse = ref(false)
 const activeMenu = ref('/dashboard')
 const userAvatar = ref('https://placeholder.com/150')
+
+// 处理下拉菜单命令
+const handleCommand = async (command: string) => {
+  switch (command) {
+    case 'profile':
+      router.push('/profile')
+      break
+    case 'settings':
+      router.push('/settings')
+      break
+    case 'logout':
+      try {
+        await ElMessageBox.confirm(
+          '确定要退出登录吗？',
+          '提示',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        )
+        await userStore.logout()
+      } catch (error) {
+        // 用户取消退出登录
+      }
+      break
+  }
+}
 </script>
 
 <style scoped>

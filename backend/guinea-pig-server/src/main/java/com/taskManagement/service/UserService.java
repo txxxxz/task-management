@@ -4,6 +4,9 @@ import com.taskManagement.dto.UserLoginDTO;
 import com.taskManagement.dto.UserRegisterDTO;
 import com.taskManagement.vo.LoginVO;
 import com.taskManagement.vo.UserVO;
+import com.taskManagement.dto.UserUpdateDTO;
+import com.taskManagement.dto.PasswordChangeDTO;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
     /**
@@ -33,4 +36,27 @@ public interface UserService {
      * @return true-存在，false-不存在
      */
     boolean checkUsernameExist(String username);
+
+    /**
+     * 更新用户信息
+     * @param userId
+     * @param updateDTO
+     * @return
+     */
+    public UserVO updateUserInfo(Long userId, UserUpdateDTO updateDTO);
+
+    /**
+     * 修改密码
+     * @param userId
+     * @param passwordDTO
+     */
+    public void changePassword(Long userId, PasswordChangeDTO passwordDTO);
+
+    /**
+     * 上传头像
+     * @param userId
+     * @param file
+     * @return
+     */
+    public String uploadAvatar(Long userId, MultipartFile file);
 }
