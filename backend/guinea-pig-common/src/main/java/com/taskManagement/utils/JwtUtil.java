@@ -1,59 +1,125 @@
 package com.taskManagement.utils;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.SignatureException;
+import lombok.extern.slf4j.Slf4j;
+import com.taskManagement.constant.JwtClaimsConstant;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
-import java.util.HashMap;
 
+@Slf4j
 public class JwtUtil {
+
     /**
-     * 生成jwt
-     * 使用Hs256算法, 私匙使用固定秘钥
-     *
-     * @param secretKey jwt秘钥
-     * @param ttlMillis jwt过期时间(毫秒)
-     * @param claims    设置的信息
-     * @return
+     * 生成JWT令牌
+     * @param secretKey JWT密钥
+     * @param ttlMillis 过期时间(毫秒)
+     * @param claims 自定义信息
+     * @return JWT令牌
      */
     public static String createJWT(String secretKey, long ttlMillis, Map<String, Object> claims) {
-        // 指定签名的时候使用的签名算法，也就是header那部分
-        SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
+        if (secretKey == null || secretKey.isEmpty()) {
+            throw new IllegalArgumentException("Secret key cannot be null or empty");
+        }
+        
+        if (ttlMillis <= 0) {
+            throw new IllegalArgumentException("TTL must be greater than 0");
+        }
 
-        // 生成JWT的时间
-        long expMillis = System.currentTimeMillis() + ttlMillis;
-        Date exp = new Date(expMillis);
+        try {
+            long nowMillis = System.currentTimeMillis();
+            Date now = new Date(nowMillis);
+            Date expiration = new Date(nowMillis + ttlMillis);
 
-        // 设置jwt的body
-        JwtBuilder builder = Jwts.builder()
-                // 如果有私有声明，一定要先设置这个自己创建的私有的声明，这个是给builder的claim赋值，一旦写在标准的声明赋值之后，就是覆盖了那些标准的声明的
-                .setClaims(claims)
-                // 设置签名使用的签名算法和签名使用的秘钥
-                .signWith(signatureAlgorithm, secretKey.getBytes(StandardCharsets.UTF_8))
-                // 设置过期时间
-                .setExpiration(exp);
-
-        return builder.compact();
+            return Jwts.builder()
+                    .setClaims(claims)
+                    .setIssuedAt(now)
+                    .setExpiration(expiration)
+                    .signWith(SignatureAlgorithm.HS256, secretKey.getBytes(StandardCharsets.UTF_8))
+                    .compact();
+        } catch (Exception e) {
+            log.error("JWT token generation failed: {}", e.getMessage());
+            throw new RuntimeException("Failed to create JWT token", e);
+        }
     }
 
     /**
-     * Token解密
-     *
-     * @param secretKey jwt秘钥 此秘钥一定要保留好在服务端, 不能暴露出去, 否则sign就可以被伪造, 如果对接多个客户端建议改造成多个
-     * @param token     加密后的token
-     * @return
+     * 解析JWT令牌
+     * @param secretKey JWT密钥
+     * @param token JWT令牌
+     * @return Claims对象
      */
     public static Claims parseJWT(String secretKey, String token) {
-        // 得到DefaultJwtParser
-        Claims claims = Jwts.parser()
-                // 设置签名的秘钥
-                .setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8))
-                // 设置需要解析的jwt
-                .parseClaimsJws(token).getBody();
-        return claims;
+        if (secretKey == null || secretKey.isEmpty()) {
+            throw new IllegalArgumentException("Secret key cannot be null or empty");
+        }
+        
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
+
+        try {
+            return Jwts.parser()
+                    .setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8))
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT token has expired: {}", e.getMessage());
+            throw e;
+        } catch (SignatureException e) {
+            log.error("JWT signature validation failed: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("JWT token parsing failed: {}", e.getMessage());
+            throw new RuntimeException("Failed to parse JWT token", e);
+        }
     }
 
+    /**
+     * 从token中获取用户ID
+     */
+    public static Long getUserIdFromToken(String secretKey, String token) {
+        Claims claims = parseJWT(secretKey, token);
+        return Long.valueOf(claims.get("userId").toString());
+    }
+
+    /**
+     * 从token中获取用户名
+     */
+    public static String getUsernameFromToken(String secretKey, String token) {
+        Claims claims = parseJWT(secretKey, token);
+        return claims.get("username").toString();
+    }
+
+    /**
+     * 从token中获取用户角色
+     */
+    public static Integer getRoleFromToken(String secretKey, String token) {
+        Claims claims = parseJWT(secretKey, token);
+        return Integer.valueOf(claims.get("role").toString());
+    }
+
+    /**
+     * 验证token是否有效
+     */
+    public static boolean validateToken(String secretKey, String token) {
+        if (secretKey == null || secretKey.isEmpty() || token == null || token.isEmpty()) {
+            return false;
+        }
+
+        try {
+            Claims claims = parseJWT(secretKey, token);
+            return !claims.getExpiration().before(new Date());
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT token has expired");
+            return false;
+        } catch (Exception e) {
+            log.error("JWT token validation failed: {}", e.getMessage());
+            return false;
+        }
+    }
 }

@@ -40,7 +40,7 @@ logging:
 guineapig:
   jwt:
     # JWT存储的请求头
-    tokenHeader: Authorization
+    tokenHeader: token
     # JWT加解密使用的密钥
     secret: task-management-secret
     # JWT的超期限时间(60*60*24*7)
@@ -55,7 +55,7 @@ guineapig:
     admin-token-name: token
     user-secret-key: guineapig
     user-ttl: 7200000
-    user-token-name: authentication
+    user-token-name: token
 
   wechat:
     appid: ${guineapig.wechat.appid}

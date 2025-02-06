@@ -50,7 +50,8 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
                     "/auth/login",
                     "/auth/register",
                     "/auth/check/**",
-                    "/auth/logout"
+                    "/auth/logout",
+                    "/auth/user/avatar"  // 排除头像上传路径
                 );
     }
 
@@ -61,12 +62,12 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
     @Override
     protected void addCorsMappings(CorsRegistry registry) {
         log.info("开始配置跨域支持...");
-        registry.addMapping("/**")  // 所有接口
-                .allowedOrigins("http://localhost:5173")  // 允许特定来源
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 允许的HTTP方法
-                .allowedHeaders("*")  // 允许所有请求头
-                .allowCredentials(true)  // 允许发送cookie
-                .maxAge(3600);  // 预检请求的有效期，单位为秒
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:5173")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(false)  // 修改为false，因为我们不需要发送凭证
+                .maxAge(3600);
     }
 
     /**

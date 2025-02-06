@@ -13,6 +13,8 @@ import com.taskManagement.entity.User;
 import com.taskManagement.vo.LoginVO;
 import com.taskManagement.vo.UserVO;
 import com.taskManagement.service.UserService;
+import com.taskManagement.properties.JwtProperties;
+import com.taskManagement.constant.JwtClaimsConstant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,7 @@ import com.taskManagement.utils.AliOssUtil;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     
     private final UserMapper userMapper;
+    private final JwtProperties jwtProperties;
     private final AliOssUtil aliOssUtil;
     
     @Override
@@ -60,13 +63,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
             
             // 5. 生成token
-            String secretKey = "guineapig";
-            long ttlMillis = 24 * 60 * 60 * 1000; // 24小时
             Map<String, Object> claims = new HashMap<>();
-            claims.put("userId", user.getId());
-            claims.put("username", user.getUsername());
+            claims.put(JwtClaimsConstant.USER_ID, user.getId());
+            claims.put(JwtClaimsConstant.USERNAME, user.getUsername());
             claims.put("role", user.getRole());
-            String token = JwtUtil.createJWT(ttlMillis, claims);
+            String token = JwtUtil.createJWT(jwtProperties.getUserSecretKey(), jwtProperties.getUserTtl(), claims);
             
             // 6. 转换并返回数据
             UserVO userVO = new UserVO();

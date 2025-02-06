@@ -40,7 +40,7 @@
     {
       "name": "guineapig.jwt.admin-secret-key",
       "type": "java.lang.String",
-      "description": "管理端员工生成jwt令牌相关配置",
+      "description": "管理端JWT配置",
       "sourceType": "com.taskManagement.properties.JwtProperties"
     },
     {
@@ -51,12 +51,20 @@
     {
       "name": "guineapig.jwt.admin-ttl",
       "type": "java.lang.Long",
-      "sourceType": "com.taskManagement.properties.JwtProperties"
+      "sourceType": "com.taskManagement.properties.JwtProperties",
+      "defaultValue": 0
+    },
+    {
+      "name": "guineapig.jwt.token-header",
+      "type": "java.lang.String",
+      "description": "Token头部信息",
+      "sourceType": "com.taskManagement.properties.JwtProperties",
+      "defaultValue": "token"
     },
     {
       "name": "guineapig.jwt.user-secret-key",
       "type": "java.lang.String",
-      "description": "用户端微信用户生成jwt令牌相关配置",
+      "description": "用户端JWT配置",
       "sourceType": "com.taskManagement.properties.JwtProperties"
     },
     {
@@ -67,7 +75,8 @@
     {
       "name": "guineapig.jwt.user-ttl",
       "type": "java.lang.Long",
-      "sourceType": "com.taskManagement.properties.JwtProperties"
+      "sourceType": "com.taskManagement.properties.JwtProperties",
+      "defaultValue": 0
     },
     {
       "name": "guineapig.wechat.api-v3-key",

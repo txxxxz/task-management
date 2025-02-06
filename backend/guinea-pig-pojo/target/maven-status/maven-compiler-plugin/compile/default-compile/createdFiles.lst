@@ -3,11 +3,13 @@ com/taskManagement/entity/User.class
 com/taskManagement/dto/UserRegisterDTO.class
 com/taskManagement/vo/ProjectVO.class
 com/taskManagement/dto/UserLoginDTO.class
+com/taskManagement/dto/PasswordChangeDTO.class
 com/taskManagement/vo/TagVO.class
 com/taskManagement/vo/LoginVO.class
 com/taskManagement/entity/Attachment.class
 com/taskManagement/entity/Project.class
 com/taskManagement/vo/CommentVO.class
+com/taskManagement/dto/UserUpdateDTO.class
 com/taskManagement/dto/TaskDTO.class
 com/taskManagement/vo/AttachmentVO.class
 com/taskManagement/entity/Task.class
