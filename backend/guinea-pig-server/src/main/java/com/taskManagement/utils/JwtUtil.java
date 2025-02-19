@@ -6,7 +6,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import java.util.Date;
 import java.util.Map;
 import java.nio.charset.StandardCharsets;
-import com.taskManagement.properties.JwtProperties;
+
 
 
 public class JwtUtil {

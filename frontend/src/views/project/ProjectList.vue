@@ -98,13 +98,13 @@ const rules = {
   ]
 }
 
-const getStatusType = (status: string) => {
-  const statusMap: Record<string, string> = {
+const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+  const statusMap = {
     'IN_PROGRESS': 'primary',
     'COMPLETED': 'success',
     'ON_HOLD': 'warning'
-  }
-  return statusMap[status] || 'info'
+  } as const
+  return statusMap[status as keyof typeof statusMap] || 'info'
 }
 
 const getStatusText = (status: string) => {

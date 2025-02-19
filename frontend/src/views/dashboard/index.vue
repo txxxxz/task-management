@@ -59,7 +59,7 @@
       <template #header>
         <div class="card-header">
           <span>任务列表</span>
-          <el-button type="primary" size="small">查看更多</el-button>
+          <el-button type="primary" size="small" @click="router.push('/list')">查看更多</el-button>
         </div>
       </template>
       <el-table :data="taskList" style="width: 100%">
@@ -100,6 +100,7 @@ import VChart from 'vue-echarts'
 import { Clock, Document, Loading, Check } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 
 use([
   CanvasRenderer,
@@ -114,6 +115,7 @@ use([
 const userStore = useUserStore()
 const username = computed(() => userStore.userInfo?.username || '访客')
 const chartTimeRange = ref('week')
+const router = useRouter()
 
 // 任务状态数据
 const taskStatus = ref([

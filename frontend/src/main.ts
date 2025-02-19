@@ -7,6 +7,7 @@ import App from './App.vue'
 import router from './router'
 
 import './assets/main.css'
+import 'animate.css'
 
 const app = createApp(App)
 
@@ -18,5 +19,4 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
-
 app.mount('#app')

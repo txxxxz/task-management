@@ -1,5 +1,18 @@
 <script setup lang="ts">
-// 空的setup，因为这是一个简单的路由容器组件
+import { onMounted } from 'vue'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+
+onMounted(async () => {
+  if (userStore.token) {
+    try {
+      await userStore.fetchUserInfo()
+    } catch (error) {
+      console.error('Failed to fetch user info:', error)
+    }
+  }
+})
 </script>
 
 <template>

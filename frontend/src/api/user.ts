@@ -43,7 +43,7 @@ export const logout = () => {
 // 修改密码
 export const changePassword = (data: { oldPassword: string; newPassword: string }) => {
   return request({
-    url: '/user/password',
+    url: '/auth/user/password',
     method: 'put',
     data
   })
@@ -52,8 +52,8 @@ export const changePassword = (data: { oldPassword: string; newPassword: string 
 // 更新用户信息
 export const updateUserInfo = (data: Partial<UserInfo>) => {
   return request({
-    url: '/user/info',
+    url: '/auth/user/info',
     method: 'put',
     data
   })
-} 
+}

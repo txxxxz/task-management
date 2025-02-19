@@ -3,8 +3,8 @@
     <!-- 顶部导航栏 -->
     <header class="header">
       <div class="logo">
-        <img src="@/assets/logo.svg" alt="Task Management System" />
-        <span>Task Management System</span>
+        <img src="/Users/txxxxz/Desktop/斗转星移/final project/task-management/frontend/img/guineahead.svg" alt="Task Management System" />
+        <span>Guinea Pig Task Management System</span>
       </div>
       <div class="header-right">
         <el-input
@@ -13,19 +13,18 @@
           v-model="searchKeyword"
           class="search-input"
         />
-        <el-button icon="Language" circle />
         <el-button icon="Bell" circle />
-        <el-switch
-          v-model="isDark"
-          inline-prompt
-          :active-icon="Moon"
-          :inactive-icon="Sunny"
-        />
         <el-dropdown @command="handleCommand">
-          <el-avatar :src="userAvatar" />
+          <el-avatar 
+            :size="40"
+            :src="userStore.userInfo?.avatar || defaultAvatar"
+            class="user-avatar"
+          >
+            {{ userStore.userInfo?.username?.charAt(0).toUpperCase() }}
+          </el-avatar>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+              <el-dropdown-item command="profile">个人中心</el-dropdown-item>
               <el-dropdown-item command="settings">设置</el-dropdown-item>
               <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
@@ -40,26 +39,15 @@
         :default-active="activeMenu"
         class="sidebar-menu"
         :collapse="isCollapse"
+        router
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><DataBoard /></el-icon>
-          <span>仪表盘</span>
-        </el-menu-item>
-        <el-menu-item index="/data">
-          <el-icon><DataLine /></el-icon>
-          <span>数据可视化</span>
-        </el-menu-item>
-        <el-menu-item index="/list">
-          <el-icon><List /></el-icon>
-          <span>任务列表</span>
-        </el-menu-item>
-        <el-menu-item index="/table">
-          <el-icon><Grid /></el-icon>
-          <span>任务处理</span>
-        </el-menu-item>
-        <el-menu-item index="/profile">
-          <el-icon><User /></el-icon>
-          <span>个人中心</span>
+        <el-menu-item 
+          v-for="item in authorizedMenuItems" 
+          :key="item.path"
+          :index="item.path"
+        >
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span>{{ item.title }}</span>
         </el-menu-item>
       </el-menu>
     </aside>
@@ -72,19 +60,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Moon, Sunny } from '@element-plus/icons-vue'
+import { ref, watch, computed } from 'vue'
+import { Moon, Sunny, Grid, Calendar, DataLine, List, User, Plus, Operation } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox } from 'element-plus'
+import { menuItems } from '@/config/menu'
 
 const router = useRouter()
 const userStore = useUserStore()
 const searchKeyword = ref('')
 const isDark = ref(false)
 const isCollapse = ref(false)
-const activeMenu = ref('/dashboard')
-const userAvatar = ref('https://placeholder.com/150')
+const activeMenu = ref(router.currentRoute.value.path)
+const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+
+// 监听路由变化
+watch(() => router.currentRoute.value.path, (newPath) => {
+  activeMenu.value = newPath
+})
 
 // 处理下拉菜单命令
 const handleCommand = async (command: string) => {
@@ -113,6 +107,17 @@ const handleCommand = async (command: string) => {
       break
   }
 }
+
+// 添加菜单权限控制的计算属性
+const authorizedMenuItems = computed(() => {
+  const userRole = userStore.userInfo?.role?.toString()
+  return menuItems.filter(item => {
+    // 如果没有指定角色限制,则所有人可见
+    if (!item.roles) return true
+    // 如果指定了角色限制,则检查用户角色是否在允许的角色列表中
+    return item.roles.includes(userRole || '')
+  })
+})
 </script>
 
 <style scoped>
@@ -171,5 +176,16 @@ const handleCommand = async (command: string) => {
   grid-area: main;
   padding: 20px;
   background: var(--el-bg-color-page);
+}
+
+.user-avatar {
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.user-avatar:hover {
+  transform: scale(1.1);
+  border-color: var(--el-color-primary);
 }
 </style> 

@@ -15,7 +15,7 @@ export const useUserStore = defineStore('user', () => {
       loading.value = true
       const data = await userLogin({ username, password, role })
       setToken(data.token)
-      setUserInfo(data.user)
+      setUserInfo(data)
       ElMessage.success('登录成功')
       router.push('/dashboard')
     } catch (error: any) {
@@ -62,6 +62,7 @@ export const useUserStore = defineStore('user', () => {
     token.value = null
     userInfo.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('userRole')
   }
 
   return {

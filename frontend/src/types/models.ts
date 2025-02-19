@@ -20,14 +20,26 @@ export interface Project {
   id: number;
   name: string;
   description: string;
-  status: number;
-  priority: number;
+  status: number; // 0-筹备中，1-进行中，2-已完成，3-已归档
+  priority: number; // 1-低，2-中，3-高，4-紧急
   startTime: string;
   endTime: string;
   createTime: string;
   createUser: number;
   updateTime: string;
   updateUser: number;
+  members: string[];
+  attachments?: string[];
+}
+
+export interface ProjectForm {
+  name: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+  members: string[];
+  attachments?: string[];
+  status?: number;
 }
 
 export interface Task {

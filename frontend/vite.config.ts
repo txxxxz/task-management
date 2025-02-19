@@ -18,5 +18,25 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
-  }
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        quietDeps: true,
+        additionalData: `
+          @use "sass:color";
+          @function darken($color, $amount) {
+            @return color.adjust($color, $lightness: -$amount);
+          }
+        `,
+        sassOptions: {
+          quietDeps: true,
+          logger: {
+            warn: () => {},
+            debug: () => {}
+          }
+        }
+      },
+    },
+  },
 })

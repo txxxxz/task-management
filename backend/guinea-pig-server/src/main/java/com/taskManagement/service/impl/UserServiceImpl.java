@@ -72,6 +72,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             // 6. 转换并返回数据
             UserVO userVO = new UserVO();
             BeanUtils.copyProperties(user, userVO);
+            // 设置创建时间
+            if (user.getCreateTime() != null) {
+                userVO.setCreateTime(user.getCreateTime().toString());
+            }
             
             return LoginVO.builder()
                     .token(token)
@@ -105,6 +109,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 3. 转换并返回数据
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(user, userVO);
+        // 设置创建时间
+        if (user.getCreateTime() != null) {
+            userVO.setCreateTime(user.getCreateTime().toString());
+        }
         return userVO;
     }
     
@@ -119,6 +127,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 2. 转换为VO对象
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(user, userVO);
+        // 设置创建时间
+        if (user.getCreateTime() != null) {
+            userVO.setCreateTime(user.getCreateTime().toString());
+        }
         return userVO;
     }
     
@@ -150,6 +162,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 4. 转换并返回更新后的用户信息
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(user, userVO);
+        // 设置创建时间
+        if (user.getCreateTime() != null) {
+            userVO.setCreateTime(user.getCreateTime().toString());
+        }
         return userVO;
     }
 

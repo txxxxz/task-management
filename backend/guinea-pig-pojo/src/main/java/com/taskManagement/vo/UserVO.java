@@ -11,4 +11,5 @@ public class UserVO {
     private String avatar;
     private Integer status;
     private Integer role;
+    private String createTime;
 } 
