@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <div class="login-box">
-      <h2 class="title">欢迎登录</h2>
+      <h2 class="title">Welcome to login</h2>
       <el-form
         ref="loginFormRef"
         :model="loginForm"
@@ -13,7 +13,7 @@
           <el-input
             v-model="loginForm.username"
             prefix-icon="User"
-            placeholder="请输入用户名"
+            placeholder="Please enter username"
           />
         </el-form-item>
 
@@ -22,7 +22,7 @@
             v-model="loginForm.password"
             prefix-icon="Lock"
             type="password"
-            placeholder="请输入密码"
+            placeholder="Please enter password"
             show-password
             @keyup.enter="handleLogin"
           />
@@ -30,21 +30,21 @@
 
         <el-form-item prop="role">
           <el-radio-group v-model="loginForm.role" class="role-select">
-            <el-radio :label="0">普通成员</el-radio>
-            <el-radio :label="1">项目负责人</el-radio>
-            <el-radio :label="2">管理员</el-radio>
+            <el-radio :label="0">Normal member</el-radio>
+            <el-radio :label="1">Project manager</el-radio>
+            <el-radio :label="2">Admin</el-radio>
           </el-radio-group>
         </el-form-item>
 
         <el-form-item>
           <el-button type="primary" class="login-button" @click="handleLogin">
-            登录
+            Login
           </el-button>
         </el-form-item>
 
         <div class="register-link">
-          还没有账号？
-          <router-link to="/register">立即注册</router-link>
+          No account yet?
+          <router-link to="/register">Register now</router-link>
         </div>
       </el-form>
     </div>
@@ -57,8 +57,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { login } from '@/api/user'
-import { useUserStore } from '@/stores/user'
+import { useUserStore } from '../../stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -73,13 +72,13 @@ const loginForm = ref({
 
 const rules = reactive<FormRules>({
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
+    { required: true, message: 'Please enter username', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
+    { required: true, message: 'Please enter password', trigger: 'blur' }
   ],
   role: [
-    { required: true, message: '请选择角色', trigger: 'change' }
+    { required: true, message: 'Please select role', trigger: 'change' }
   ]
 })
 
@@ -101,7 +100,7 @@ const handleLogin = async () => {
           localStorage.removeItem('rememberedUsername')
         }
       } catch (error: any) {
-        ElMessage.error(error.message || '登录失败')
+        ElMessage.error(error.message || 'Login failed')
       }
     }
   })

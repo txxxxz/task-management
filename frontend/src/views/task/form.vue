@@ -16,37 +16,37 @@
           label-width="100px"
           class="task-form"
         >
-          <el-form-item label="任务名称" prop="name" required>
-            <el-input v-model="taskForm.name" placeholder="请输入任务名称" />
+          <el-form-item label="Task Name" prop="name" required>
+            <el-input v-model="taskForm.name" placeholder="Please enter the task name" />
           </el-form-item>
 
-          <el-form-item label="优先级" prop="priority" required>
-            <el-select v-model="taskForm.priority" placeholder="请选择优先级" style="width: 100%">
-              <el-option label="低" value="LOW" />
-              <el-option label="中" value="MEDIUM" />
-              <el-option label="高" value="HIGH" />
-              <el-option label="紧急" value="CRITICAL" />
+          <el-form-item label="Priority" prop="priority" required>
+            <el-select v-model="taskForm.priority" placeholder="Please select the priority" style="width: 100%">
+              <el-option label="Low" value="LOW" />
+              <el-option label="Medium" value="MEDIUM" />
+              <el-option label="High" value="HIGH" />
+              <el-option label="Critical" value="CRITICAL" />
             </el-select>
           </el-form-item>
 
-          <el-form-item label="截止时间" prop="dueTime" required>
+          <el-form-item label="Due Time" prop="dueTime" required>
             <el-date-picker
               v-model="taskForm.dueTime"
               type="datetime"
-              placeholder="请选择截止时间"
+              placeholder="Please select the due time"
               style="width: 100%"
               value-format="YYYY-MM-DD HH:mm:ss"
             />
           </el-form-item>
 
-          <el-form-item label="标签" prop="tags">
+          <el-form-item label="Tags" prop="tags">
             <el-select
               v-model="taskForm.tags"
               multiple
               filterable
               allow-create
               default-first-option
-              placeholder="请选择或创建标签"
+              placeholder="Please select or create tags"
               style="width: 100%"
             >
               <el-option
@@ -58,21 +58,21 @@
             </el-select>
           </el-form-item>
 
-          <el-form-item label="任务描述" prop="description">
+          <el-form-item label="Description" prop="description">
             <el-input
               v-model="taskForm.description"
               type="textarea"
               :rows="4"
-              placeholder="请描述任务"
+              placeholder="Please describe the task"
             />
           </el-form-item>
 
-          <el-form-item label="参与成员" prop="members">
+          <el-form-item label="Members" prop="members">
             <el-select
               v-model="taskForm.members"
               multiple
               filterable
-              placeholder="请选择参与成员"
+              placeholder="Please select the members"
               style="width: 100%"
             >
               <el-option
@@ -121,10 +121,10 @@
           <div class="success-icon">
             <el-icon :size="64" color="#67C23A"><CircleCheckFilled /></el-icon>
           </div>
-          <h2>创建成功</h2>
+          <h2>Create successfully</h2>
           <div class="action-buttons">
-            <el-button type="primary" @click="handleCheckTask">查看任务</el-button>
-            <el-button @click="handleCreateAgain">继续创建</el-button>
+            <el-button type="primary" @click="handleCheckTask">View Task</el-button>
+            <el-button @click="handleCreateAgain">Continue Create</el-button>
           </div>
         </div>
       </template>
@@ -156,19 +156,31 @@ const steps = [
   { title: '完成', component: 'Finish' }
 ]
 
+type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+
+interface TaskForm {
+  name: string
+  description: string
+  priority: Priority
+  dueTime: string
+  tags: string[]
+  members: string[]
+  attachments: any[]
+}
+
 // 表单数据
-const taskForm = reactive({
+const taskForm = reactive<TaskForm>({
   name: '',
   description: '',
-  priority: '',
+  priority: 'LOW',
   dueTime: '',
-  tags: [] as string[],
-  members: [] as string[],
-  attachments: [] as any[]
+  tags: [],
+  members: [],
+  attachments: []
 })
 
 // 标签选项
-const tagOptions = ref(['Bug', 'Login Page', '功能开发', '性能优化', 'UI设计', '文档'])
+const tagOptions = ref(['Bug', 'Login Page', 'Feature Development', 'Performance Optimization', 'UI Design', 'Documentation'])
 
 // 成员选项
 const memberOptions = [
@@ -181,17 +193,17 @@ const memberOptions = [
 // 表单校验规则
 const formRules = {
   name: [
-    { required: true, message: '请输入任务名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the task name', trigger: 'blur' },
+    { min: 2, max: 50, message: 'Length must be between 2 and 50 characters', trigger: 'blur' }
   ],
   priority: [
-    { required: true, message: '请选择优先级', trigger: 'change' }
+    { required: true, message: 'Please select the priority', trigger: 'change' }
   ],
   dueTime: [
-    { required: true, message: '请选择截止时间', trigger: 'change' }
+    { required: true, message: 'Please select the due time', trigger: 'change' }
   ],
   members: [
-    { required: true, message: '请选择至少一名参与成员', trigger: 'change' }
+    { required: true, message: 'Please select at least one member', trigger: 'change' }
   ]
 }
 
@@ -217,7 +229,7 @@ const handleNext = async () => {
     try {
       await formRef.value.validate()
     } catch (error) {
-      ElMessage.error('请完善必填信息')
+      ElMessage.error('Please complete the required information')
       return
     }
   } else if (currentStep.value === 1) {
@@ -229,14 +241,14 @@ const handleNext = async () => {
       const taskId = route.params.id as string
       if (taskId) {
         await updateTask(taskId, taskForm)
-        ElMessage.success('更新成功')
+        ElMessage.success('Update successfully')
       } else {
         await createTask(taskForm)
-        ElMessage.success('创建成功')
+        ElMessage.success('Create successfully')
       }
     } catch (error: any) {
-      console.error('操作失败:', error)
-      ElMessage.error(error.message || '操作失败')
+      console.error('Operation failed:', error)
+      ElMessage.error(error.message || 'Operation failed')
       return
     } finally {
       loading.value = false
@@ -255,7 +267,7 @@ const handleCreateAgain = () => {
   Object.assign(taskForm, {
     name: '',
     description: '',
-    priority: '',
+    priority: 'LOW',
     dueTime: '',
     tags: [],
     members: [],

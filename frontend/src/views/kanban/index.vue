@@ -3,15 +3,15 @@
     <!-- 顶部搜索和标签页 -->
     <div class="kanban-header">
       <el-tabs v-model="activeTab" class="kanban-tabs">
-        <el-tab-pane label="全部" name="all" />
-        <el-tab-pane label="待处理" name="pending" />
-        <el-tab-pane label="进行中" name="in-process" />
-        <el-tab-pane label="已完成" name="completed" />
+        <el-tab-pane label="All" name="all" />
+        <el-tab-pane label="Pending" name="pending" />
+        <el-tab-pane label="In progress" name="in-process" />
+        <el-tab-pane label="Completed" name="completed" />
       </el-tabs>
       <div class="header-right">
         <el-select
           v-model="selectedProject"
-          placeholder="选择项目"
+          placeholder="Select project"
           clearable
           class="project-select"
           @change="handleProjectChange"
@@ -25,12 +25,12 @@
         </el-select>
         <el-input
           v-model="searchText"
-          placeholder="搜索任务..."
+          placeholder="Search tasks..."
           class="search-input"
           :prefix-icon="Search"
         />
         <el-button v-if="isLeader" type="primary" @click="handleCreateTask">
-          <el-icon><Plus /></el-icon> 新建任务
+          <el-icon><Plus /></el-icon> Create task
         </el-button>
       </div>
     </div>
@@ -40,7 +40,7 @@
       <!-- 待处理任务 -->
       <div v-show="activeTab === 'all' || activeTab === 'pending'" class="task-section">
         <div class="section-header">
-          <h2>待处理</h2>
+          <h2>Pending</h2>
           <span class="task-count">{{ pendingTasks.length }}</span>
         </div>
         <div class="task-row">
@@ -48,7 +48,7 @@
           <el-card v-if="isLeader" class="task-card add-task-card" @click="handleNavigateToCreate">
             <div class="add-task-content">
               <el-icon :size="32" style="color: #909399;"><Plus /></el-icon>
-              <p style="margin-top: 12px; color: #909399;">点击创建新任务</p>
+              <p style="margin-top: 12px; color: #909399;">Click to create a new task</p>
             </div>
           </el-card>
           <!-- 待处理任务列表 -->
@@ -112,11 +112,11 @@
               </div>
               <div class="task-actions">
                 <el-button type="primary" size="small" @click="handleProcess(task)">
-                  去处理
+                  Go to process
                 </el-button>
                 <el-button type="primary" plain size="small" @click="handleComments(task)">
                   <el-icon><ChatLineRound /></el-icon>
-                  <span>评论({{ task.comments }})</span>
+                  <span>Comments({{ task.comments }})</span>
                 </el-button>
               </div>
             </div>
@@ -127,7 +127,7 @@
       <!-- 进行中任务 -->
       <div v-show="activeTab === 'all' || activeTab === 'in-process'" class="task-section">
         <div class="section-header">
-          <h2>进行中</h2>
+          <h2>In progress</h2>
           <span class="task-count">{{ inProcessTasks.length }}</span>
         </div>
         <div class="task-row">
@@ -199,11 +199,11 @@
             </div>
             <div class="task-actions">
               <el-button type="primary" size="small" @click="handleFinish(task)">
-                完成
+                Complete
               </el-button>
               <el-button type="primary" plain size="small" @click="handleComments(task)">
                 <el-icon><ChatLineRound /></el-icon>
-                <span>评论({{ task.comments }})</span>
+                <span>Comments({{ task.comments }})</span>
               </el-button>
             </div>
           </el-card>
@@ -213,7 +213,7 @@
       <!-- 已完成任务 -->
       <div v-show="activeTab === 'all' || activeTab === 'completed'" class="task-section">
         <div class="section-header">
-          <h2>已完成</h2>
+          <h2>Completed</h2>
           <span class="task-count">{{ completedTasks.length }}</span>
         </div>
         <div class="task-row">
@@ -276,11 +276,11 @@
             <div class="task-actions">
               <el-button type="info" size="small" @click.stop="handleCheck(task)">
                 <el-icon><View /></el-icon>
-                <span>查看</span>
+                <span>View</span>
               </el-button>
               <el-button type="primary" plain size="small" @click.stop="handleComments(task)">
                 <el-icon><ChatLineRound /></el-icon>
-                <span>评论({{ task.comments }})</span>
+                <span>Comments({{ task.comments }})</span>
               </el-button>
             </div>
           </el-card>
@@ -294,10 +294,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { Search, Plus, Check, ChatLineRound, View, Folder } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useUserStore } from '@/stores/user'
+import { useUserStore } from '../../stores/user'
 import { useRouter } from 'vue-router'
-import { getProjectList } from '@/api/project'
-import type { Project } from '@/types/task'
+import { getProjectList } from '../../api/project'
+import type { Project } from '../../types/task'
 import dayjs from 'dayjs'
 
 const userStore = useUserStore()
@@ -341,18 +341,18 @@ const handleProjectChange = (projectId: string) => {
 const tasks = ref([
   {
     id: 1,
-    title: '前端项目重构计划',
+    title: 'Frontend project refactoring plan',
     createTime: '2024-01-15 09:00:00',
     dueTime: '2024-02-15 18:00:00',
     priority: 'HIGH',
     status: 'pending',
-    tags: ['架构', '重构', '前端'],
+    tags: ['Architecture', 'Refactoring', 'Frontend'],
     members: ['Tom', 'John'],
     comments: 5,
     leader: 'Tom',
-    description: '对现有前端项目进行重构，提高代码质量和性能',
+    description: 'Refactor the existing frontend project to improve code quality and performance',
     projectId: '1',
-    projectName: '前端重构项目'
+    projectName: 'Frontend Refactoring Project'
   }
 ])
 
@@ -361,48 +361,48 @@ const initData = () => {
   tasks.value = [
     {
       id: 1,
-      title: '前端项目重构计划',
+      title: 'Frontend project refactoring plan',
       createTime: '2024-01-15 09:00:00',
       dueTime: '2024-02-15 18:00:00',
       priority: 'HIGH',
       status: 'pending',
-      tags: ['架构', '重构', '前端'],
+      tags: ['Architecture', 'Refactoring', 'Frontend'],
       members: ['Tom', 'John'],
       comments: 5,
       leader: 'Tom',
-      description: '对现有前端项目进行重构，提高代码质量和性能',
+      description: 'Refactor the existing frontend project to improve code quality and performance',
       projectId: '1',
-      projectName: '前端重构项目'
+      projectName: 'Frontend Refactoring Project'
     },
     {
       id: 2,
-      title: '后端接口优化',
+      title: 'Backend interface optimization',
       createTime: '2024-01-16 10:30:00',
       dueTime: '2024-01-30 18:00:00',
       priority: 'MEDIUM',
       status: 'in-process',
-      tags: ['后端', '性能优化'],
+      tags: ['Backend', 'Performance optimization'],
       members: ['Amy', 'Jack'],
       comments: 3,
       leader: 'Tom',
-      description: '优化现有后端接口，提高响应速度',
+      description: 'Optimize the existing backend interfaces to improve response speed',
       projectId: '2',
-      projectName: '后端优化项目'
+      projectName: 'Backend Optimization Project'
     },
     {
       id: 3,
-      title: '用户反馈系统实现',
+      title: 'User feedback system implementation',
       createTime: '2024-01-10 14:00:00',
       dueTime: '2024-01-20 18:00:00',
       priority: 'LOW',
       status: 'completed',
-      tags: ['功能', '用户体验'],
+      tags: ['Function', 'User experience'],
       members: ['Sarah', 'Mike'],
       comments: 8,
       leader: 'Tom',
-      description: '实现用户反馈收集和处理系统',
+      description: 'Implement the user feedback collection and processing system',
       projectId: '3',
-      projectName: '用户反馈系统'
+      projectName: 'User Feedback System'
     }
   ]
 }
@@ -440,35 +440,35 @@ const getPriorityType = (priority: string): 'success' | 'warning' | 'info' | 'pr
 // 处理任务操作
 const handleFinish = (task: any) => {
   task.status = 'completed'
-  ElMessage.success('任务已完成')
+  ElMessage.success('Task completed')
 }
 
 const handleCheck = (task: any) => {
-  ElMessage('查看任务详情')
+  ElMessage('View task details')
 }
 
 const handleComments = (task: any) => {
-  ElMessage('查看任务评论')
+  ElMessage('View task comments')
 }
 
 const handleAddMember = (task: any) => {
-  ElMessage('添加成员功能开发中')
+  ElMessage('Add member feature under development')
 }
 
 const handleRemoveMember = (task: any, member: string) => {
   const index = task.members.indexOf(member)
   if (index !== -1) {
     task.members.splice(index, 1)
-    ElMessage.success('成员已移除')
+    ElMessage.success('Member removed')
   }
 }
 
 const handleCreateTask = () => {
-  ElMessageBox.prompt('请输入任务标题', '新建任务', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  ElMessageBox.prompt('Please enter the task title', 'New task', {
+    confirmButtonText: 'Confirm',
+    cancelButtonText: 'Cancel',
     inputPattern: /\S+/,
-    inputErrorMessage: '标题不能为空'
+    inputErrorMessage: 'Title cannot be empty'
   }).then(({ value }) => {
     const newTask = {
       id: tasks.value.length + 1,
@@ -480,13 +480,13 @@ const handleCreateTask = () => {
       tags: [],
       members: [],
       comments: 0,
-      leader: userStore.userInfo?.username || '未分配',
+      leader: userStore.userInfo?.username || 'Not assigned',
       description: '',
       projectId: '',
       projectName: ''
     }
     tasks.value.push(newTask)
-    ElMessage.success('任务创建成功')
+    ElMessage.success('Task created successfully')
   })
 }
 
@@ -504,16 +504,16 @@ const handleProcess = (task: any) => {
 
 const handleComplete = async (task: any) => {
   try {
-    await ElMessageBox.confirm('确认将任务标记为已完成？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm('Confirm to mark the task as completed?', 'Tips', {
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
       type: 'warning'
     })
     task.status = 'completed'
-    ElMessage.success('任务已完成')
+    ElMessage.success('Task completed')
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('操作失败')
+      ElMessage.error('Operation failed')
     }
   }
 }
@@ -599,7 +599,7 @@ const handleComplete = async (task: any) => {
   margin: 0;
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

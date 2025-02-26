@@ -6,18 +6,18 @@
         <!-- 第一行：任务编号、任务名称、优先级、状态 -->
         <div class="filter-row">
           <div class="filter-item">
-            <el-form-item label="任务编号">
-              <el-input v-model="filterForm.number" placeholder="请输入任务编号" clearable />
+            <el-form-item label="Task Number">
+              <el-input v-model="filterForm.number" placeholder="Please enter the task number" clearable />
             </el-form-item>
           </div>
           <div class="filter-item">
-            <el-form-item label="任务名称">
-              <el-input v-model="filterForm.name" placeholder="请输入任务名称" clearable />
+            <el-form-item label="Task Name">
+              <el-input v-model="filterForm.name" placeholder="Please enter the task name" clearable />
             </el-form-item>
           </div>
           <div class="filter-item">
-            <el-form-item label="优先级">
-              <el-select v-model="filterForm.priority" placeholder="请选择优先级" clearable>
+            <el-form-item label="Priority">
+              <el-select v-model="filterForm.priority" placeholder="Please select the priority" clearable>
                 <el-option
                   v-for="item in priorityOptions"
                   :key="item.value"
@@ -28,8 +28,8 @@
             </el-form-item>
           </div>
           <div class="filter-item">
-            <el-form-item label="状态">
-              <el-select v-model="filterForm.status" placeholder="请选择状态" clearable>
+            <el-form-item label="Status">
+              <el-select v-model="filterForm.status" placeholder="Please select the status" clearable>
                 <el-option
                   v-for="item in statusOptions"
                   :key="item.value"
@@ -43,32 +43,32 @@
         <!-- 第二行：创建日期、截止日期、成员、标签 -->
         <div class="filter-row">
           <div class="filter-item">
-            <el-form-item label="创建日期">
+            <el-form-item label="Create Date">
               <el-date-picker
                 v-model="filterForm.createDateRange"
                 type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
+                range-separator="To"
+                start-placeholder="Start Date"
+                end-placeholder="End Date"
                 value-format="YYYY-MM-DD"
               />
             </el-form-item>
           </div>
           <div class="filter-item">
-            <el-form-item label="截止日期">
+            <el-form-item label="Due Date">
               <el-date-picker
                 v-model="filterForm.dueDateRange"
                 type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
+                range-separator="To"
+                start-placeholder="Start Date"
+                end-placeholder="End Date"
                 value-format="YYYY-MM-DD"
               />
             </el-form-item>
           </div>
           <div class="filter-item">
-            <el-form-item label="成员">
-              <el-select v-model="filterForm.members" placeholder="请选择成员" clearable multiple>
+            <el-form-item label="Members">
+              <el-select v-model="filterForm.members" placeholder="Please select the members" clearable multiple>
                 <el-option
                   v-for="item in memberOptions"
                   :key="item.value"
@@ -79,8 +79,8 @@
             </el-form-item>
           </div>
           <div class="filter-item">
-            <el-form-item label="标签">
-              <el-select v-model="filterForm.tags" placeholder="请选择标签" clearable multiple>
+            <el-form-item label="Tags">
+              <el-select v-model="filterForm.tags" placeholder="Please select the tags" clearable multiple>
                 <el-option
                   v-for="item in tagOptions"
                   :key="item.value"
@@ -94,10 +94,10 @@
         <!-- 查询和重置按钮 -->
         <div class="filter-buttons">
           <el-button type="primary" @click="handleCheck">
-            <el-icon><Search /></el-icon> 查询
+            <el-icon><Search /></el-icon> Search
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon> 重置
+            <el-icon><Refresh /></el-icon> Reset
           </el-button>
         </div>
       </el-form>
@@ -157,7 +157,7 @@
           <el-button
             type="primary"
             link
-            @click="handleCheck(row)"
+            @click="handleCheck()"
           >
             Check
           </el-button>
@@ -181,9 +181,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { Search, Refresh, Plus, Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+
+const route = useRoute()
+const router = useRouter()
 
 // 筛选表单数据
 const filterForm = reactive({
@@ -206,9 +210,10 @@ const priorityOptions = [
 ]
 
 const statusOptions = [
-  { label: 'In process', value: 'In process' },
+  { label: 'Pending', value: 'Pending' },
+  { label: 'In progress', value: 'In progress' },
   { label: 'Completed', value: 'Completed' },
-  { label: 'Pending', value: 'Pending' }
+  { label: 'Expired', value: 'Expired' }
 ]
 
 const memberOptions = [
@@ -250,51 +255,113 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(687)
 
+// 监听路由参数变化并自动筛选
+onMounted(() => {
+  const status = route.query.status as string
+  if (status) {
+    filterForm.status = status
+    handleCheck()
+  }
+})
+
+// 监听筛选条件变化，更新 URL 参数
+watch(() => filterForm.status, (newStatus) => {
+  updateUrlParams({ status: newStatus })
+})
+
+// 更新 URL 参数
+const updateUrlParams = (params: Record<string, any>) => {
+  const query = { ...route.query }
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      query[key] = value
+    } else {
+      delete query[key]
+    }
+  })
+  router.push({ query })
+}
+
 // 工具方法
-const getPriorityType = (priority: string) => {
-  const types: Record<string, string> = {
+const getPriorityType = (priority: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
     'Critical': 'danger',
     'High': 'warning',
     'Medium': 'success',
     'Low': 'info'
   }
-  return types[priority] || 'info'
+  return types[priority] || 'primary'
 }
 
-const getStatusType = (status: string) => {
-  const types: Record<string, string> = {
+const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
     'In process': 'warning',
     'Completed': 'success',
     'Pending': 'info'
   }
-  return types[status] || 'info'
+  return types[status] || 'primary'
 }
 
 // 事件处理方法
 const handleCheck = () => {
   loading.value = true
+  // 构建查询参数
+  const params = {
+    number: filterForm.number,
+    name: filterForm.name,
+    priority: filterForm.priority,
+    status: filterForm.status,
+    createDateStart: filterForm.createDateRange[0],
+    createDateEnd: filterForm.createDateRange[1],
+    dueDateStart: filterForm.dueDateRange[0],
+    dueDateEnd: filterForm.dueDateRange[1],
+    members: filterForm.members,
+    tags: filterForm.tags
+  }
+  
+  // 模拟 API 调用
   setTimeout(() => {
+    // 根据筛选条件过滤数据
+    let filteredData = [...tableData.value]
+    if (params.status) {
+      filteredData = filteredData.filter(item => item.status === params.status)
+    }
+    if (params.priority) {
+      filteredData = filteredData.filter(item => item.priority === params.priority)
+    }
+    // ... 其他筛选条件
+    
+    tableData.value = filteredData
     loading.value = false
-    ElMessage.success('查询成功')
+    ElMessage.success('Query successful')
   }, 1000)
 }
 
 const handleReset = () => {
   Object.keys(filterForm).forEach(key => {
-    filterForm[key] = Array.isArray(filterForm[key]) ? [] : ''
+    const k = key as keyof typeof filterForm
+    if (Array.isArray(filterForm[k])) {
+      filterForm[k] = [] as any
+    } else {
+      filterForm[k] = ''
+    }
   })
+  // 清除 URL 参数
+  router.push({ query: {} })
+  // 重新加载数据
+  handleCheck()
 }
 
 const handleNewTask = () => {
-  ElMessage.info('新建任务')
+  ElMessage.info('Create new task')
 }
 
 const handleImportBatch = () => {
-  ElMessage.info('批量导入')
+  ElMessage.info('Import batch')
 }
 
 const handleDownload = () => {
-  ElMessage.info('下载')
+  ElMessage.info('Download')
 }
 
 const handleSizeChange = (val: number) => {

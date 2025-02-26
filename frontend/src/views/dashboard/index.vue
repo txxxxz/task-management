@@ -2,13 +2,17 @@
   <div class="dashboard">
     <!-- 欢迎信息 -->
     <div class="welcome-section">
-      <h2>👋 欢迎回来，{{ username }}</h2>
+      <h2>👋 Welcome back, {{ username }}</h2>
     </div>
 
     <!-- 任务状态卡片 -->
     <el-row :gutter="20" class="status-cards">
       <el-col :span="6" v-for="(item, index) in taskStatus" :key="index">
-        <el-card shadow="hover" :body-style="{ padding: '20px' }">
+        <el-card 
+          shadow="hover" 
+          :body-style="{ padding: '20px', cursor: 'pointer' }" 
+          @click="handleStatusCardClick(item.status)"
+        >
           <div class="status-card">
             <div class="status-info">
               <h3>{{ item.label }}</h3>
@@ -28,10 +32,10 @@
         <el-card>
           <template #header>
             <div class="card-header">
-              <span>每日任务状态统计</span>
+              <span>Daily task status statistics</span>
               <el-radio-group v-model="chartTimeRange" size="small">
-                <el-radio-button label="week">周</el-radio-button>
-                <el-radio-button label="month">月</el-radio-button>
+                <el-radio-button label="week">Week</el-radio-button>
+                <el-radio-button label="month">Month</el-radio-button>
               </el-radio-group>
             </div>
           </template>
@@ -44,7 +48,7 @@
         <el-card>
           <template #header>
             <div class="card-header">
-              <span>任务优先级分布</span>
+              <span>Task priority distribution</span>
             </div>
           </template>
           <div class="chart-container">
@@ -58,22 +62,22 @@
     <el-card class="task-list">
       <template #header>
         <div class="card-header">
-          <span>任务列表</span>
-          <el-button type="primary" size="small" @click="router.push('/list')">查看更多</el-button>
+          <span>Task list</span>
+          <el-button type="primary" size="small" @click="router.push('/list')">View more</el-button>
         </div>
       </template>
       <el-table :data="taskList" style="width: 100%">
-        <el-table-column prop="id" label="序号" width="80" />
-        <el-table-column prop="title" label="任务标题" />
-        <el-table-column prop="deadline" label="截止日期" width="180" />
-        <el-table-column prop="priority" label="优先级" width="120">
+        <el-table-column prop="id" label="No." width="80" />
+        <el-table-column prop="title" label="Task title" />
+        <el-table-column prop="deadline" label="Deadline" width="180" />
+        <el-table-column prop="priority" label="Priority" width="120">
           <template #default="{ row }">
             <el-tag :type="getPriorityType(row.priority)">
               {{ row.priority }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="120">
+        <el-table-column prop="status" label="Status" width="120">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
               {{ row.status }}
@@ -120,25 +124,29 @@ const router = useRouter()
 // 任务状态数据
 const taskStatus = ref([
   {
-    label: '待处理',
+    label: 'Pending',
+    status: 'Pending',
     count: 5,
     icon: 'Clock',
     iconClass: 'status-pending'
   },
   {
-    label: '进行中',
+    label: 'In progress',
+    status: 'In progress',
     count: 6,
     icon: 'Loading',
     iconClass: 'status-progress'
   },
   {
-    label: '今日到期',
+    label: 'Today expired',
+    status: 'Expired',
     count: 1,
     icon: 'Document',
     iconClass: 'status-due'
   },
   {
-    label: '已完成',
+    label: 'Completed',
+    status: 'Completed',
     count: 1,
     icon: 'Check',
     iconClass: 'status-completed'
@@ -151,7 +159,7 @@ const taskTrendOption = ref({
     trigger: 'axis'
   },
   legend: {
-    data: ['待处理', '进行中', '已完成']
+    data: ['Pending', 'In progress', 'Completed']
   },
   grid: {
     left: '3%',
@@ -162,24 +170,24 @@ const taskTrendOption = ref({
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    data: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
   },
   yAxis: {
     type: 'value'
   },
   series: [
     {
-      name: '待处理',
+      name: 'Pending',
       type: 'line',
       data: [5, 6, 4, 8, 7, 5, 4]
     },
     {
-      name: '进行中',
+      name: 'In progress',
       type: 'line',
       data: [3, 4, 6, 4, 5, 3, 2]
     },
     {
-      name: '已完成',
+      name: 'Completed',
       type: 'line',
       data: [2, 3, 1, 4, 3, 2, 1]
     }
@@ -204,28 +212,28 @@ const priorityOption = ref({
       data: [
         { 
           value: 2, 
-          name: '紧急',
+          name: 'Critical',
           itemStyle: {
             color: '#F56C6C' // 红色，表示紧急
           }
         },
         { 
           value: 4, 
-          name: '高',
+          name: 'High',
           itemStyle: {
             color: '#E6A23C' // 橙色，表示高优先级
           }
         },
         { 
           value: 6, 
-          name: '中',
+          name: 'Medium',
           itemStyle: {
             color: '#409EFF' // 蓝色，表示中等优先级
           }
         },
         { 
           value: 3, 
-          name: '低',
+          name: 'Low',
           itemStyle: {
             color: '#67C23A' // 绿色，表示低优先级
           }
@@ -249,60 +257,68 @@ const priorityOption = ref({
 const taskList = ref([
   {
     id: 1,
-    title: '实现响应式布局',
+    title: 'Implement responsive layout',
     deadline: '2024-12-12',
-    priority: '高',
-    status: '进行中'
+    priority: 'High',
+    status: 'In progress'
   },
   {
     id: 2,
-    title: '修复登录页面认证问题',
+    title: 'Fix login page authentication issue',
     deadline: '2024-12-25',
-    priority: '中',
-    status: '待处理'
+    priority: 'Medium',
+    status: 'Pending'
   },
   {
     id: 3,
-    title: '进行跨浏览器测试',
+    title: 'Cross-browser testing',
     deadline: '2024-12-09',
-    priority: '低',
-    status: '待处理'
+    priority: 'Low',
+    status: 'Pending'
   },
   {
     id: 4,
-    title: '编写单元测试用例',
+    title: 'Write unit test cases',
     deadline: '2024-12-08',
-    priority: '紧急',
-    status: '进行中'
+    priority: 'Critical',
+    status: 'In progress'
   },
   {
     id: 5,
-    title: '设置API集成测试',
+    title: 'Set up API integration tests',
     deadline: '2025-01-04',
-    priority: '中',
-    status: '待处理'
+    priority: 'Medium',
+    status: 'Pending'
   }
 ])
 
 // 获取优先级标签类型
-const getPriorityType = (priority: string): 'success' | 'warning' | 'info' | 'danger' | '' => {
-  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | ''> = {
-    '紧急': 'danger',
-    '高': 'warning',
-    '中': '',
-    '低': 'info'
+const getPriorityType = (priority: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
+    'Critical': 'danger',
+    'High': 'warning',
+    'Medium': 'primary',
+    'Low': 'info'
   }
-  return types[priority] || ''
+  return types[priority] || 'primary'
 }
 
 // 获取状态标签类型
-const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'danger' | '' => {
-  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | ''> = {
-    '待处理': 'info',
-    '进行中': 'warning',
-    '已完成': 'success'
+const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
+    'Pending': 'info',
+    'In progress': 'warning',
+    'Completed': 'success'
   }
-  return types[status] || ''
+  return types[status] || 'primary'
+}
+
+// 处理状态卡片点击
+const handleStatusCardClick = (status: string) => {
+  router.push({
+    path: '/list',
+    query: { status }
+  })
 }
 
 onMounted(async () => {
@@ -310,18 +326,18 @@ onMounted(async () => {
   try {
     await userStore.fetchUserInfo()
   } catch (error: any) {
-    let errorMessage = '获取用户信息失败'
+    let errorMessage = 'Failed to get user information'
     if (error.response) {
       // 服务器响应错误
       const { status, data } = error.response
-      errorMessage += `\n状态码: ${status}`
-      errorMessage += `\n错误信息: ${data.msg || data.message || '未知错误'}`
+      errorMessage += `\nStatus code: ${status}`
+      errorMessage += `\nError message: ${data.msg || data.message || 'Unknown error'}`
     } else if (error.request) {
       // 请求发送失败
-      errorMessage += '\n网络请求失败，请检查网络连接'
+      errorMessage += '\nNetwork request failed, please check your network connection'
     } else {
       // 其他错误
-      errorMessage += `\n${error.message || '未知错误'}`
+      errorMessage += `\n${error.message || 'Unknown error'}`
     }
     console.error(errorMessage)
     ElMessage.error(errorMessage)

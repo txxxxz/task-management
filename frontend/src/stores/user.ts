@@ -13,9 +13,9 @@ export const useUserStore = defineStore('user', () => {
   const login = async (username: string, password: string, role: number) => {
     try {
       loading.value = true
-      const data = await userLogin({ username, password, role })
-      setToken(data.token)
-      setUserInfo(data)
+      const response = await userLogin({ username, password, role })
+      setToken(response.data.token)
+      setUserInfo(response.data.userInfo)
       ElMessage.success('登录成功')
       router.push('/dashboard')
     } catch (error: any) {
@@ -28,9 +28,9 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchUserInfo = async () => {
     try {
-      const data = await getUserInfo()
-      setUserInfo(data)
-      return data
+      const response = await getUserInfo()
+      setUserInfo(response.data)
+      return response.data
     } catch (error: any) {
       console.error('Fetch user info failed:', error)
       throw error

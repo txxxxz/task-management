@@ -2,9 +2,9 @@
   <div class="create-task-container">
     <!-- 步骤导航 -->
     <el-steps :active="currentStep" finish-status="success" class="task-steps">
-      <el-step title="基本信息" />
-      <el-step title="上传文件" />
-      <el-step title="完成" />
+      <el-step title="Basic Information" />
+      <el-step title="Upload Files" />
+      <el-step title="Finish" />
     </el-steps>
 
     <!-- 步骤1：基本信息 -->
@@ -16,30 +16,30 @@
         label-width="120px"
         class="task-form"
       >
-        <el-form-item label="任务名称" prop="title" required>
-          <el-input v-model="taskForm.title" placeholder="请输入任务名称" />
+        <el-form-item label="Task Name" prop="title" required>
+          <el-input v-model="taskForm.title" placeholder="Please enter the task name" />
         </el-form-item>
 
-        <el-form-item label="优先级" prop="priority" required>
-          <el-select v-model="taskForm.priority" placeholder="请选择优先级" style="width: 100%">
-            <el-option label="低" value="LOW" />
-            <el-option label="中" value="MEDIUM" />
-            <el-option label="高" value="HIGH" />
-            <el-option label="紧急" value="CRITICAL" />
+        <el-form-item label="Priority" prop="priority" required>
+          <el-select v-model="taskForm.priority" placeholder="Please select the priority" style="width: 100%">
+            <el-option label="Low" value="LOW" />
+            <el-option label="Medium" value="MEDIUM" />
+            <el-option label="High" value="HIGH" />
+            <el-option label="Critical" value="CRITICAL" />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="截止时间" prop="dueTime" required>
+        <el-form-item label="Due Time" prop="dueTime" required>
           <el-date-picker
             v-model="taskForm.dueTime"
             type="datetime"
-            placeholder="请选择截止时间"
+            placeholder="Please select the due time"
             style="width: 100%"
             value-format="YYYY-MM-DD HH:mm:ss"
           />
         </el-form-item>
 
-        <el-form-item label="标签" prop="tags">
+        <el-form-item label="Tags" prop="tags">
           <el-select
             v-model="taskForm.tags"
             multiple
@@ -47,7 +47,7 @@
             allow-create
             default-first-option
             :reserve-keyword="false"
-            placeholder="请选择标签或输入新标签"
+            placeholder="Please select the tags or enter a new tag"
             style="width: 100%"
             @visible-change="handleTagDropdownToggle"
           >
@@ -65,37 +65,37 @@
                 v-if="isDefaultTag(tag)"
                 style="float: right; color: var(--el-text-color-secondary); font-size: 13px"
               >
-                预设标签
+                Default Tags
               </span>
             </el-option>
             <template #empty>
               <div style="padding: 8px 12px;">
                 <span style="color: var(--el-text-color-secondary);">
-                  输入新标签名称并按回车键创建
+                  Enter a new tag name and press Enter to create
                 </span>
               </div>
             </template>
           </el-select>
           <div class="form-item-tip">
-            提示：可以输入新的标签名称并按回车键创建
+            Tips: You can enter a new tag name and press Enter to create
           </div>
         </el-form-item>
 
-        <el-form-item label="任务描述" prop="description">
+        <el-form-item label="Task Description" prop="description">
           <el-input
             v-model="taskForm.description"
             type="textarea"
             :rows="4"
-            placeholder="请描述任务"
+            placeholder="Please describe the task"
           />
         </el-form-item>
 
-        <el-form-item label="参与成员" prop="members">
+        <el-form-item label="Members" prop="members">
           <el-select
             v-model="taskForm.members"
             multiple
             filterable
-            placeholder="请选择参与成员"
+            placeholder="Please select the members"
             style="width: 100%"
           >
             <el-option
@@ -121,7 +121,7 @@
       >
         <el-icon class="el-icon--upload"><upload-filled /></el-icon>
         <div class="el-upload__text">
-          点击或拖拽文件到此处上传
+          Click or drag files here to upload
         </div>
       </el-upload>
       
@@ -130,7 +130,7 @@
         <div v-for="(file, index) in taskForm.attachments" :key="index" class="upload-item">
           <span>{{ file.name }}</span>
           <el-button type="danger" size="small" @click="removeFile(index)">
-            删除
+            Delete
           </el-button>
         </div>
       </div>
@@ -141,22 +141,22 @@
       <div class="success-icon">
         <el-icon :size="64" color="#67C23A"><CircleCheckFilled /></el-icon>
       </div>
-      <h2>创建成功</h2>
+      <h2>Task created successfully</h2>
       <div class="action-buttons">
-        <el-button type="primary" @click="handleCheckTask">查看任务</el-button>
-        <el-button @click="handleCreateAgain">继续创建</el-button>
+        <el-button type="primary" @click="handleCheckTask">View Task</el-button>
+        <el-button @click="handleCreateAgain">Continue Creating</el-button>
       </div>
     </div>
 
     <!-- 底部按钮 -->
     <div class="form-buttons">
-      <el-button v-if="currentStep > 0" @click="previousStep">上一步</el-button>
+      <el-button v-if="currentStep > 0" @click="previousStep">Previous Step</el-button>
       <el-button 
         v-if="currentStep < 2" 
         type="primary" 
         @click="nextStep"
       >
-        下一步
+          Next Step
       </el-button>
     </div>
   </div>
@@ -166,7 +166,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheckFilled, UploadFilled, Collection } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance, FormRules, UploadFile } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
@@ -179,13 +179,23 @@ const currentStep = ref(0)
 // 检查用户权限
 onMounted(() => {
   if (userStore.userInfo?.role !== 1) {
-    ElMessage.error('只有管理员可以创建任务')
+      ElMessage.error('Only the administrator can create tasks')
     router.push('/list')
   }
 })
 
+interface TaskForm {
+  title: string
+  description: string
+  priority: string
+  dueTime: string
+  tags: string[]
+  members: string[]
+  attachments: File[]
+}
+
 // 表单数据
-const taskForm = reactive({
+const taskForm = reactive<TaskForm>({
   title: '',
   description: '',
   priority: '',
@@ -198,8 +208,8 @@ const taskForm = reactive({
 // 表单验证规则
 const rules = reactive<FormRules>({
   title: [
-    { required: true, message: '请输入任务名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the task name', trigger: 'blur' },
+    { min: 2, max: 50, message: 'Length must be between 2 and 50 characters', trigger: 'blur' }
   ],
   priority: [
     { required: true, message: '请选择优先级', trigger: 'change' }
@@ -255,8 +265,8 @@ const memberOptions = [
 ]
 
 // 处理文件变更
-const handleFileChange = (file: any) => {
-  taskForm.attachments.push(file)
+const handleFileChange = (uploadFile: UploadFile) => {
+  taskForm.attachments.push(uploadFile.raw as File)
 }
 
 // 移除文件
