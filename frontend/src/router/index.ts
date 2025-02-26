@@ -10,7 +10,7 @@ const routes: RouteRecordRaw[] = [
     name: 'Login',
     component: () => import('@/views/auth/Login.vue'),
     meta: {
-      title: '登录',
+      title: 'Login',
       requiresAuth: false
     }
   },
@@ -19,7 +19,7 @@ const routes: RouteRecordRaw[] = [
     name: 'Register',
     component: () => import('@/views/auth/Register.vue'),
     meta: {
-      title: '注册',
+      title: 'Register',
       requiresAuth: false
     }
   },
@@ -33,7 +33,7 @@ const routes: RouteRecordRaw[] = [
         name: 'Dashboard',
         component: () => import('@/views/dashboard/index.vue'),
         meta: {
-          title: '仪表盘',
+          title: 'Dashboard',
           requiresAuth: true
         }
       },
@@ -42,7 +42,7 @@ const routes: RouteRecordRaw[] = [
         name: 'gantt',
         component: () => import('@/views/GanttView.vue'),
         meta: {
-          title: '甘特图',
+          title: 'Gantt Chart',
           requiresAuth: true
         }
       },
@@ -51,7 +51,7 @@ const routes: RouteRecordRaw[] = [
         name: 'List',
         component: () => import('@/views/table/updateTask.vue'),
         meta: {
-          title: '任务列表',
+          title: 'Task List',
           requiresAuth: true
         }
       },
@@ -60,7 +60,7 @@ const routes: RouteRecordRaw[] = [
         name: 'kanban',
         component: () => import('@/views/kanban/index.vue'),
         meta: {
-          title: '任务看板',
+          title: 'Task Board',
           requiresAuth: true
         }
       },
@@ -69,7 +69,7 @@ const routes: RouteRecordRaw[] = [
         name: 'CreateTask',
         component: () => import('@/views/table/createTask.vue'),
         meta: {
-          title: '新增任务',
+          title: 'Create Task',
           requiresAuth: true,
           requiresLeader: true
         }
@@ -79,7 +79,7 @@ const routes: RouteRecordRaw[] = [
         name: 'TaskDetail',
         component: () => import('@/views/table/taskDetail.vue'),
         meta: {
-          title: '任务详情',
+          title: 'Task Detail',
           requiresAuth: true
         }
       },
@@ -88,7 +88,7 @@ const routes: RouteRecordRaw[] = [
         name: 'Profile',
         component: () => import('@/views/profile/index.vue'),
         meta: {
-          title: '个人中心',
+          title: 'Personal Centeronal Center',
           requiresAuth: true
         }
       },
@@ -97,7 +97,7 @@ const routes: RouteRecordRaw[] = [
         name: 'Projects',
         component: () => import('@/views/project/index.vue'),
         meta: {
-          title: '项目管理',
+          title: 'Project Management',
           requiresAuth: true
         }
       },
@@ -106,7 +106,7 @@ const routes: RouteRecordRaw[] = [
         name: 'TaskCreate',
         component: () => import('@/views/task/form.vue'),
         meta: {
-          title: '新建任务',
+          title: 'Create Task',
           requiresAuth: true,
           requiresLeader: true
         }
@@ -116,7 +116,7 @@ const routes: RouteRecordRaw[] = [
         name: 'TaskEdit',
         component: () => import('@/views/task/form.vue'),
         meta: {
-          title: '编辑任务',
+          title: 'Edit Task',
           requiresAuth: true,
           requiresLeader: true
         }
@@ -126,7 +126,7 @@ const routes: RouteRecordRaw[] = [
         name: 'ProjectList',
         component: () => import('@/views/project/list.vue'),
         meta: {
-          title: '项目列表',
+          title: 'Project List',
           requiresAuth: true
         }
       },
@@ -135,7 +135,7 @@ const routes: RouteRecordRaw[] = [
         name: 'ProjectCreate',
         component: () => import('@/views/project/form.vue'),
         meta: {
-          title: '新增项目',
+          title: 'Create Project',
           requiresAuth: true,
           requiresLeader: true
         }
@@ -145,11 +145,30 @@ const routes: RouteRecordRaw[] = [
         name: 'ProjectEdit',
         component: () => import('@/views/project/form.vue'),
         meta: {
-          title: '编辑项目',
+          title: 'Edit Project',
           requiresAuth: true,
           requiresLeader: true
         }
+      },
+      {
+        path: 'employee',
+        name: 'EmployeeList',
+        component: () => import('@/views/employee/index.vue'),
+        meta: {
+          title: '员工管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
       }
+    ]
+  },
+  {
+    path: '/admin',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true },
+    redirect: '/admin/employee',
+    children: [
+      // 移除重复的员工管理路由，直接使用主布局中的路由
     ]
   },
   {
@@ -188,7 +207,14 @@ router.beforeEach((to, from, next) => {
     
     // 检查是否需要 leader 权限
     if (to.meta.requiresLeader && userStore.userInfo?.role !== 1) {
-      ElMessage.warning('您没有权限访问该页面')
+      ElMessage.warning('You do not have permission to access this page')
+      next('/dashboard')
+      return
+    }
+    
+    // 检查是否需要 admin 权限
+    if (to.meta.requiresAdmin && userStore.userInfo?.role !== 2) {
+      ElMessage.warning('You do not have permission to access this page')
       next('/dashboard')
       return
     }

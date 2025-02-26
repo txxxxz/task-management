@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { UserInfo } from '@/types/user'
+import type { UserInfo, LoginResponse } from '@/types/user'
 import { login as userLogin, getUserInfo, logout as userLogout } from '@/api/user'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
+import type { AxiosResponse } from 'axios'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
@@ -13,38 +14,39 @@ export const useUserStore = defineStore('user', () => {
   const login = async (username: string, password: string, role: number) => {
     try {
       loading.value = true
-      // 注意：由于响应拦截器直接返回data.data，所以response就是API的实际数据
-      const response = await userLogin({ username, password, role })
+      // 调用登录API
+      const responseData = await userLogin({ username, password, role })
       
-      console.log('登录响应:', response)
+      console.log('登录API返回:', responseData)
       
-      // 检查响应数据是否完整
-      if (response) {
-        if (response.token) {
-          setToken(response.token)
-          
-          // 检查是否有用户信息
-          if (response.user) {
-            // 转换用户数据
-            const userData = {
-              ...response.user,
-              id: String(response.user.id),
-              status: response.user.status === 1 || response.user.status === true
-            }
-            setUserInfo(userData)
+      // 响应拦截器已处理了response.data，responseData直接就是登录数据
+      if (responseData && responseData.token) {
+        // 设置token
+        setToken(responseData.token)
+        
+        // 如果有用户信息，设置用户信息
+        if (responseData.user) {
+          // 转换用户数据格式
+          const userData: UserInfo = {
+            id: String(responseData.user.id || ''),
+            username: responseData.user.username || '',
+            email: responseData.user.email || '',
+            phone: responseData.user.phone || '',
+            avatar: responseData.user.avatar,
+            status: responseData.user.status === 1 || responseData.user.status === true,
+            role: Number(responseData.user.role || 0),
+            createTime: responseData.user.createTime || '',
+            updateTime: responseData.user.updateTime || ''
           }
-          
-          ElMessage.success('登录成功')
-          router.push('/dashboard')
-        } else {
-          // 如果response没有token，抛出错误
-          console.error('登录响应缺少token:', response)
-          throw new Error('登录响应数据格式不正确')
+          setUserInfo(userData)
         }
+        
+        ElMessage.success('登录成功')
+        router.push('/dashboard')
       } else {
-        // 如果response为空，抛出错误
-        console.error('登录响应为空')
-        throw new Error('登录响应为空')
+        // 登录响应缺少token
+        console.error('登录响应无效:', responseData)
+        throw new Error('登录响应数据格式不正确')
       }
     } catch (error: any) {
       console.error('登录失败:', error)
@@ -57,19 +59,25 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchUserInfo = async () => {
     try {
-      // 注意：由于响应拦截器直接返回data.data，所以response就是用户信息数据本身
+      // 调用获取用户信息API
       const userData = await getUserInfo()
       
-      console.log('获取用户信息响应:', userData)
+      console.log('获取用户信息返回:', userData)
       
       if (userData) {
         // 确保用户数据格式一致
-        const formattedUserData = {
-          ...userData,
-          id: String(userData.id), // 确保ID是字符串类型
+        const formattedUserData: UserInfo = {
+          id: String(userData.id || ''),
+          username: userData.username || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          avatar: userData.avatar,
           status: typeof userData.status === 'boolean' 
             ? userData.status 
-            : userData.status === 1
+            : userData.status === 1,
+          role: Number(userData.role || 0),
+          createTime: userData.createTime || '',
+          updateTime: userData.updateTime || ''
         }
         
         setUserInfo(formattedUserData)

@@ -10,9 +10,9 @@ export const useUserStore = defineStore('user', () => {
 
   const login = async (username: string, password: string, role: number) => {
     try {
-      const response = await userApi.login({ username, password, role })
-      token.value = response.data.token
-      localStorage.setItem('token', response.data.token)
+      const response = await userApi.login({ username, password, role})
+      token.value = response.token
+      localStorage.setItem('token', response.token)
       await getUserInfo()
       return true
     } catch (error) {
@@ -24,8 +24,10 @@ export const useUserStore = defineStore('user', () => {
     try {
       const response = await userApi.getUserInfo()
       user.value = {
-        ...response.data,
-        id: Number(response.data.id)
+        ...response,
+        id: Number(response.id),
+        status: Number(response.status),
+        role: Number(response.role)
       }
       return true
     } catch (error) {

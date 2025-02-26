@@ -15,7 +15,7 @@ const service: AxiosInstance = axios.create({
 // 请求拦截器
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    console.log('发送请求:', config.url)
+    console.log('发送请求:', config.url, config.data || config.params)
     
     // 不需要token的白名单路径
     const whiteList = ['/auth/login', '/auth/register', '/auth/user/avatar']
@@ -25,6 +25,7 @@ service.interceptors.request.use(
     if (!isWhitelisted) {
       const token = localStorage.getItem('token')
       if (token && config.headers) {
+        config.headers['Authorization'] = `Bearer ${token}`
         config.headers['token'] = token
       }
     }
@@ -54,26 +55,37 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (response: AxiosResponse) => {
-    const { data } = response
+    const { data, config } = response
     
-    console.log('响应数据:', response.config.url, data)
+    console.log('收到API响应:', config.url, data)
     
     // 处理url中的/api前缀
     if (response.config.url) {
       response.config.url = response.config.url.replace('/api', '')
     }
     
-    // 如果响应成功，直接返回数据
-    if (data.code === 1) {
-      // 直接返回data或data.data，确保有返回值
-      return data.data !== undefined ? data.data : data
+    // 处理不同格式的响应数据
+    // 如果响应成功且有标准格式（带code字段）
+    if (data && typeof data === 'object') {
+      if ('code' in data) {
+        if (data.code === 1 || data.code === 200 || data.code === 0) {
+          console.log('返回的数据:', data.data)
+          return data.data
+        } else {
+          // 处理业务错误
+          const errorMsg = data.msg || data.message || '操作失败'
+          console.error('业务错误:', errorMsg, data)
+          ElMessage.error(errorMsg)
+          return Promise.reject(new Error(errorMsg))
+        }
+      }
+      // 无code字段，直接返回响应数据
+      console.log('直接返回响应数据:', data)
+      return data
     }
     
-    // 处理业务错误
-    const errorMsg = data.msg || '操作失败'
-    console.error('业务错误:', errorMsg, data)
-    ElMessage.error(errorMsg)
-    return Promise.reject(new Error(errorMsg))
+    // 最后兜底，返回原始响应
+    return response
   },
   (error) => {
     // 处理HTTP错误
@@ -82,7 +94,7 @@ service.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response
       console.error(`HTTP错误 ${status}:`, data)
-      errorMsg = data.msg || data.message || `请求失败 (${status})`
+      errorMsg = data?.msg || data?.message || `请求失败 (${status})`
       
       // 处理特定状态码
       if (status === 401) {

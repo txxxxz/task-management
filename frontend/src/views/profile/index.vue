@@ -44,7 +44,7 @@
           <div class="profile-stats">
             <div class="stat-item">
               <div class="stat-value">{{ formatDate(userInfo.createTime) }}</div>
-              <div class="stat-label">加入时间</div>
+              <div class="stat-label">Join Time</div>
             </div>
           </div>
         </el-card>
@@ -55,7 +55,7 @@
         <el-card class="info-card" shadow="hover">
           <el-tabs v-model="activeTab" class="custom-tabs">
             <!-- 基本信息 -->
-            <el-tab-pane label="基本信息" name="basic">
+            <el-tab-pane label="Basic Information" name="basic">
               <el-form
                 ref="basicFormRef"
                 :model="basicForm"
@@ -63,24 +63,24 @@
                 label-width="100px"
                 class="profile-form"
               >
-                <el-form-item label="用户名" prop="username">
+                <el-form-item label="Username" prop="username">
                   <el-input 
                     v-model="basicForm.username" 
-                    placeholder="请输入用户名"
+                    placeholder="Please enter the username"
                     :prefix-icon="User"
                   />
                 </el-form-item>
-                <el-form-item label="邮箱" prop="email">
+                <el-form-item label="Email" prop="email">
                   <el-input 
                     v-model="basicForm.email" 
-                    placeholder="请输入邮箱"
+                    placeholder="Please enter the email"
                     :prefix-icon="Message"
                   />
                 </el-form-item>
-                <el-form-item label="手机号" prop="phone">
+                <el-form-item label="Phone" prop="phone">
                   <el-input 
                     v-model="basicForm.phone" 
-                    placeholder="请输入手机号"
+                    placeholder="Please enter the phone number"
                     :prefix-icon="Phone"
                   />
                 </el-form-item>
@@ -92,14 +92,14 @@
                     :icon="Check"
                     round
                   >
-                    保存修改
+                    Save Changes
                   </el-button>
                 </el-form-item>
               </el-form>
             </el-tab-pane>
 
             <!-- 修改密码 -->
-            <el-tab-pane label="修改密码" name="password">
+            <el-tab-pane label="Change Password" name="password">
               <el-form
                 ref="passwordFormRef"
                 :model="passwordForm"
@@ -107,30 +107,30 @@
                 label-width="100px"
                 class="profile-form"
               >
-                <el-form-item label="当前密码" prop="oldPassword">
+                <el-form-item label="Current Password" prop="oldPassword">
                   <el-input
                     v-model="passwordForm.oldPassword"
                     type="password"
                     show-password
-                    placeholder="请输入当前密码"
+                    placeholder="Please enter the current password"
                     :prefix-icon="Lock"
                   />
                 </el-form-item>
-                <el-form-item label="新密码" prop="newPassword">
+                <el-form-item label="New Password" prop="newPassword">
                   <el-input
                     v-model="passwordForm.newPassword"
                     type="password"
                     show-password
-                    placeholder="请输入新密码"
+                    placeholder="Please enter the new password"
                     :prefix-icon="Lock"
                   />
                 </el-form-item>
-                <el-form-item label="确认新密码" prop="confirmPassword">
+                <el-form-item label="Confirm New Password" prop="confirmPassword">
                   <el-input
                     v-model="passwordForm.confirmPassword"
                     type="password"
                     show-password
-                    placeholder="请再次输入新密码"
+                    placeholder="Please enter the new password again"
                     :prefix-icon="Lock"
                   />
                 </el-form-item>
@@ -142,7 +142,7 @@
                     :icon="Key"
                     round
                   >
-                    修改密码
+                    Change Password
                   </el-button>
                 </el-form-item>
               </el-form>
@@ -158,8 +158,8 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { useUserStore } from '@/stores/user'
-import { updateUserInfo, changePassword } from '@/api/user'
+import { useUserStore } from '../../stores/user'
+import { updateUserInfo, changePassword } from '../../api/user'
 import { 
   User, 
   Message, 
@@ -177,26 +177,26 @@ const passwordFormRef = ref<FormInstance>()
 
 // 在 script 开始处添加 UserInfo 接口定义
 interface UserInfo {
-  id: number;
+  id: string;
   username: string;
   email: string;
   phone: string;
   avatar?: string;  // 改为可选属性
   role: number;
-  status: number;
+  status: boolean;  // 修改为 boolean 类型，与 userStore 中保持一致
   createTime: string;
   updateTime: string;
 }
 
 // 修改 userInfo 的计算属性类型
 const userInfo = computed<UserInfo>(() => userStore.userInfo || {
-  id: 0,
+  id: '',
   username: '',
   email: '',
   phone: '',
   avatar: '',
   role: 0,
-  status: 0,
+  status: false,  // 修改为 boolean 默认值
   createTime: '',
   updateTime: ''
 })
@@ -220,37 +220,37 @@ const passwordForm = reactive({
 // 基本信息验证规则
 const basicRules: FormRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the username', trigger: 'blur' },
+    { min: 3, max: 20, message: 'Length must be between 3 and 20 characters', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+    { required: true, message: 'Please enter the email address', trigger: 'blur' },
+    { type: 'email', message: 'Please enter the correct email address', trigger: 'blur' }
   ],
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    { required: true, message: 'Please enter the phone number', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: 'Please enter the correct phone number', trigger: 'blur' }
   ]
 }
 
 // 密码验证规则
 const passwordRules: FormRules = {
   oldPassword: [
-    { required: true, message: '请输入当前密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the current password', trigger: 'blur' },
+    { min: 6, max: 20, message: 'Length must be between 6 and 20 characters', trigger: 'blur' }
   ],
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the new password', trigger: 'blur' },
+    { min: 6, max: 20, message: 'Length must be between 6 and 20 characters', trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    { required: true, message: 'Please enter the new password again', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         if (value === '') {
-          callback(new Error('请再次输入密码'))
+          callback(new Error('Please enter the new password again'))
         } else if (value !== passwordForm.newPassword) {
-          callback(new Error('两次输入密码不一致!'))
+          callback(new Error('The two passwords are inconsistent!'))
         } else {
           callback()
         }
@@ -273,11 +273,11 @@ const getRoleType = (role: number) => {
 // 获取角色文本
 const getRoleText = (role: number) => {
   const texts = {
-    0: '普通成员',
-    1: '项目负责人',
-    2: '管理员'
+    0: 'Member',
+    1: 'Project Leader',
+    2: 'Admin'
   }
-  return texts[role as keyof typeof texts] || '未知角色'
+  return texts[role as keyof typeof texts] || 'Unknown role'
 }
 
 // 头像上传前的验证
@@ -286,11 +286,11 @@ const beforeAvatarUpload = (file: File) => {
   const isLt2M = file.size / 1024 / 1024 < 2
 
   if (!isJPG) {
-    ElMessage.error('头像只能是 JPG 或 PNG 格式!')
+    ElMessage.error('The avatar can only be JPG or PNG format!')
     return false
   }
   if (!isLt2M) {
-    ElMessage.error('头像大小不能超过 2MB!')
+    ElMessage.error('The avatar size cannot exceed 2MB!')
     return false
   }
 
@@ -305,16 +305,16 @@ const handleAvatarSuccess = (response: any) => {
       ...userInfo.value,
       avatar: response.data
     })
-    ElMessage.success('头像更新成功')
+    ElMessage.success('Avatar updated successfully')
   } else {
-    ElMessage.error(response.msg || '头像更新失败')
+    ElMessage.error(response.msg || 'Avatar update failed')
   }
 }
 
 // 头像上传失败
 const handleAvatarError = (error: any) => {
   console.error('Upload error:', error)
-  ElMessage.error('头像上传失败，请重试')
+  ElMessage.error('Avatar upload failed, please try again')
 }
 
 // 更新基本信息
@@ -328,9 +328,9 @@ const handleUpdateBasic = async () => {
       ...userInfo.value,
       ...basicForm
     })
-    ElMessage.success('个人信息更新成功')
+    ElMessage.success('Personal information updated successfully')
   } catch (error: any) {
-    ElMessage.error(error.message || '更新失败')
+    ElMessage.error(error.message || 'Update failed')
   }
 }
 
@@ -344,13 +344,13 @@ const handleUpdatePassword = async () => {
       oldPassword: passwordForm.oldPassword,
       newPassword: passwordForm.newPassword
     })
-    ElMessage.success('密码修改成功')
+    ElMessage.success('Password changed successfully')
     // 清空表单
     passwordForm.oldPassword = ''
     passwordForm.newPassword = ''
     passwordForm.confirmPassword = ''
   } catch (error: any) {
-    ElMessage.error(error.message || '密码修改失败')
+    ElMessage.error(error.message || 'Password change failed')
   }
 }
 

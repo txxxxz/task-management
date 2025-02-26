@@ -1,9 +1,11 @@
 {
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
+    "@types/xlsx": "^0.0.36",
     "dayjs": "^1.11.13",
     "element-plus": "^2.9.3",
     "frappe-gantt": "^1.0.3",
-    "pinia": "^2.3.1"
+    "pinia": "^2.3.1",
+    "xlsx": "^0.18.5"
   }
 }

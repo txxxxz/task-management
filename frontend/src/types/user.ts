@@ -29,13 +29,14 @@ export interface RegisterDTO {
   role: number
 }
 
+// UserInfo接口用于前端存储和使用用户信息
 export interface UserInfo {
-  id: number
+  id: string      // 接口可能返回string或number，统一在前端使用string
   username: string
   email: string
   phone: string
   avatar?: string
-  status: number
+  status: boolean  // 布尔值表示用户启用状态
   role: number
   createTime: string
   updateTime: string
@@ -54,5 +55,5 @@ export interface RegisterParams extends LoginParams {
 
 export interface LoginResponse {
   token: string
-  user: UserInfo
+  user: UserInfo | UserVO  // 可能返回不同结构的用户信息
 } 

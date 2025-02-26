@@ -1,13 +1,13 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
+import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src')
+      '@': path.resolve(__dirname, 'src')
     }
   },
   server: {
@@ -23,12 +23,7 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         quietDeps: true,
-        additionalData: `
-          @use "sass:color";
-          @function darken($color, $amount) {
-            @return color.adjust($color, $lightness: -$amount);
-          }
-        `,
+        additionalData: `@use "sass:color";`,
         sassOptions: {
           quietDeps: true,
           logger: {
