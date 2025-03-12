@@ -102,7 +102,7 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { Clock, Document, Loading, Check } from '@element-plus/icons-vue'
-import { useUserStore } from '@/stores/user'
+import { useUserStore } from '../../stores/user'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 

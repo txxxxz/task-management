@@ -6,7 +6,7 @@
         <el-col :span="6">
           <el-input
             v-model="filterForm.number"
-            placeholder="请输入任务编号"
+            placeholder="Please enter the task number"
             clearable
             prefix-icon="Search"
           />
@@ -14,7 +14,7 @@
         <el-col :span="6">
           <el-input
             v-model="filterForm.name"
-            placeholder="请输入任务名称"
+            placeholder="Please enter the task name"
             clearable
             prefix-icon="Search"
           />
@@ -22,7 +22,7 @@
         <el-col :span="6">
           <el-select
             v-model="filterForm.priority"
-            placeholder="请选择优先级"
+            placeholder="Please select the priority"
             clearable
             style="width: 100%"
           >
@@ -37,7 +37,7 @@
         <el-col :span="6">
           <el-select
             v-model="filterForm.status"
-            placeholder="请选择状态"
+            placeholder="Please select the status"
             clearable
             style="width: 100%"
           >
@@ -56,9 +56,9 @@
           <el-date-picker
             v-model="filterForm.createDateRange"
             type="daterange"
-            range-separator="至"
-            start-placeholder="创建开始日期"
-            end-placeholder="创建结束日期"
+            range-separator="To"
+            start-placeholder="Start Date"
+            end-placeholder="End Date"
             style="width: 100%"
           />
         </el-col>
@@ -66,16 +66,16 @@
           <el-date-picker
             v-model="filterForm.dueDateRange"
             type="daterange"
-            range-separator="至"
-            start-placeholder="截止开始日期"
-            end-placeholder="截止结束日期"
+            range-separator="To"
+            start-placeholder="Start Date"
+            end-placeholder="End Date"
             style="width: 100%"
           />
         </el-col>
         <el-col :span="6">
           <el-select
             v-model="filterForm.members"
-            placeholder="请选择成员"
+            placeholder="Please select the members"
             clearable
             multiple
             style="width: 100%"
@@ -91,7 +91,7 @@
         <el-col :span="6">
           <el-select
             v-model="filterForm.tags"
-            placeholder="请选择标签"
+            placeholder="Please select the tags"
             clearable
             multiple
             style="width: 100%"
@@ -109,10 +109,10 @@
       <el-row style="margin-top: 20px">
         <el-col :span="24" style="text-align: right">
           <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon> 查询
+            <el-icon><Search /></el-icon> Search
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon> 重置
+            <el-icon><Refresh /></el-icon> Reset
           </el-button>
         </el-col>
       </el-row>
@@ -124,10 +124,10 @@
         <div class="gantt-controls">
           <el-button-group>
             <el-button @click="previousWeek">
-              <el-icon><ArrowLeft /></el-icon> 上一周
+              <el-icon><ArrowLeft /></el-icon> Previous Week
             </el-button>
             <el-button @click="nextWeek">
-              下一周 <el-icon><ArrowRight /></el-icon>
+              Next Week <el-icon><ArrowRight /></el-icon>
             </el-button>
           </el-button-group>
         </div>
@@ -188,29 +188,29 @@ const filterForm = reactive({
 })
 
 const priorityOptions = [
-  { label: '低', value: 'low' },
-  { label: '中', value: 'medium' },
-  { label: '高', value: 'high' },
-  { label: '紧急', value: 'urgent' }
+  { label: 'Low', value: 'low' },
+  { label: 'Medium', value: 'medium' },
+  { label: 'High', value: 'high' },
+  { label: 'Critical', value: 'critical' }
 ]
 
 const statusOptions = [
-  { label: '待处理', value: 'pending' },
-  { label: '进行中', value: 'in-progress' },
-  { label: '已完成', value: 'completed' },
-  { label: '已取消', value: 'cancelled' }
+  { label: 'Pending', value: 'pending' },
+  { label: 'In Progress', value: 'in-progress' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' }
 ]
 
 const memberOptions = [
-  { label: '成员1', value: 1 },
-  { label: '成员2', value: 2 },
-  { label: '成员3', value: 3 }
+  { label: 'Member 1', value: 1 },
+  { label: 'Member 2', value: 2 },
+  { label: 'Member 3', value: 3 }
 ]
 
 const tagOptions = [
   { label: 'Bug', value: 'bug' },
-  { label: '功能', value: 'feature' },
-  { label: '优化', value: 'optimization' }
+  { label: 'Feature', value: 'feature' },
+  { label: 'Optimization', value: 'optimization' }
 ]
 
 /* ---------------------------
@@ -219,39 +219,39 @@ const tagOptions = [
 const tasks = ref([
   {
     id: 'Task1',
-    name: '前端项目重构计划',
+    name: 'Frontend Project Refactoring Plan',
     start: dayjs().toDate(),
     end: dayjs().add(4, 'day').toDate(),
     progress: 20,
     priority: 'high',
-    tags: ['架构', '重构']
+    tags: ['Architecture', 'Refactoring']
   },
   {
     id: 'Task2',
-    name: '后端接口优化',
+    name: 'Backend Interface Optimization',
     start: dayjs().add(3, 'day').toDate(),
     end: dayjs().add(7, 'day').toDate(),
     progress: 60,
     priority: 'medium',
-    tags: ['后端', '性能优化']
+    tags: ['Backend', 'Performance Optimization']
   },
   {
     id: 'Task3',
-    name: '用户反馈系统实现',
+    name: 'User Feedback System Implementation',
     start: dayjs().add(5, 'day').toDate(),
     end: dayjs().add(8, 'day').toDate(),
     progress: 0,
     priority: 'low',
-    tags: ['功能', '用户体验']
+    tags: ['Feature', 'User Experience']
   },
   {
     id: 'Task4',
-    name: '安全漏洞修复',
+    name: 'Security Vulnerability Fix',
     start: dayjs().add(1, 'day').toDate(),
     end: dayjs().add(2, 'day').toDate(),
     progress: 100,
-    priority: 'urgent',
-    tags: ['安全', '漏洞修复']
+    priority: 'critical',
+    tags: ['Security', 'Vulnerability Fix']
   }
 ])
 
@@ -259,7 +259,7 @@ const tasks = ref([
    事件处理方法
 --------------------------- */
 const handleSearch = () => {
-  console.log('搜索条件：', filterForm)
+  console.log('Search conditions:', filterForm)
 }
 
 const handleReset = () => {
@@ -278,12 +278,12 @@ const handleReset = () => {
 --------------------------- */
 const customPopupHtml = (task: any) => {
   const priorityMap: Record<string, string> = {
-    urgent: '紧急',
-    high: '高',
-    medium: '中',
-    low: '低'
+    urgent: 'Critical',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low'
   }
-  const priorityText = priorityMap[task.priority] || '未知'
+  const priorityText = priorityMap[task.priority] || 'Unknown'
   const progressText = `${task.progress || 0}%`
   const startDate = dayjs(task.start).format('YYYY-MM-DD')
   const endDate = dayjs(task.end).format('YYYY-MM-DD')
@@ -291,10 +291,10 @@ const customPopupHtml = (task: any) => {
   return `
     <div class="popup-container">
       <h4 class="task-title">${task.name}</h4>
-      <p><strong>开始日期:</strong> ${startDate}</p>
-      <p><strong>结束日期:</strong> ${endDate}</p>
-      <p><strong>优先级:</strong> ${priorityText}</p>
-      <p><strong>进度:</strong> ${progressText}</p>
+      <p><strong>Start Date:</strong> ${startDate}</p>
+      <p><strong>End Date:</strong> ${endDate}</p>
+      <p><strong>Priority:</strong> ${priorityText}</p>
+      <p><strong>Progress:</strong> ${progressText}</p>
     </div>
   `
 }
@@ -335,16 +335,16 @@ const initGantt = () => {
     start_date: weekStart.value.toDate(),
     end_date: weekEnd.value.toDate(),
     on_click: (task: any) => {
-      console.log('任务点击：', task)
+      console.log('Task clicked:', task)
     },
     on_date_change: (task: any, start: string, end: string) => {
-      console.log('日期变更：', task, start, end)
+      console.log('Date changed:', task, start, end)
     },
     on_progress_change: (task: any, progress: number) => {
-      console.log('进度变更：', task, progress)
+      console.log('Progress changed:', task, progress)
     },
     on_view_change: (mode: string) => {
-      console.log('视图变更：', mode)
+      console.log('View changed:', mode)
       setTimeout(() => {
         customizeHeader()
       }, 0)
@@ -378,13 +378,13 @@ const customizeHeader = () => {
 // 获取星期几
 const getWeekdayLabel = (dateObj: dayjs.Dayjs) => {
   const weekDayMap: Record<number, string> = {
-    0: '周日',
-    1: '周一',
-    2: '周二',
-    3: '周三',
-    4: '周四',
-    5: '周五',
-    6: '周六'
+    0: 'Sunday',
+    1: 'Monday',
+    2: 'Tuesday',
+    3: 'Wednesday',
+    4: 'Thursday',
+    5: 'Friday',
+    6: 'Saturday'
   }
   return weekDayMap[dateObj.day()] || ''
 }

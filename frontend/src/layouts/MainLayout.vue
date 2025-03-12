@@ -8,7 +8,7 @@
       </div>
       <div class="header-right">
         <el-input
-          placeholder="搜索..."
+          placeholder="Search..."
           prefix-icon="Search"
           v-model="searchKeyword"
           class="search-input"
@@ -24,9 +24,9 @@
           </el-avatar>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人中心</el-dropdown-item>
-              <el-dropdown-item command="settings">设置</el-dropdown-item>
-              <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              <el-dropdown-item command="profile">Personal Center</el-dropdown-item>
+              <el-dropdown-item command="settings">Settings</el-dropdown-item>
+              <el-dropdown-item divided command="logout">Logout</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -92,11 +92,11 @@ const handleCommand = async (command: string) => {
     case 'logout':
       try {
         await ElMessageBox.confirm(
-          '确定要退出登录吗？',
-          '提示',
+          'Are you sure you want to logout?',
+          'Tips',
           {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
+            confirmButtonText: 'Confirm',
+            cancelButtonText: 'Cancel',
             type: 'warning'
           }
         )

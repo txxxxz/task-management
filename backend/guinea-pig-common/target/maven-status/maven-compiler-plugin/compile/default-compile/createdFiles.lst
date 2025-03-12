@@ -6,6 +6,7 @@ com/taskManagement/json/JacksonObjectMapper.class
 com/taskManagement/properties/JwtProperties.class
 com/taskManagement/properties/AliOssProperties.class
 com/taskManagement/exception/BaseException.class
+com/taskManagement/exception/BusinessException.class
 com/taskManagement/exception/LoginFailedException.class
 com/taskManagement/utils/JwtUtil.class
 com/taskManagement/utils/AliOssUtil.class

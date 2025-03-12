@@ -168,7 +168,7 @@ import { ElMessage } from 'element-plus'
 import { CircleCheckFilled, UploadFilled, Collection } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules, UploadFile } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { useUserStore } from '../../stores/user'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -212,14 +212,14 @@ const rules = reactive<FormRules>({
     { min: 2, max: 50, message: 'Length must be between 2 and 50 characters', trigger: 'blur' }
   ],
   priority: [
-    { required: true, message: '请选择优先级', trigger: 'change' }
+    { required: true, message: 'Please select the priority', trigger: 'change' }
   ],
   dueTime: [
-    { required: true, message: '请选择截止时间', trigger: 'change' },
+    { required: true, message: 'Please select the due time', trigger: 'change' },
     {
       validator: (rule, value, callback) => {
         if (value && dayjs(value).isBefore(dayjs())) {
-          callback(new Error('截止时间不能早于当前时间'))
+          callback(new Error('The due time cannot be earlier than the current time'))
         } else {
           callback()
         }
@@ -228,7 +228,7 @@ const rules = reactive<FormRules>({
     }
   ],
   members: [
-    { required: true, message: '请选择至少一名参与成员', trigger: 'change' }
+    { required: true, message: 'Please select at least one member', trigger: 'change' }
   ]
 })
 
@@ -236,10 +236,10 @@ const rules = reactive<FormRules>({
 const defaultTags = [
   'Bug',
   'Login Page',
-  '功能开发',
-  '性能优化',
-  'UI设计',
-  '文档'
+  'Feature Development',
+  'Performance Optimization',
+  'UI Design',
+  'Documentation'
 ]
 
 // 标签选项（包括用户新建的标签）
@@ -252,7 +252,7 @@ const isDefaultTag = (tag: string) => defaultTags.includes(tag)
 const handleTagDropdownToggle = (visible: boolean) => {
   if (visible) {
     // 当下拉框打开时，可以在这里从后端获取最新的标签列表
-    console.log('标签下拉框打开')
+    console.log('Tag dropdown opened')
   }
 }
 
@@ -282,7 +282,7 @@ const nextStep = async () => {
       await formRef.value.validate()
       currentStep.value++
     } catch (error) {
-      ElMessage.error('请完善必填信息')
+      ElMessage.error('Please complete the required information')
       return
     }
   } else if (currentStep.value === 1) {

@@ -1,5 +1,7 @@
 import request from '@/utils/request'
-import type { Project, ProjectForm } from '@/types/models'
+import type { ProjectForm } from '@/types/models'
+import axios from 'axios'
+import type { Project } from '../types/task'
 
 // 获取项目列表
 export function getProjectList(params?: {
@@ -103,5 +105,72 @@ export function removeProjectMember(id: number, username: string) {
   }>({
     url: `/api/projects/${id}/members/${username}`,
     method: 'delete'
+  })
+}
+
+// 搜索项目成员
+export function searchProjectMembers(id: number, params?: {
+  keyword?: string
+  page?: number
+  pageSize?: number
+}) {
+  return request<{
+    code: number
+    data: {
+      total: number
+      items: {
+        id: number
+        username: string
+        email: string
+        avatar?: string
+        status: number
+        createTime: string
+      }[]
+    }
+    message: string
+  }>({
+    url: `/api/projects/${id}/members/search`,
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 上传项目文件
+ * @param file 文件对象
+ */
+export function uploadProjectFile(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  return axios.post('/api/files/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+/**
+ * 批量上传项目文件
+ * @param files 文件列表
+ */
+export function batchUploadProjectFiles(files: File[]) {
+  const formData = new FormData()
+  
+  files.forEach(file => {
+    formData.append('files', file)
+  })
+  
+  return request<{
+    code: number
+    data: string[]
+    message: string
+  }>({
+    url: '/api/files/batch-upload',
+    method: 'post',
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    data: formData
   })
 } 

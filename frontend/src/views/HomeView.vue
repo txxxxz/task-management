@@ -5,8 +5,8 @@
         <el-card class="stat-card">
           <template #header>
             <div class="card-header">
-              <span>我的项目</span>
-              <el-button text @click="$router.push('/projects')">查看全部</el-button>
+              <span>My Projects</span>
+              <el-button text @click="$router.push('/projects')">View All</el-button>
             </div>
           </template>
           <div class="stat-value">{{ projectStore.projects.length }}</div>
@@ -16,7 +16,7 @@
         <el-card class="stat-card">
           <template #header>
             <div class="card-header">
-              <span>待办任务</span>
+              <span>Pending Tasks</span>
             </div>
           </template>
           <div class="stat-value">{{ pendingTasks }}</div>
@@ -26,7 +26,7 @@
         <el-card class="stat-card">
           <template #header>
             <div class="card-header">
-              <span>已完成任务</span>
+              <span>Completed Tasks</span>
             </div>
           </template>
           <div class="stat-value">{{ completedTasks }}</div>
@@ -37,11 +37,11 @@
     <el-card class="recent-tasks">
       <template #header>
         <div class="card-header">
-          <span>最近任务</span>
+          <span>Recent Tasks</span>
         </div>
       </template>
       <el-table :data="recentTasks" style="width: 100%">
-        <el-table-column prop="title" label="任务名称" min-width="200">
+        <el-table-column prop="title" label="Task Name" min-width="200">
           <template #default="{ row }">
             <el-link
               type="primary"
@@ -52,22 +52,22 @@
             </el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="project.name" label="所属项目" width="200" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="project.name" label="Project" width="200" />
+        <el-table-column prop="status" label="Status" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="priority" label="优先级" width="100">
+        <el-table-column prop="priority" label="Priority" width="100">
           <template #default="{ row }">
             <el-tag :type="getPriorityType(row.priority)">
               {{ getPriorityText(row.priority) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="endTime" label="截止日期" width="180">
+        <el-table-column prop="endTime" label="Deadline" width="180">
           <template #default="{ row }">
             <span :class="{ 'text-danger': isOverdue(row.endTime) }">
               {{ formatDate(row.endTime) }}
@@ -124,9 +124,9 @@ const getStatusType = (status: number) => {
 
 const getStatusText = (status: number) => {
   const texts = {
-    0: '待处理',
-    1: '进行中',
-    2: '已完成'
+    0: 'Pending',
+    1: 'In Progress',
+    2: 'Completed'
   }
   return texts[status as keyof typeof texts]
 }
@@ -143,10 +143,10 @@ const getPriorityType = (priority: number) => {
 
 const getPriorityText = (priority: number) => {
   const texts = {
-    0: '低',
-    1: '中',
-    2: '高',
-    3: '紧急'
+    0: 'Low',
+    1: 'Medium',
+    2: 'High',
+    3: 'Critical'
   }
   return texts[priority as keyof typeof texts]
 }

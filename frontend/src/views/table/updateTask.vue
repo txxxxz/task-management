@@ -4,18 +4,18 @@
     <el-form :model="searchForm" class="search-form" label-width="100px">
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-form-item label="任务编号">
-            <el-input v-model="searchForm.taskNumber" placeholder="请输入任务编号" clearable />
+          <el-form-item label="Task Number">
+            <el-input v-model="searchForm.taskNumber" placeholder="Please enter the task number" clearable />
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="任务名称">
-            <el-input v-model="searchForm.taskName" placeholder="请输入任务名称" clearable />
+          <el-form-item label="Task Name">
+            <el-input v-model="searchForm.taskName" placeholder="Please enter the task name" clearable />
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="优先级">
-            <el-select v-model="searchForm.priority" placeholder="请选择优先级" clearable style="width: 100%">
+          <el-form-item label="Priority">
+            <el-select v-model="searchForm.priority" placeholder="Please select the priority" clearable style="width: 100%">
               <el-option
                 v-for="item in priorityOptions"
                 :key="item.value"
@@ -26,8 +26,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="状态">
-            <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 100%">
+          <el-form-item label="Status">
+            <el-select v-model="searchForm.status" placeholder="Please select the status" clearable style="width: 100%">
               <el-option
                 v-for="item in statusOptions"
                 :key="item.value"
@@ -41,32 +41,32 @@
 
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-form-item label="创建时间">
+          <el-form-item label="Create Time">
             <el-date-picker
               v-model="searchForm.createTimeRange"
               type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+              range-separator="To"
+              start-placeholder="Start Date"
+              end-placeholder="End Date"
               style="width: 100%"
             />
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="截止时间">
+          <el-form-item label="Due Time">
             <el-date-picker
               v-model="searchForm.dueTimeRange"
               type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+              range-separator="To"
+              start-placeholder="Start Date"
+              end-placeholder="End Date"
               style="width: 100%"
             />
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="参与成员">
-            <el-select v-model="searchForm.members" multiple placeholder="请选择成员" clearable style="width: 100%">
+          <el-form-item label="Members">
+            <el-select v-model="searchForm.members" multiple placeholder="Please select the members" clearable style="width: 100%">
               <el-option
                 v-for="item in memberOptions"
                 :key="item.value"
@@ -77,8 +77,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="标签">
-            <el-select v-model="searchForm.tags" multiple placeholder="请选择标签" clearable style="width: 100%">
+          <el-form-item label="Tags">
+            <el-select v-model="searchForm.tags" multiple placeholder="Please select the tags" clearable style="width: 100%">
               <el-option
                 v-for="item in tagOptions"
                 :key="item.value"
@@ -93,13 +93,13 @@
       <el-row>
         <el-col :span="24" style="text-align: right">
           <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon> 查询
+            <el-icon><Search /></el-icon> Search
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon> 重置
+            <el-icon><Refresh /></el-icon> Reset
           </el-button>
           <el-button type="primary" @click="handleCreate" v-if="isLeader">
-            <el-icon><Plus /></el-icon> 新建任务
+            <el-icon><Plus /></el-icon> Create Task
           </el-button>
         </el-col>
       </el-row>
@@ -121,31 +121,31 @@
         padding: '12px 0'
       }"
     >
-      <el-table-column prop="number" label="任务编号" width="120" />
-      <el-table-column label="任务名称" min-width="180">
+      <el-table-column prop="number" label="Task Number" width="120" />
+      <el-table-column label="Task Name" min-width="180">
         <template #default="{ row }">
           <el-link type="primary" @click="handleViewDetail(row)">{{ row.name }}</el-link>
         </template>
       </el-table-column>
-      <el-table-column label="优先级" width="100" align="center">
+      <el-table-column label="Priority" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="getPriorityType(row.priority)" size="small">
-            {{ row.priority === 'CRITICAL' ? '紧急' :
-               row.priority === 'HIGH' ? '高' :
-               row.priority === 'MEDIUM' ? '中' : '低' }}
+            {{ row.priority === 'CRITICAL' ? 'Critical' :
+               row.priority === 'HIGH' ? 'High' :
+               row.priority === 'MEDIUM' ? 'Medium' : 'Low' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="状态" width="100" align="center">
+      <el-table-column label="Status" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)" size="small">
-            {{ row.status === 'PENDING' ? '待处理' :
-               row.status === 'IN_PROGRESS' ? '进行中' :
-               row.status === 'COMPLETED' ? '已完成' : '已取消' }}
+            {{ row.status === 'PENDING' ? 'Pending' :
+               row.status === 'IN_PROGRESS' ? 'In Progress' :
+               row.status === 'COMPLETED' ? 'Completed' : 'Cancelled' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="参与成员" width="160">
+      <el-table-column label="Members" width="160">
         <template #default="{ row }">
           <el-tooltip
             :content="row.members.join(', ')"
@@ -158,25 +158,25 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" width="160" align="center">
+      <el-table-column label="Create Time" width="160" align="center">
         <template #default="{ row }">
           {{ formatDate(row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="截止时间" width="160" align="center">
+      <el-table-column label="Due Time" width="160" align="center">
         <template #default="{ row }">
           {{ formatDate(row.dueTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120" fixed="right" align="center">
+      <el-table-column label="Operation" width="120" fixed="right" align="center">
         <template #default="{ row }">
           <el-button-group class="operation-group">
-            <el-tooltip content="编辑" placement="top">
+            <el-tooltip content="Edit" placement="top">
               <el-button type="primary" link @click="handleEdit(row)">
                 <el-icon><Edit /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="完成" placement="top">
+            <el-tooltip content="Complete" placement="top">
               <el-button 
                 type="success" 
                 link 
@@ -186,7 +186,7 @@
                 <el-icon><CircleCheck /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="删除" placement="top">
+            <el-tooltip content="Delete" placement="top">
               <el-button
                 type="danger"
                 link
@@ -219,7 +219,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { useUserStore } from '../../stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search,
@@ -229,8 +229,8 @@ import {
   CircleCheck,
   Delete
 } from '@element-plus/icons-vue'
-import type { TaskDetail } from '@/types/task'
-import { getTaskList, deleteTask } from '@/api/task'
+import type { TaskDetail } from '../../types/task'
+import { getTaskList, deleteTask } from '../../api/task'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -264,82 +264,82 @@ const taskList = ref<TaskDetail[]>([
   {
     id: '1',
     number: 'TASK-001',
-    name: '前端项目重构',
-    description: '对现有前端项目进行重构，提高代码质量和性能',
+    name: 'Frontend Project Refactoring',
+    description: 'Refactor the existing frontend project to improve code quality and performance',
     createTime: '2024-01-15 09:00:00',
     dueTime: '2024-02-15 18:00:00',
     priority: 'HIGH',
     status: 'IN_PROGRESS',
     members: ['Tom', 'John'],
-    tags: ['重构', '前端'],
+    tags: ['Refactoring', 'Frontend'],
     files: [],
     comments: [],
     projectId: '1',
-    projectName: '前端重构项目'
+    projectName: 'Frontend Refactoring Project'
   },
   {
     id: '2',
     number: 'TASK-002',
-    name: '后端接口优化',
-    description: '优化现有后端接口，提高响应速度',
+    name: 'Backend Interface Optimization',
+    description: 'Optimize the existing backend interfaces to improve response speed',
     createTime: '2024-01-16 10:30:00',
     dueTime: '2024-01-30 18:00:00',
     priority: 'MEDIUM',
     status: 'IN_PROGRESS',
     members: ['Amy', 'Jack'],
-    tags: ['后端', '性能优化'],
+    tags: ['Backend', 'Performance Optimization'],
     files: [],
     comments: [],
     projectId: '2',
-    projectName: '后端优化项目'
+    projectName: 'Backend Optimization Project'
   },
   {
     id: '3',
     number: 'TASK-003',
-    name: '用户反馈系统实现',
-    description: '实现用户反馈收集和处理系统',
+    name: 'User Feedback System Implementation',
+    description: 'Implement a user feedback collection and processing system',
     createTime: '2024-01-10 14:00:00',
     dueTime: '2024-01-20 18:00:00',
     priority: 'LOW',
     status: 'DONE',
     members: ['Sarah', 'Mike'],
-    tags: ['功能', '用户体验'],
+    tags: ['Function', 'User Experience'],
     files: [],
     comments: [],
     projectId: '3',
-    projectName: '用户反馈系统'
+    projectName: 'User Feedback System Project'
   },
   {
     id: '4',
     number: 'TASK-004',
-    name: '安全漏洞修复',
-    description: '修复最近发现的安全漏洞',
+    name: 'Security Vulnerability Fix',
+    description: 'Fix the recently discovered security vulnerabilities',
     createTime: '2024-01-17 11:00:00',
     dueTime: '2024-01-19 18:00:00',
     priority: 'CRITICAL',
     status: 'IN_PROGRESS',
     members: ['Tom', 'Amy'],
-    tags: ['安全', 'Bug修复'],
+    tags: ['Security', 'Bug Fix'],
     files: [],
     comments: [],
     projectId: '4',
-    projectName: '系统安全项目'
+    projectName: 'System Security Project'
   }
 ])
 
 // 选项数据
 const priorityOptions = [
-  { label: '紧急', value: 'CRITICAL' },
-  { label: '高', value: 'HIGH' },
-  { label: '中', value: 'MEDIUM' },
-  { label: '低', value: 'LOW' }
+  { label: 'Critical', value: 'CRITICAL' },
+  { label: 'High', value: 'HIGH' },
+  { label: 'Medium', value: 'MEDIUM' },
+  { label: 'Low', value: 'LOW' }
 ]
 
 const statusOptions = [
-  { label: '待处理', value: 'PENDING' },
-  { label: '进行中', value: 'IN_PROGRESS' },
-  { label: '已完成', value: 'COMPLETED' },
-  { label: '已取消', value: 'CANCELLED' }
+  { label: 'Pending', value: 'PENDING' },
+  { label: 'In Progress', value: 'IN_PROGRESS' },
+  { label: 'Completed', value: 'COMPLETED' },
+  { label: 'Cancelled', value: 'CANCELLED' }
 ]
 
 const memberOptions = [
@@ -351,9 +351,9 @@ const memberOptions = [
 
 const tagOptions = [
   { label: 'Bug', value: 'Bug' },
-  { label: '功能开发', value: '功能开发' },
-  { label: '性能优化', value: '性能优化' },
-  { label: '文档', value: '文档' }
+  { label: 'Function Development', value: 'Function Development' },
+  { label: 'Performance Optimization', value: 'Performance Optimization' },
+  { label: 'Documentation', value: 'Documentation' }
 ]
 
 // 过滤后的任务列表
@@ -378,7 +378,7 @@ const fetchTasks = async () => {
     // 使用模拟数据
     total.value = taskList.value.length
   } catch (err: any) {
-    ElMessage.error(err.message || '获取任务列表失败')
+    ElMessage.error(err.message || 'Get task list failed')
   } finally {
     loading.value = false
   }
@@ -423,15 +423,15 @@ const handleEdit = (row: TaskDetail) => {
 // 处理完成任务
 const handleComplete = async (row: TaskDetail) => {
   try {
-    await ElMessageBox.confirm('确认将该任务标记为已完成？', '提示', {
+    await ElMessageBox.confirm('Are you sure to mark this task as completed?', 'Tips', {
       type: 'warning'
     })
     // TODO: 调用完成任务的API
-    ElMessage.success('操作成功')
+    ElMessage.success('Operation successful')
     fetchTasks()
   } catch (err) {
     if (err !== 'cancel') {
-      ElMessage.error('操作失败')
+      ElMessage.error('Operation failed')
     }
   }
 }
@@ -439,15 +439,15 @@ const handleComplete = async (row: TaskDetail) => {
 // 处理删除
 const handleDelete = async (row: TaskDetail) => {
   try {
-    await ElMessageBox.confirm('确认删除该任务？此操作不可恢复', '警告', {
+    await ElMessageBox.confirm('Are you sure to delete this task? This operation cannot be recovered', 'Warning', {
       type: 'warning'
     })
     await deleteTask(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success('Delete successful')
     fetchTasks()
   } catch (err) {
     if (err !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error('Delete failed')
     }
   }
 }

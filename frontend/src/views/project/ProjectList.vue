@@ -1,31 +1,31 @@
 <template>
   <div class="project-list">
     <div class="page-header">
-      <h2>项目管理</h2>
+      <h2>Project Management</h2>
       <el-button type="primary" @click="showCreateDialog = true">
-        新建项目
+        New Project
       </el-button>
     </div>
 
     <el-table :data="projects" style="width: 100%">
-      <el-table-column prop="name" label="项目名称" />
-      <el-table-column prop="description" label="项目描述" />
-      <el-table-column prop="status" label="状态">
+      <el-table-column prop="name" label="Project Name" />
+      <el-table-column prop="description" label="Project Description" />
+      <el-table-column prop="status" label="Status">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)">
             {{ getStatusText(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" />
-      <el-table-column label="操作" width="200">
+      <el-table-column prop="createTime" label="Create Time" />
+      <el-table-column label="Operation" width="200">
         <template #default="{ row }">
           <el-button-group>
             <el-button type="primary" link @click="handleEdit(row)">
-              编辑
+              Edit
             </el-button>
             <el-button type="danger" link @click="handleDelete(row)">
-              删除
+              Delete
             </el-button>
           </el-button-group>
         </template>
@@ -35,7 +35,7 @@
     <!-- 创建/编辑项目对话框 -->
     <el-dialog
       v-model="showCreateDialog"
-      :title="isEdit ? '编辑项目' : '新建项目'"
+      :title="isEdit ? 'Edit Project' : 'New Project'"
       width="500px"
     >
       <el-form
@@ -44,10 +44,10 @@
         :rules="rules"
         label-width="80px"
       >
-        <el-form-item label="项目名称" prop="name">
+        <el-form-item label="Project Name" prop="name">
           <el-input v-model="projectForm.name" />
         </el-form-item>
-        <el-form-item label="项目描述" prop="description">
+        <el-form-item label="Project Description" prop="description">
           <el-input
             v-model="projectForm.description"
             type="textarea"
@@ -57,9 +57,9 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="showCreateDialog = false">取消</el-button>
+          <el-button @click="showCreateDialog = false">Cancel</el-button>
           <el-button type="primary" @click="handleSubmit">
-            确定
+            Confirm
           </el-button>
         </span>
       </template>
@@ -91,10 +91,10 @@ const projectForm = reactive({
 
 const rules = {
   name: [
-    { required: true, message: '请输入项目名称', trigger: 'blur' }
+    { required: true, message: 'Please enter the project name', trigger: 'blur' }
   ],
   description: [
-    { required: true, message: '请输入项目描述', trigger: 'blur' }
+    { required: true, message: 'Please enter the project description', trigger: 'blur' }
   ]
 }
 
@@ -109,9 +109,9 @@ const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'primar
 
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
-    'IN_PROGRESS': '进行中',
-    'COMPLETED': '已完成',
-    'ON_HOLD': '已暂停'
+    'IN_PROGRESS': 'In Progress',
+    'COMPLETED': 'Completed',
+    'ON_HOLD': 'On Hold'
   }
   return statusMap[status] || status
 }
@@ -124,16 +124,16 @@ const handleEdit = (row: Project) => {
 
 const handleDelete = (row: Project) => {
   ElMessageBox.confirm(
-    '确定要删除该项目吗？',
-    '警告',
+    'Are you sure you want to delete this project?',
+    'Warning',
     {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
       type: 'warning'
     }
   ).then(() => {
     // TODO: 实现删除逻辑
-    ElMessage.success('删除成功')
+    ElMessage.success('Delete successfully')
   })
 }
 
@@ -141,9 +141,9 @@ const handleSubmit = async () => {
   try {
     // TODO: 实现提交逻辑
     showCreateDialog.value = false
-    ElMessage.success(isEdit.value ? '编辑成功' : '创建成功')
+    ElMessage.success(isEdit.value ? 'Edit successfully' : 'Create successfully')
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error('Operation failed')
   }
 }
 </script>

@@ -2,23 +2,23 @@
   <div class="employee-list">
     <!-- 搜索表单 -->
     <el-form :model="queryParams" class="search-form" inline>
-      <el-form-item label="姓名">
-        <el-input v-model="queryParams.username" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" />
+      <el-form-item label="Name">
+        <el-input v-model="queryParams.username" placeholder="Please enter the name" clearable @keyup.enter="handleSearch" />
       </el-form-item>
-      <el-form-item label="邮箱">
-        <el-input v-model="queryParams.email" placeholder="请输入邮箱" clearable @keyup.enter="handleSearch" />
+      <el-form-item label="Email">
+        <el-input v-model="queryParams.email" placeholder="Please enter the email" clearable @keyup.enter="handleSearch" />
       </el-form-item>
-      <el-form-item label="角色">
-        <el-select v-model="queryParams.role" placeholder="请选择角色" clearable>
-          <el-option label="管理员" value="admin" />
-          <el-option label="组长" value="leader" />
-          <el-option label="成员" value="member" />
+      <el-form-item label="Role">
+        <el-select v-model="queryParams.role" placeholder="Please select the role" clearable>
+          <el-option label="Admin" value="admin" />
+          <el-option label="Leader" value="leader" />
+          <el-option label="Member" value="member" />
         </el-select>
       </el-form-item>
-      <el-form-item label="状态">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
-          <el-option label="启用" :value="true" />
-          <el-option label="禁用" :value="false" />
+      <el-form-item label="Status">
+        <el-select v-model="queryParams.status" placeholder="Please select the status" clearable>
+          <el-option label="Enabled" :value="true" />
+          <el-option label="Disabled" :value="false" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -34,10 +34,10 @@
 
     <!-- 员工列表 -->
     <el-table v-loading="loading" :data="employeeList" border style="width: 100%">
-      <el-table-column prop="username" label="姓名" width="120" />
-      <el-table-column prop="email" label="邮箱" width="180" />
-      <el-table-column prop="phone" label="手机号" width="120" />
-      <el-table-column prop="role" label="角色" width="100">
+      <el-table-column prop="username" label="Name" width="120" />
+      <el-table-column prop="email" label="Email" width="180" />
+      <el-table-column prop="phone" label="Phone" width="120" />
+      <el-table-column prop="role" label="Role" width="100">
         <template #default="{ row }">
           <el-tag :type="getRoleTagType(row.role)">
             {{ getRoleLabel(row.role) }}
@@ -54,11 +54,11 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column prop="createTime" label="Create Time" width="180" />
+      <el-table-column label="Operation" width="200" fixed="right">
         <template #default="{ row }">
-          <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-          <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+          <el-button type="primary" link @click="handleEdit(row)">Edit</el-button>
+          <el-button type="danger" link @click="handleDelete(row)">Delete</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -89,33 +89,33 @@
         :rules="rules"
         label-width="80px"
       >
-        <el-form-item label="姓名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入姓名" />
+        <el-form-item label="Name" prop="username">
+          <el-input v-model="form.username" placeholder="Please enter the name" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
+        <el-form-item label="Email" prop="email">
           <el-input v-model="form.email" placeholder="请输入邮箱" />
         </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="form.phone" placeholder="请输入手机号" />
+        <el-form-item label="Phone" prop="phone">
+          <el-input v-model="form.phone" placeholder="Please enter the phone" />
         </el-form-item>
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="form.role" placeholder="请选择角色">
-            <el-option label="管理员" value="admin" />
-            <el-option label="组长" value="leader" />
-            <el-option label="成员" value="member" />
+        <el-form-item label="Role" prop="role">
+          <el-select v-model="form.role" placeholder="Please select the role">
+            <el-option label="Admin" value="admin" />
+            <el-option label="Leader" value="leader" />
+            <el-option label="Member" value="member" />
           </el-select>
         </el-form-item>
-        <el-form-item label="密码" prop="password" v-if="!form.id">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" />
+        <el-form-item label="Password" prop="password" v-if="!form.id">
+          <el-input v-model="form.password" type="password" placeholder="Please enter the password" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="Status" prop="status">
           <el-switch v-model="form.status" />
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
+          <el-button @click="dialogVisible = false">Cancel</el-button>
+          <el-button type="primary" @click="handleSubmit">Confirm</el-button>
         </span>
       </template>
     </el-dialog>
@@ -159,23 +159,23 @@ const form = reactive<EmployeeFormData & { id?: number }>({
 // 表单校验规则
 const rules = {
   username: [
-    { required: true, message: '请输入姓名', trigger: 'blur' },
-    { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the name', trigger: 'blur' },
+    { min: 2, max: 20, message: 'Length must be between 2 and 20 characters', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+    { required: true, message: 'Please enter the email', trigger: 'blur' },
+    { type: 'email', message: 'Please enter the correct email address', trigger: 'blur' }
   ],
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    { required: true, message: 'Please enter the phone number', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: 'Please enter the correct phone number', trigger: 'blur' }
   ],
   role: [
-    { required: true, message: '请选择角色', trigger: 'change' }
+    { required: true, message: 'Please select the role', trigger: 'change' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the password', trigger: 'blur' },
+    { min: 6, max: 20, message: 'Length must be between 6 and 20 characters', trigger: 'blur' }
   ]
 }
 
@@ -192,7 +192,7 @@ const getList = async () => {
     total.value = res.total
   } catch (error) {
     console.error(error)
-    ElMessage.error('获取员工列表失败')
+    ElMessage.error('Failed to get employee list')
   } finally {
     loading.value = false
   }
@@ -215,7 +215,7 @@ const resetQuery = () => {
 // 新增员工
 const handleAdd = () => {
   resetForm()
-  dialogTitle.value = '新增员工'
+  dialogTitle.value = 'Add Employee'
   dialogVisible.value = true
 }
 
@@ -223,21 +223,21 @@ const handleAdd = () => {
 const handleEdit = (row: Employee) => {
   Object.assign(form, row)
   form.password = undefined
-  dialogTitle.value = '编辑员工'
+  dialogTitle.value = 'Edit Employee'
   dialogVisible.value = true
 }
 
 // 删除员工
 const handleDelete = (row: Employee) => {
-  ElMessageBox.confirm('确认要删除该员工吗？', '提示', {
+  ElMessageBox.confirm('Are you sure you want to delete this employee?', 'Warning', {
     type: 'warning'
   }).then(async () => {
     try {
       await deleteEmployee(row.id)
-      ElMessage.success('删除成功')
+      ElMessage.success('Delete successfully')
       getList()
     } catch (error) {
-      ElMessage.error('删除失败')
+      ElMessage.error('Delete failed')
     }
   })
 }
@@ -250,15 +250,15 @@ const handleSubmit = async () => {
       try {
         if (form.id) {
           await updateEmployee(form.id, form)
-          ElMessage.success('更新成功')
+          ElMessage.success('Update successfully')
         } else {
           await createEmployee(form)
-          ElMessage.success('创建成功')
+          ElMessage.success('Create successfully')
         }
         dialogVisible.value = false
         getList()
       } catch (error) {
-        ElMessage.error(form.id ? '更新失败' : '创建失败')
+        ElMessage.error(form.id ? 'Update failed' : 'Create failed')
       }
     }
   })
@@ -268,10 +268,10 @@ const handleSubmit = async () => {
 const handleStatusChange = async (row: Employee) => {
   try {
     await updateEmployeeStatus(row.id, row.status)
-    ElMessage.success('状态更新成功')
+    ElMessage.success('Status updated successfully')
   } catch (error) {
     row.status = !row.status // 恢复状态
-    ElMessage.error('状态更新失败')
+    ElMessage.error('Status update failed')
   }
 }
 

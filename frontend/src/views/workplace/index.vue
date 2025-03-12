@@ -7,54 +7,54 @@
     <!-- 搜索过滤区域 -->
     <el-card class="filter-card">
       <el-form :model="filterForm" inline>
-        <el-form-item label="任务编号">
-          <el-input v-model="filterForm.number" placeholder="请输入任务编号" />
+        <el-form-item label="Task Number">
+          <el-input v-model="filterForm.number" placeholder="Please enter the task number" />
         </el-form-item>
         
-        <el-form-item label="任务名称">
-          <el-input v-model="filterForm.keyword" placeholder="请输入任务名称" />
+        <el-form-item label="Task Name">
+          <el-input v-model="filterForm.keyword" placeholder="Please enter the task name" />
         </el-form-item>
 
-        <el-form-item label="创建日期">
+        <el-form-item label="Create Date">
           <el-date-picker
             v-model="filterForm.createDateRange"
             type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
+            range-separator="To"
+            start-placeholder="Start Date"
+            end-placeholder="End Date"
           />
         </el-form-item>
 
-        <el-form-item label="截止日期">
+        <el-form-item label="Due Date">
           <el-date-picker
             v-model="filterForm.dueDateRange"
             type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
+            range-separator="To"
+            start-placeholder="Start Date"
+            end-placeholder="End Date"
           />
         </el-form-item>
 
-        <el-form-item label="优先级">
-          <el-select v-model="filterForm.priority" placeholder="全部">
-            <el-option label="全部" value="" />
-            <el-option label="高" value="high" />
-            <el-option label="中" value="medium" />
-            <el-option label="低" value="low" />
+        <el-form-item label="Priority">
+          <el-select v-model="filterForm.priority" placeholder="All">
+            <el-option label="All" value="" />
+            <el-option label="High" value="high" />
+            <el-option label="Medium" value="medium" />
+            <el-option label="Low" value="low" />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="状态">
-          <el-select v-model="filterForm.status" placeholder="全部">
-            <el-option label="全部" value="" />
-            <el-option label="待处理" value="pending" />
-            <el-option label="进行中" value="in_progress" />
-            <el-option label="已完成" value="completed" />
+        <el-form-item label="Status">
+          <el-select v-model="filterForm.status" placeholder="All">
+            <el-option label="All" value="" />
+            <el-option label="Pending" value="pending" />
+            <el-option label="In Progress" value="in_progress" />
+            <el-option label="Completed" value="completed" />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="成员">
-          <el-select v-model="filterForm.members" placeholder="全部" multiple>
+        <el-form-item label="Members">
+          <el-select v-model="filterForm.members" placeholder="All" multiple>
             <el-option
               v-for="member in memberOptions"
               :key="member.id"
@@ -64,8 +64,8 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="标签">
-          <el-select v-model="filterForm.tags" placeholder="全部" multiple>
+        <el-form-item label="Tags">
+          <el-select v-model="filterForm.tags" placeholder="All" multiple>
             <el-option
               v-for="tag in tagOptions"
               :key="tag.id"
@@ -76,8 +76,8 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleSearch">Search</el-button>
+          <el-button @click="handleReset">Reset</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -86,12 +86,12 @@
     <div class="gantt-toolbar">
       <div class="left">
         <el-button-group>
-          <el-button @click="handlePrevWeek">上一周</el-button>
-          <el-button @click="handleNextWeek">下一周</el-button>
+          <el-button @click="handlePrevWeek">Prev Week</el-button>
+          <el-button @click="handleNextWeek">Next Week</el-button>
         </el-button-group>
       </div>
       <div class="right">
-        <el-button type="primary" @click="handleCreateTask">新建任务</el-button>
+        <el-button type="primary" @click="handleCreateTask">Create Task</el-button>
       </div>
     </div>
 
@@ -100,9 +100,9 @@
       <div class="gantt-container">
         <div class="gantt-header">
           <div class="task-info">
-            <div class="task-name">任务名称</div>
-            <div class="task-tags">标签</div>
-            <div class="task-priority">优先级</div>
+            <div class="task-name">Task Name</div>
+            <div class="task-tags">Tags</div>
+            <div class="task-priority">Priority</div>
           </div>
           <div class="time-scale">
             <div v-for="date in dateList" :key="date" class="date-cell">
@@ -207,18 +207,18 @@
           </el-select>
         </el-form-item>
         
-        <el-form-item label="描述" prop="description">
+        <el-form-item label="Description" prop="description">
           <el-input
             v-model="taskForm.description"
             type="textarea"
             :rows="3"
-            placeholder="请输入任务描述"
+            placeholder="Please enter the task description"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="taskDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveTask">确定</el-button>
+        <el-button @click="taskDialogVisible = false">Cancel</el-button>
+        <el-button type="primary" @click="handleSaveTask">Confirm</el-button>
       </template>
     </el-dialog>
   </div>
@@ -262,8 +262,8 @@ const memberOptions = ref([
 // 标签选项
 const tagOptions = ref([
   { id: 1, name: 'Bug', type: 'danger' },
-  { id: 2, name: '功能', type: 'primary' },
-  { id: 3, name: '优化', type: 'warning' }
+  { id: 2, name: 'Feature Development', type: 'primary' },
+  { id: 3, name: 'Performance Optimization', type: 'warning' }
 ])
 
 // 任务列表数据
@@ -379,23 +379,23 @@ const taskForm = reactive<TaskForm>({
 
 const taskRules: FormRules = {
   name: [
-    { required: true, message: '请输入任务名称', trigger: 'blur' }
+    { required: true, message: 'Please enter the task name', trigger: 'blur' }
   ],
   startDate: [
-    { required: true, message: '请选择开始日期', trigger: 'change' }
+    { required: true, message: 'Please select the start date', trigger: 'change' }
   ],
   endDate: [
-    { required: true, message: '请选择结束日期', trigger: 'change' }
+    { required: true, message: 'Please select the end date', trigger: 'change' }
   ],
   priority: [
-    { required: true, message: '请选择优先级', trigger: 'change' }
+    { required: true, message: 'Please select the priority', trigger: 'change' }
   ]
 }
 
 // 处理搜索
 const handleSearch = () => {
-  console.log('搜索条件：', filterForm)
-  // TODO: 调用接口进行搜索
+  console.log('Search conditions:', filterForm)
+  // TODO: Call the interface for search
 }
 
 // 处理重置
@@ -442,11 +442,11 @@ const handleSaveTask = async () => {
   
   try {
     await taskFormRef.value.validate()
-    // TODO: 调用接口保存任务
-    ElMessage.success('保存成功')
+    // TODO: Call the interface to save the task
+    ElMessage.success('Save successfully')
     taskDialogVisible.value = false
   } catch (error) {
-    console.error('表单验证失败：', error)
+    console.error('Form validation failed:', error)
   }
 }
 

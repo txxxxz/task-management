@@ -75,3 +75,20 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
+
+address:
+  # 演示地址
+  origin: 'http://localhost:${server.port}'
+  
+# 阿里云OSS配置
+aliyun:
+  oss:
+    endpoint: ${guineapig.alioss.endpoint}
+    accessKeyId: ${guineapig.alioss.access-key-id}
+    accessKeySecret: ${guineapig.alioss.access-key-secret}
+    bucketName: ${guineapig.alioss.bucket-name}
+    urlPrefix: https://${guineapig.alioss.bucket-name}.${guineapig.alioss.endpoint}
+    # 加密密钥 (请更改为实际的加密密钥)
+    encryption-key: 0123456789ABCDEF0123456789ABCDEF
+    # 项目文件存储目录
+    project-folder: project/

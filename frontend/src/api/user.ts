@@ -1,30 +1,30 @@
 import request from '@/utils/request'
-import type { UserInfo, LoginParams, RegisterParams, LoginResponse } from '@/types/user'
+import type { UserInfo, LoginParams, RegisterParams, LoginResponse, ApiResponse } from '@/types/user'
 
-// 用户登录 - 明确返回LoginResponse而不是AxiosResponse
+// 用户登录 - 返回完整响应而不是仅data字段
 export const login = (data: LoginParams) => {
-  return request<LoginResponse>({
+  return request<ApiResponse<LoginResponse>>({
     url: '/auth/login',
     method: 'post',
     data
-  }).then(response => response.data)
+  })
 }
 
 // 用户注册
 export const register = (data: RegisterParams) => {
-  return request<LoginResponse>({
+  return request<ApiResponse<LoginResponse>>({
     url: '/auth/register',
     method: 'post',
     data
-  }) as Promise<LoginResponse>
+  })
 }
 
-// 获取用户信息 - 明确返回UserInfo而不是AxiosResponse
+// 获取用户信息 - 返回完整响应而不是仅data字段
 export const getUserInfo = () => {
-  return request<UserInfo>({
+  return request<ApiResponse<UserInfo>>({
     url: '/auth/user/info',
     method: 'get'
-  }) as Promise<UserInfo> // 显式指定返回Promise<UserInfo>
+  })
 }
 
 // 检查用户名是否存在
@@ -68,10 +68,31 @@ interface BatchRegisterData {
 }
 
 // 获取所有用户列表
-export const getAllUsers = () => {
-  return request({
-    url: '/api/users',
-    method: 'get'
+export const getAllUsers = (params?: {
+  keyword?: string
+  role?: string
+  page?: number
+  pageSize?: number
+}) => {
+  return request<{
+    code: 1
+    data: {
+      total: number
+      items: {
+        id: number
+        username: string
+        email: string
+        avatar?: string
+        status: number
+        role: number
+        createTime: string
+      }[]
+    }
+    msg: string | null
+  }>({
+    url: '/api/members',
+    method: 'get',
+    params
   })
 }
 

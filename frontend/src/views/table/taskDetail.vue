@@ -2,15 +2,15 @@
   <div class="task-detail-container">
     <!-- 面包屑导航 -->
     <el-breadcrumb separator="/" class="breadcrumb">
-      <el-breadcrumb-item :to="{ path: '/list' }">任务列表</el-breadcrumb-item>
-      <el-breadcrumb-item>任务详情</el-breadcrumb-item>
+      <el-breadcrumb-item :to="{ path: '/list' }">Task List</el-breadcrumb-item>
+      <el-breadcrumb-item>Task Details</el-breadcrumb-item>
     </el-breadcrumb>
 
     <!-- 返回按钮 -->
     <div class="back-button">
       <el-button @click="handleBack">
         <el-icon><Back /></el-icon>
-        返回
+        Back
       </el-button>
     </div>
 
@@ -18,7 +18,7 @@
     <el-loading
       v-model:loading="loading"
       :lock="true"
-      text="加载中..."
+      text="Loading..."
       background="rgba(255, 255, 255, 0.7)"
     />
 
@@ -36,15 +36,15 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>任务详情</h2>
+          <h2>Task Details</h2>
           <div class="header-actions">
             <el-button type="primary" plain @click="handleSave" v-if="isLeader" :loading="saveLoading">
               <el-icon><Check /></el-icon>
-              保存修改
+              Save Changes
             </el-button>
             <el-button type="danger" plain @click="handleDelete" v-if="isLeader">
               <el-icon><Delete /></el-icon>
-              删除任务
+              Delete Task
             </el-button>
           </div>
         </div>
@@ -53,17 +53,17 @@
       <el-form :model="taskForm" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="任务编号">
+            <el-form-item label="Task Number">
               <el-input v-model="taskForm.number" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="创建时间">
+            <el-form-item label="Create Time">
               <el-input v-model="taskForm.createTime" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="优先级">
+            <el-form-item label="Priority">
               <template v-if="isLeader">
                 <el-select v-model="taskForm.priority" style="width: 100%">
                   <el-option
@@ -85,16 +85,16 @@
 
         <el-row :gutter="20">
           <el-col :span="16">
-            <el-form-item label="任务名称">
+            <el-form-item label="Task Name">
               <el-input 
                 v-model="taskForm.name" 
                 :disabled="!isLeader"
-                placeholder="请输入任务名称"
+                placeholder="Please enter task name"
               />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="截止时间">
+            <el-form-item label="Due Time">
               <el-date-picker
                 v-model="taskForm.dueTime"
                 type="datetime"
@@ -105,7 +105,7 @@
           </el-col>
         </el-row>
 
-        <el-form-item label="任务成员">
+        <el-form-item label="Task Members">
           <el-select
             v-model="taskForm.members"
             multiple
@@ -121,7 +121,7 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="任务标签">
+        <el-form-item label="Task Tags">
           <el-select
             v-model="taskForm.tags"
             multiple
@@ -137,13 +137,13 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="任务描述">
+        <el-form-item label="Task Description">
           <el-input
             v-model="taskForm.description"
             type="textarea"
             :rows="4"
             :disabled="!isLeader"
-            placeholder="请输入任务描述"
+            placeholder="Please enter task description"
           />
         </el-form-item>
       </el-form>
@@ -153,43 +153,43 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>任务文件</h2>
+          <h2>Task Files</h2>
           <div class="header-actions">
             <el-button type="primary" @click="handleUpload">
               <el-icon><Upload /></el-icon>
-              上传文件
+              Upload Files
             </el-button>
             <el-button @click="handleBatchUpload">
               <el-icon><Document /></el-icon>
-              批量导入
+              Batch Import
             </el-button>
           </div>
         </div>
       </template>
 
       <el-table :data="fileList" style="width: 100%">
-        <el-table-column prop="name" label="文件名" min-width="200" />
-        <el-table-column prop="uploader" label="上传者" width="120" />
-        <el-table-column prop="uploadTime" label="上传时间" width="160" />
-        <el-table-column prop="size" label="大小" width="100">
+        <el-table-column prop="name" label="File Name" min-width="200" />
+        <el-table-column prop="uploader" label="Uploader" width="120" />
+        <el-table-column prop="uploadTime" label="Upload Time" width="160" />
+        <el-table-column prop="size" label="Size" width="100">
           <template #default="{ row }">
             {{ formatFileSize(row.size) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="Actions" width="200" align="center">
           <template #default="{ row }">
             <el-button-group>
-              <el-tooltip content="查看文件" placement="top">
+              <el-tooltip content="View File" placement="top">
                 <el-button type="primary" link @click="handleViewFile(row)">
                   <el-icon><View /></el-icon>
                 </el-button>
               </el-tooltip>
-              <el-tooltip content="下载文件" placement="top">
+              <el-tooltip content="Download File" placement="top">
                 <el-button type="primary" link @click="handleDownloadFile(row)">
                   <el-icon><Download /></el-icon>
                 </el-button>
               </el-tooltip>
-              <el-tooltip content="删除文件" placement="top">
+              <el-tooltip content="Delete File" placement="top">
                 <el-button 
                   type="danger" 
                   link 
@@ -207,7 +207,7 @@
       <!-- 文件上传对话框 -->
       <el-dialog
         v-model="uploadDialogVisible"
-        title="上传文件"
+        title="Upload Files"
         width="500px"
       >
         <el-upload
@@ -224,11 +224,11 @@
         >
           <el-icon class="el-icon--upload"><upload-filled /></el-icon>
           <div class="el-upload__text">
-            将文件拖到此处，或<em>点击上传</em>
+            Drag files here, or <em>click to upload</em>
           </div>
           <template #tip>
             <div class="el-upload__tip">
-              支持任意格式文件，单个文件不超过100MB
+              Supports any file format, single file不超过100MB
             </div>
           </template>
         </el-upload>
@@ -239,7 +239,7 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>评论区 ({{ comments.length }})</h2>
+          <h2>Comments ({{ comments.length }})</h2>
         </div>
       </template>
 
@@ -258,7 +258,7 @@
               <div class="comment-text">{{ comment.content }}</div>
               <div class="comment-actions">
                 <el-button type="primary" link @click="handleReply(comment)">
-                  回复
+                  Reply
                 </el-button>
                 <el-button 
                   type="danger" 
@@ -266,7 +266,7 @@
                   @click="handleDeleteComment(comment)"
                   v-if="isLeader || comment.username === userStore.userInfo?.username"
                 >
-                  删除
+                  Delete
                 </el-button>
               </div>
             </div>
@@ -279,11 +279,11 @@
             v-model="newComment"
             type="textarea"
             :rows="3"
-            placeholder="写下你的评论..."
+            placeholder="Write your comment..."
           />
           <div class="comment-buttons">
             <el-button type="primary" @click="handleAddComment" :loading="commentLoading">
-              发表评论
+              Post Comment
             </el-button>
           </div>
         </div>
@@ -295,7 +295,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { useUserStore } from '../../stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Check,
@@ -309,10 +309,10 @@ import {
 } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import type { TaskDetail, TaskFile, TaskComment } from '@/types/task'
-import { getTaskDetail, updateTask, deleteTask } from '@/api/task'
-import { uploadFile, deleteFile } from '@/api/file'
-import { addComment, deleteComment } from '@/api/comment'
+import type { TaskDetail, TaskFile, TaskComment } from '../../types/task'
+import { getTaskDetail, updateTask, deleteTask } from '../../api/task'
+import { uploadFile, deleteFile } from '../../api/file'
+import { addComment, deleteComment } from '../../api/comment'
 
 dayjs.extend(relativeTime)
 
@@ -510,7 +510,7 @@ const initMockData = () => {
 const fetchTaskDetail = async () => {
   const taskId = route.params.id as string
   if (!taskId) {
-    error.value = '任务ID不能为空'
+    error.value = 'Task ID cannot be empty'
     return
   }
 
@@ -522,7 +522,7 @@ const fetchTaskDetail = async () => {
     Object.assign(taskForm, response.data)
   } catch (err: any) {
     // 如果API调用失败，使用模拟数据
-    console.warn('使用模拟数据')
+    console.warn('Use mock data')
     initMockData()
     error.value = null // 清除错误提示
   } finally {
@@ -533,7 +533,7 @@ const fetchTaskDetail = async () => {
 // 保存任务修改
 const handleSave = async () => {
   if (!isLeader.value) {
-    ElMessage.warning('您没有权限修改任务信息')
+    ElMessage.warning('You do not have permission to modify task information')
     return
   }
 
@@ -548,9 +548,9 @@ const handleSave = async () => {
       tags: taskForm.tags
     }
     await updateTask(route.params.id as string, updateData)
-    ElMessage.success('保存成功')
+    ElMessage.success('Save successfully')
   } catch (err: any) {
-    ElMessage.error(err.message || '保存失败')
+    ElMessage.error(err.message || 'Save failed')
   } finally {
     saveLoading.value = false
   }
@@ -568,14 +568,14 @@ const handleBatchUpload = () => {
 const beforeUpload = (file: File) => {
   const maxSize = 100 * 1024 * 1024 // 100MB
   if (file.size > maxSize) {
-    ElMessage.error('文件大小不能超过100MB')
+    ElMessage.error('The file size cannot exceed 100MB')
     return false
   }
 
   // 检查文件名是否合法
   const invalidChars = /[\\\\/:*?"<>|]/g
   if (invalidChars.test(file.name)) {
-    ElMessage.error('文件名不能包含特殊字符')
+    ElMessage.error('The file name cannot contain special characters')
     return false
   }
 
@@ -592,24 +592,24 @@ const handleUploadSuccess = async (response: any) => {
     uploadLoading.value = true
     await uploadFile(formData)
     
-    ElMessage.success('上传成功')
+    ElMessage.success('Upload successfully')
     uploadDialogVisible.value = false
     await fetchTaskDetail() // 刷新文件列表
   } catch (err: any) {
-    ElMessage.error(err.message || '上传失败')
+    ElMessage.error(err.message || 'Upload failed')
   } finally {
     uploadLoading.value = false
   }
 }
 
 const handleUploadError = (err: any) => {
-  ElMessage.error(err.message || '上传失败')
+  ElMessage.error(err.message || 'Upload failed')
 }
 
 // 文件操作方法
 const handleViewFile = (file: TaskFile) => {
   if (!file.url) {
-    ElMessage.warning('文件链接不可用')
+    ElMessage.warning('The file link is not available')
     return
   }
   window.open(file.url)
@@ -617,7 +617,7 @@ const handleViewFile = (file: TaskFile) => {
 
 const handleDownloadFile = (file: TaskFile) => {
   if (!file.url) {
-    ElMessage.warning('文件链接不可用')
+    ElMessage.warning('The file link is not available')
     return
   }
   
@@ -629,29 +629,29 @@ const handleDownloadFile = (file: TaskFile) => {
     link.click()
     document.body.removeChild(link)
   } catch (err) {
-    ElMessage.error('下载失败')
+    ElMessage.error('Download failed')
   }
 }
 
 const handleDeleteFile = async (file: TaskFile) => {
   if (!isLeader.value && file.uploader !== userStore.userInfo?.username) {
-    ElMessage.warning('您没有权限删除此文件')
+    ElMessage.warning('You do not have permission to delete this file')
     return
   }
 
   try {
-    await ElMessageBox.confirm('确定要删除该文件吗？', '警告', {
+    await ElMessageBox.confirm('Are you sure you want to delete this file?', 'Warning', {
       type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel'
     })
 
     await deleteFile(file.id)
-    ElMessage.success('删除成功')
+    ElMessage.success('Delete successfully')
     await fetchTaskDetail() // 刷新文件列表
   } catch (err: any) {
     if (err !== 'cancel') {
-      ElMessage.error(err.message || '删除失败')
+      ElMessage.error(err.message || 'Delete failed')
     }
   }
 }
@@ -659,7 +659,7 @@ const handleDeleteFile = async (file: TaskFile) => {
 // 评论相关方法
 const handleAddComment = async () => {
   if (!newComment.value.trim()) {
-    ElMessage.warning('请输入评论内容')
+    ElMessage.warning('Please enter a comment')
     return
   }
 
@@ -678,9 +678,9 @@ const handleAddComment = async () => {
       createTime: dayjs().format('YYYY-MM-DD HH:mm:ss')
     })
     newComment.value = ''
-    ElMessage.success('评论成功')
+    ElMessage.success('Comment successfully')
   } catch (err: any) {
-    ElMessage.error(err.message || '评论失败')
+    ElMessage.error(err.message || 'Comment failed')
   } finally {
     commentLoading.value = false
   }
@@ -692,15 +692,15 @@ const handleReply = (comment: TaskComment) => {
 
 const handleDeleteComment = async (comment: TaskComment) => {
   if (!isLeader.value && comment.username !== userStore.userInfo?.username) {
-    ElMessage.warning('您没有权限删除此评论')
+    ElMessage.warning('You do not have permission to delete this comment')
     return
   }
 
   try {
-    await ElMessageBox.confirm('确定要删除该评论吗？', '警告', {
+    await ElMessageBox.confirm('Are you sure you want to delete this comment?', 'Warning', {
       type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel'
     })
 
     await deleteComment(comment.id)
@@ -708,10 +708,10 @@ const handleDeleteComment = async (comment: TaskComment) => {
     if (index !== -1) {
       comments.value.splice(index, 1)
     }
-    ElMessage.success('删除成功')
+    ElMessage.success('Delete successfully')
   } catch (err: any) {
     if (err !== 'cancel') {
-      ElMessage.error(err.message || '删除失败')
+      ElMessage.error(err.message || 'Delete failed')
     }
   }
 }
@@ -720,11 +720,11 @@ const handleDeleteComment = async (comment: TaskComment) => {
 const handleDelete = async () => {
   try {
     await ElMessageBox.confirm(
-      '确定要删除该任务吗？此操作不可恢复！',
-      '警告',
+      'Are you sure you want to delete this task? This action cannot be undone!',
+      'Warning',
       {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
@@ -732,11 +732,11 @@ const handleDelete = async () => {
     
     loading.value = true
     await deleteTask(route.params.id as string)
-    ElMessage.success('删除成功')
+    ElMessage.success('Delete successfully')
     router.push('/list')
   } catch (err: any) {
     if (err !== 'cancel') {
-      ElMessage.error(err.message || '删除失败')
+      ElMessage.error(err.message || 'Delete failed')
     }
   } finally {
     loading.value = false

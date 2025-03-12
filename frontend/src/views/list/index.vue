@@ -342,8 +342,6 @@ const handleReset = () => {
     const k = key as keyof typeof filterForm
     if (Array.isArray(filterForm[k])) {
       filterForm[k] = [] as any
-    } else {
-      filterForm[k] = ''
     }
   })
   // 清除 URL 参数

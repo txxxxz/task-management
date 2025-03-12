@@ -53,7 +53,16 @@ export interface RegisterParams extends LoginParams {
   phone: string
 }
 
+// 标准响应结构
+export interface ApiResponse<T> {
+  code: number
+  data: T
+  msg?: string
+  message?: string
+}
+
+// 登录响应中的实际数据结构
 export interface LoginResponse {
   token: string
-  user: UserInfo | UserVO  // 可能返回不同结构的用户信息
+  user: UserVO
 } 

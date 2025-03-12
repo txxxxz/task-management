@@ -4,13 +4,13 @@
     <el-form :model="searchForm" class="search-form" label-width="100px">
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="项目名称">
-            <el-input v-model="searchForm.name" placeholder="请输入项目名称" clearable />
+          <el-form-item label="Project Name">
+            <el-input v-model="searchForm.name" placeholder="Please enter the project name" clearable />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="状态">
-            <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 100%">
+          <el-form-item label="Status">
+            <el-select v-model="searchForm.status" placeholder="Please select the status" clearable style="width: 100%">
               <el-option
                 v-for="item in statusOptions"
                 :key="item.value"
@@ -21,8 +21,13 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="成员">
-            <el-select v-model="searchForm.members" multiple placeholder="请选择成员" clearable style="width: 100%">
+          <el-form-item label="Members">
+            <el-select v-model="searchForm.members" multiple placeholder="Please select the members" clearable style="width: 100%"
+              filterable
+              :loading="membersLoading"
+              loading-text="Loading..."
+              remote
+              :remote-method="searchUsers">
               <el-option
                 v-for="item in memberOptions"
                 :key="item.value"
@@ -37,13 +42,13 @@
       <el-row>
         <el-col :span="24" style="text-align: right">
           <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon> 查询
+            <el-icon><Search /></el-icon> Search
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon> 重置
+            <el-icon><Refresh /></el-icon> Reset
           </el-button>
           <el-button type="primary" @click="handleCreate" v-if="isLeader">
-            <el-icon><Plus /></el-icon> 新建项目
+            <el-icon><Plus /></el-icon> New Project
           </el-button>
         </el-col>
       </el-row>
@@ -65,21 +70,25 @@
         padding: '12px 0'
       }"
     >
-      <el-table-column prop="name" label="项目名称" min-width="180">
+      <el-table-column prop="name" label="Project Name" min-width="180">
         <template #default="{ row }">
           <el-link type="primary" @click="handleViewDetail(row)">{{ row.name }}</el-link>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="描述" show-overflow-tooltip />
-      <el-table-column prop="leader" label="负责人" width="120" />
-      <el-table-column label="状态" width="100" align="center">
+      <el-table-column prop="description" label="Description" show-overflow-tooltip />
+      <el-table-column label="Leader" width="120">
         <template #default="{ row }">
-          <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'info'">
-            {{ row.status === 'ACTIVE' ? '进行中' : '已归档' }}
+          {{ row.creator ? row.creator.username : '' }}
+        </template>
+      </el-table-column>
+      <el-table-column label="Status" width="100" align="center">
+        <template #default="{ row }">
+          <el-tag :type="getStatusType(row.status)">
+            {{ getStatusLabel(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="成员" width="200">
+      <el-table-column label="Members" width="200">
         <template #default="{ row }">
           <el-tooltip
             :content="row.members.join(', ')"
@@ -92,26 +101,26 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="200" fixed="right" align="center">
+      <el-table-column prop="createTime" label="Create Time" width="180" />
+      <el-table-column label="Operations" width="200" fixed="right" align="center">
         <template #default="{ row }">
           <el-button-group class="operation-group">
-            <el-tooltip content="编辑" placement="top" v-if="isLeader">
+            <el-tooltip content="Edit" placement="top" v-if="isLeader">
               <el-button type="primary" link @click="handleProjectAction('edit', row)">
                 <el-icon><Edit /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="成员管理" placement="top" v-if="isLeader">
+            <el-tooltip content="Member Management" placement="top" v-if="isLeader">
               <el-button type="primary" link @click="handleMemberManagement(row)">
                 <el-icon><User /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="归档" placement="top" v-if="isLeader && row.status === 'ACTIVE'">
+            <el-tooltip content="Archive" placement="top" v-if="isLeader && row.status === 'ACTIVE'">
               <el-button type="warning" link @click="handleProjectAction('archive', row)">
                 <el-icon><Folder /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="删除" placement="top" v-if="isLeader && row.status === 'ARCHIVED'">
+            <el-tooltip content="Delete" placement="top" v-if="isLeader">
               <el-button type="danger" link @click="handleProjectAction('delete', row)">
                 <el-icon><Delete /></el-icon>
               </el-button>
@@ -137,7 +146,7 @@
     <!-- 成员管理对话框 -->
     <el-dialog
       v-model="memberDialogVisible"
-      title="成员管理"
+      title="Member Management"
       width="400px"
     >
       <div class="member-list">
@@ -150,7 +159,7 @@
             @click="handleRemoveMember(member)"
             v-if="isLeader"
           >
-            移除
+            Remove
           </el-button>
         </div>
       </div>
@@ -158,7 +167,7 @@
         <el-select
           v-model="newMember"
           filterable
-          placeholder="添加成员"
+          placeholder="Add Member"
           class="member-select"
         >
           <el-option
@@ -168,7 +177,7 @@
             :value="user.value"
           />
         </el-select>
-        <el-button type="primary" @click="handleAddMember">添加</el-button>
+        <el-button type="primary" @click="handleAddMember">Add</el-button>
       </div>
     </el-dialog>
   </div>
@@ -177,9 +186,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { useUserStore } from '../../stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { ProjectStatus } from '@/utils/status'
+import type { ProjectStatus } from '../../utils/status'
 import {
   Search,
   Refresh,
@@ -189,7 +198,7 @@ import {
   User,
   Folder
 } from '@element-plus/icons-vue'
-import type { Project } from '@/types/task'
+import type { Project } from '../../types/task'
 import {
   getProjectList,
   deleteProject,
@@ -197,7 +206,8 @@ import {
   addProjectMember,
   removeProjectMember,
   getProjectMembers
-} from '@/api/project'
+} from '../../api/project'
+import { getAllUsers } from '../../api/user'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -207,10 +217,26 @@ const loading = ref(false)
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
+// 成员加载状态
+const membersLoading = ref(false)
+
+// 项目列表数据
+const projectList = ref<Project[]>([])
+// 当前操作的项目
+const currentProject = ref<Project | null>(null)
 
 // 判断是否为项目负责人
 const isLeader = computed(() => {
-  return userStore.userInfo?.role === 1
+  // 全局管理员权限始终为true
+  if (userStore.userInfo?.role === 1) {
+    return true;
+  }
+  // 如果没有选择当前项目，则没有项目领导权限
+  if (!currentProject.value) return false;
+  
+  // 特定项目中，如果是创建者也拥有领导权限
+  return userStore.userInfo?.id !== undefined && 
+         Number(userStore.userInfo.id) === currentProject.value.createUser;
 })
 
 // 搜索表单
@@ -220,21 +246,16 @@ const searchForm = reactive({
   members: [] as string[]
 })
 
-// 项目列表数据
-const projectList = ref<Project[]>([])
-
 // 选项数据
 const statusOptions = [
-  { label: '进行中', value: 'ACTIVE' },
-  { label: '已归档', value: 'ARCHIVED' }
+  { label: '筹备中', value: 0 },
+  { label: '进行中', value: 1 },
+  { label: '已完成', value: 2 },
+  { label: '已归档', value: 3 }
 ]
 
-const memberOptions = [
-  { label: 'Tom', value: 'Tom' },
-  { label: 'John', value: 'John' },
-  { label: 'Amy', value: 'Amy' },
-  { label: 'Jack', value: 'Jack' }
-]
+// 修复类型定义
+const memberOptions = ref<{ value: string, label: string, avatar?: string }[]>([])
 
 // 成员管理相关
 const memberDialogVisible = ref(false)
@@ -244,7 +265,7 @@ const currentProjectId = ref('')
 
 // 可添加的用户列表
 const availableUsers = computed(() => {
-  return memberOptions.filter(
+  return memberOptions.value.filter(
     user => !currentProjectMembers.value.includes(user.value)
   )
 })
@@ -263,8 +284,14 @@ const filteredProjects = computed(() => {
 const fetchProjects = async () => {
   loading.value = true
   try {
-    const response = await getProjectList()
-    if (response.data && response.data.code === 200) {
+    const params = {
+      keyword: searchForm.name,
+      status: searchForm.status ? Number(searchForm.status) : undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value
+    }
+    const response = await getProjectList(params)
+    if (response.data && (response.data.code === 1 || response.data.code === 200)) {
       projectList.value = response.data.data.items
       total.value = response.data.data.total
     }
@@ -273,6 +300,75 @@ const fetchProjects = async () => {
     ElMessage.error('获取项目列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 获取用户列表
+const fetchUsers = async () => {
+  membersLoading.value = true
+  try {
+    const response = await getAllUsers({
+      role: '0,1', // 只查询角色为0和1的用户
+      page: 1,
+      pageSize: 50
+    })
+    
+    if (response && response.data && response.data.code === 1 && response.data.data) {
+      const { items } = response.data.data
+      if (Array.isArray(items)) {
+        memberOptions.value = items.map(user => ({
+          value: user.username,
+          label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+          avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
+        }))
+      } else {
+        memberOptions.value = []
+      }
+    } else {
+      memberOptions.value = []
+    }
+  } catch (error) {
+    memberOptions.value = []
+    ElMessage.error('获取用户列表失败')
+  } finally {
+    membersLoading.value = false
+  }
+}
+
+// 搜索用户
+const searchUsers = async (query: string) => {
+  if (query) {
+    membersLoading.value = true
+    try {
+      const response = await getAllUsers({
+        keyword: query,
+        role: '0,1',
+        page: 1,
+        pageSize: 20
+      })
+      
+      if (response && response.data && response.data.code === 1 && response.data.data) {
+        const { items } = response.data.data
+        if (Array.isArray(items)) {
+          memberOptions.value = items.map(user => ({
+            value: user.username,
+            label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+            avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
+          }))
+        } else {
+          memberOptions.value = []
+        }
+      } else {
+        memberOptions.value = []
+      }
+    } catch (error) {
+      memberOptions.value = []
+      ElMessage.error('搜索用户失败')
+    } finally {
+      membersLoading.value = false
+    }
+  } else {
+    fetchUsers()
   }
 }
 
@@ -299,8 +395,11 @@ const handleCreate = () => {
 
 // 处理项目操作
 const handleProjectAction = async (action: string, project: Project) => {
+  // 设置当前项目
+  currentProject.value = project;
+  
   if (!isLeader.value) {
-    ElMessage.warning('只有项目负责人可以执行此操作')
+    ElMessage.warning('只有项目负责人才能执行此操作')
     return
   }
 
@@ -313,14 +412,14 @@ const handleProjectAction = async (action: string, project: Project) => {
         const archiveResponse = await updateProject(project.id, { 
           status: 3 as ProjectStatus 
         })
-        if (archiveResponse.data.code === 200) {
+        if (archiveResponse.data.code === 1 || archiveResponse.data.code === 200) {
           ElMessage.success('项目已归档')
           fetchProjects()
         }
         break
       case 'delete':
         const deleteResponse = await deleteProject(project.id)
-        if (deleteResponse.data.code === 200) {
+        if (deleteResponse.data.code === 1 || deleteResponse.data.code === 200) {
           ElMessage.success('项目已删除')
           fetchProjects()
         }
@@ -336,13 +435,18 @@ const handleProjectAction = async (action: string, project: Project) => {
 
 // 处理查看详情
 const handleViewDetail = (row: Project) => {
-  router.push(`/project/detail/${row.id}`)
+  // 设置当前项目
+  currentProject.value = row;
+  router.push(`/project/edit/${row.id}`)
 }
 
 // 处理成员管理
 const handleMemberManagement = async (project: Project) => {
+  // 设置当前项目
+  currentProject.value = project;
+  
   if (!isLeader.value) {
-    ElMessage.warning('只有项目负责人可以管理成员')
+    ElMessage.warning('只有项目负责人才能管理成员')
     return
   }
   currentProjectId.value = project.id.toString()
@@ -353,8 +457,8 @@ const handleMemberManagement = async (project: Project) => {
       memberDialogVisible.value = true
     }
   } catch (error) {
-    console.error('获取项目成员失败:', error)
-    ElMessage.error('获取项目成员失败')
+    console.error('Failed to get project members:', error)
+    ElMessage.error('Failed to get project members')
   }
 }
 
@@ -367,18 +471,18 @@ const handleAddMember = async () => {
     if (response.data.code === 200) {
       currentProjectMembers.value.push(newMember.value)
       newMember.value = ''
-      ElMessage.success('添加成员成功')
+      ElMessage.success('Add member successfully')
     }
   } catch (error) {
-    console.error('添加成员失败:', error)
-    ElMessage.error('添加成员失败')
+    console.error('Failed to add member:', error)
+    ElMessage.error('Failed to add member')
   }
 }
 
 // 处理移除成员
 const handleRemoveMember = async (member: string) => {
   try {
-    await ElMessageBox.confirm('确定要移除该成员吗？', '提示', {
+    await ElMessageBox.confirm('Are you sure you want to remove this member?', 'Tips', {
       type: 'warning'
     })
     const response = await removeProjectMember(parseInt(currentProjectId.value), member)
@@ -387,12 +491,12 @@ const handleRemoveMember = async (member: string) => {
       if (index !== -1) {
         currentProjectMembers.value.splice(index, 1)
       }
-      ElMessage.success('移除成员成功')
+      ElMessage.success('Remove member successfully')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('移除成员失败:', error)
-      ElMessage.error('移除成员失败')
+      console.error('Failed to remove member:', error)
+      ElMessage.error('Failed to remove member')
     }
   }
 }
@@ -408,9 +512,27 @@ const handleCurrentChange = (val: number) => {
   fetchProjects()
 }
 
+// 获取状态标签
+const getStatusLabel = (status: number) => {
+  const option = statusOptions.find(opt => opt.value === status)
+  return option ? option.label : '未知'
+}
+
+// 获取状态标签类型
+const getStatusType = (status: number) => {
+  switch (status) {
+    case 0: return 'info'     // 筹备中
+    case 1: return 'success'  // 进行中
+    case 2: return 'warning'  // 已完成
+    case 3: return 'danger'   // 已归档
+    default: return 'info'
+  }
+}
+
 // 初始化
 onMounted(() => {
   fetchProjects()
+  fetchUsers()
 })
 </script>
 

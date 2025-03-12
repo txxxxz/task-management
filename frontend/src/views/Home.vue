@@ -5,12 +5,12 @@
         <el-card class="stat-card">
           <template #header>
             <div class="card-header">
-              <span>我的项目</span>
-              <el-button type="primary" link>查看全部</el-button>
+              <span>My Projects</span>
+              <el-button type="primary" link>View All</el-button>
             </div>
           </template>
           <div class="stat-value">{{ stats.projectCount }}</div>
-          <div class="stat-label">个进行中的项目</div>
+          <div class="stat-label">Projects in Progress</div>
         </el-card>
       </el-col>
       
@@ -18,12 +18,12 @@
         <el-card class="stat-card">
           <template #header>
             <div class="card-header">
-              <span>我的任务</span>
-              <el-button type="primary" link>查看全部</el-button>
+              <span>My Tasks</span>
+              <el-button type="primary" link>View All</el-button>
             </div>
           </template>
           <div class="stat-value">{{ stats.taskCount }}</div>
-          <div class="stat-label">个待处理的任务</div>
+          <div class="stat-label">Tasks Pending</div>
         </el-card>
       </el-col>
       
@@ -31,12 +31,12 @@
         <el-card class="stat-card">
           <template #header>
             <div class="card-header">
-              <span>已完成</span>
-              <el-button type="primary" link>查看全部</el-button>
+              <span>Completed</span>
+              <el-button type="primary" link>View All</el-button>
             </div>
           </template>
           <div class="stat-value">{{ stats.completedCount }}</div>
-          <div class="stat-label">个已完成的任务</div>
+          <div class="stat-label">Completed Tasks</div>
         </el-card>
       </el-col>
     </el-row>
@@ -44,14 +44,14 @@
     <el-card class="recent-tasks" style="margin-top: 20px;">
       <template #header>
         <div class="card-header">
-          <span>最近的任务</span>
+          <span>Recent Tasks</span>
         </div>
       </template>
       <el-table :data="recentTasks" style="width: 100%">
-        <el-table-column prop="name" label="任务名称" />
-        <el-table-column prop="project" label="所属项目" />
-        <el-table-column prop="deadline" label="截止日期" />
-        <el-table-column prop="status" label="状态">
+        <el-table-column prop="name" label="Task Name" />
+        <el-table-column prop="project" label="Project" />
+        <el-table-column prop="deadline" label="Deadline" />
+        <el-table-column prop="status" label="Status">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
               {{ getStatusText(row.status) }}
@@ -74,14 +74,14 @@ const stats = ref({
 
 const recentTasks = ref([
   {
-    name: '完成首页设计',
-    project: '任务管理系统',
+    name: 'Complete Homepage Design',
+    project: 'Task Management System',
     deadline: '2024-03-20',
     status: 'IN_PROGRESS'
   },
   {
-    name: '用户管理模块',
-    project: '任务管理系统',
+    name: 'User Management Module',
+    project: 'Task Management System',
     deadline: '2024-03-25',
     status: 'PENDING'
   }
@@ -98,9 +98,9 @@ const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'primar
 
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
-    'IN_PROGRESS': '进行中',
-    'COMPLETED': '已完成',
-    'PENDING': '待处理'
+    'IN_PROGRESS': 'In Progress',
+    'COMPLETED': 'Completed',
+    'PENDING': 'Pending'
   }
   return statusMap[status] || status
 }

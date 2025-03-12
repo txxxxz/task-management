@@ -99,7 +99,7 @@
           >
             <el-icon class="el-icon--upload"><upload-filled /></el-icon>
             <div class="el-upload__text">
-              点击或拖拽文件到此处上传
+              Click or drag files here to upload
             </div>
           </el-upload>
           
@@ -138,9 +138,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import { CircleCheckFilled, UploadFilled } from '@element-plus/icons-vue'
-import { createTask, getTaskDetail, updateTask } from '@/api/task'
-import { useUserStore } from '@/stores/user'
-import StepForm from '@/components/StepForm.vue'
+import { createTask, getTaskDetail, updateTask } from '../../api/task'
+import { useUserStore } from '../../stores/user'
+import StepForm from '../../components/StepForm.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -151,9 +151,9 @@ const currentStep = ref(0)
 
 // 步骤配置
 const steps = [
-  { title: '基本信息', component: 'BasicInfo' },
-  { title: '上传文件', component: 'UploadFiles' },
-  { title: '完成', component: 'Finish' }
+  { title: 'Basic Information', component: 'BasicInfo' },
+  { title: 'Upload Files', component: 'UploadFiles' },
+  { title: 'Finish', component: 'Finish' }
 ]
 
 type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
@@ -166,6 +166,7 @@ interface TaskForm {
   tags: string[]
   members: string[]
   attachments: any[]
+  projectId: string
 }
 
 // 表单数据
@@ -176,7 +177,8 @@ const taskForm = reactive<TaskForm>({
   dueTime: '',
   tags: [],
   members: [],
-  attachments: []
+  attachments: [],
+  projectId: ''
 })
 
 // 标签选项
@@ -278,7 +280,7 @@ const handleCreateAgain = () => {
 onMounted(() => {
   // 检查用户权限
   if (userStore.userInfo?.role !== 1) {
-    ElMessage.error('只有项目负责人可以创建任务')
+    ElMessage.error('Only project leaders can create tasks')
     router.push('/list')
   }
 })

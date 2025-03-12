@@ -39,7 +39,8 @@ export interface ProjectForm {
   endTime: string;
   members: string[];
   attachments?: string[];
-  status?: number;
+  status: number;
+  priority: number;
 }
 
 export interface Task {

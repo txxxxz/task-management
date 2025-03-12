@@ -1,7 +1,7 @@
 <template>
   <div class="register-container">
     <div class="register-box">
-      <h2 class="title">注册账号</h2>
+      <h2 class="title">Register account</h2>
       <el-form
         ref="registerFormRef"
         :model="registerForm"
@@ -13,7 +13,7 @@
           <el-input
             v-model="registerForm.username"
             prefix-icon="User"
-            placeholder="请输入用户名"
+            placeholder="Please enter username"
           />
         </el-form-item>
 
@@ -22,7 +22,7 @@
             v-model="registerForm.password"
             prefix-icon="Lock"
             type="password"
-            placeholder="请输入密码"
+            placeholder="Please enter password"
             show-password
           />
         </el-form-item>
@@ -32,7 +32,7 @@
             v-model="registerForm.confirmPassword"
             prefix-icon="Lock"
             type="password"
-            placeholder="请确认密码"
+            placeholder="Please confirm password"
             show-password
           />
         </el-form-item>
@@ -41,7 +41,7 @@
           <el-input
             v-model="registerForm.email"
             prefix-icon="Message"
-            placeholder="请输入邮箱"
+            placeholder="Please enter email"
           />
         </el-form-item>
 
@@ -49,27 +49,27 @@
           <el-input
             v-model="registerForm.phone"
             prefix-icon="Phone"
-            placeholder="请输入手机号"
+            placeholder="Please enter phone number"
           />
         </el-form-item>
 
         <el-form-item prop="role">
           <el-radio-group v-model="registerForm.role" class="role-select">
-            <el-radio :label="0">普通成员</el-radio>
-            <el-radio :label="1">项目负责人</el-radio>
-            <el-radio :label="2">管理员</el-radio>
+            <el-radio :label="0">Normal member</el-radio>
+            <el-radio :label="1">Project manager</el-radio>
+            <el-radio :label="2">Admin</el-radio>
           </el-radio-group>
         </el-form-item>
 
         <el-form-item>
           <el-button type="primary" class="register-button" @click="handleRegister">
-            注册
+            Register
           </el-button>
         </el-form-item>
 
         <div class="login-link">
-          已有账号？
-          <router-link to="/login">立即登录</router-link>
+          Already have an account?
+          <router-link to="/login">Login now</router-link>
         </div>
       </el-form>
     </div>
@@ -98,9 +98,9 @@ const registerForm = ref({
 
 const validatePass2 = (rule: any, value: string, callback: any) => {
   if (value === '') {
-    callback(new Error('请再次输入密码'))
+    callback(new Error('Please enter password again'))
   } else if (value !== registerForm.value.password) {
-    callback(new Error('两次输入密码不一致!'))
+    callback(new Error('The two passwords do not match!'))
   } else {
     callback()
   }
@@ -108,26 +108,26 @@ const validatePass2 = (rule: any, value: string, callback: any) => {
 
 const rules = reactive<FormRules>({
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter username', trigger: 'blur' },
+    { min: 3, max: 20, message: 'Length must be between 3 and 20 characters', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter password', trigger: 'blur' },
+    { min: 6, max: 20, message: 'Length must be between 6 and 20 characters', trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, validator: validatePass2, trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+    { required: true, message: 'Please enter email address', trigger: 'blur' },
+    { type: 'email', message: 'Please enter a valid email address', trigger: 'blur' }
   ],
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    { required: true, message: 'Please enter phone number', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: 'Please enter a valid phone number', trigger: 'blur' }
   ],
   role: [
-    { required: true, message: '请选择角色', trigger: 'change' }
+    { required: true, message: 'Please select role', trigger: 'change' }
   ]
 })
 
@@ -139,10 +139,10 @@ const handleRegister = async () => {
       try {
         const { confirmPassword, ...registerData } = registerForm.value
         await register(registerData)
-        ElMessage.success('注册成功')
+        ElMessage.success('Registration successful')
         router.push('/login')
       } catch (error: any) {
-        ElMessage.error(error.message || '注册失败')
+        ElMessage.error(error.message || 'Registration failed')
       }
     }
   })

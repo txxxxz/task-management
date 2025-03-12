@@ -3,7 +3,7 @@
     <el-aside width="200px" class="aside">
       <div class="logo">
         <img src="@/assets/logo.png" alt="Logo" />
-        <span>任务管理系统</span>
+        <span>Task Management System</span>
       </div>
       <el-menu
         :router="true"
@@ -12,11 +12,11 @@
       >
         <el-menu-item index="/">
           <el-icon><House /></el-icon>
-          <span>首页</span>
+          <span>Home</span>
         </el-menu-item>
         <el-menu-item index="/projects">
           <el-icon><Folder /></el-icon>
-          <span>项目管理</span>
+          <span>Project Management</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -34,10 +34,10 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item @click="$router.push('/profile')">
-                  个人信息
+                  Personal Information
                 </el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout">
-                  退出登录
+                  Logout
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -66,9 +66,9 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const handleLogout = () => {
-  ElMessageBox.confirm('确认退出登录吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm('Confirm logout?', 'Tips', {
+    confirmButtonText: 'Confirm',
+    cancelButtonText: 'Cancel',
     type: 'warning'
   }).then(() => {
     userStore.logout()
