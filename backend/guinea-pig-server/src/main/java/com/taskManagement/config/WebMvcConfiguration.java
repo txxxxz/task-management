@@ -47,7 +47,7 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
     public void addInterceptors(InterceptorRegistry registry) {
         log.info("开始注册自定义拦截器...");
         registry.addInterceptor(jwtTokenUserInterceptor)
-                .addPathPatterns("/auth/**", "/api/**")
+                .addPathPatterns("/auth/**", "/api/**", "/tags/**", "/projects/**", "/tasks/**")
                 .excludePathPatterns(
                     "/auth/login",
                     "/auth/register",
@@ -71,7 +71,6 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
                 .allowCredentials(false)  // 修改为false，因为我们不需要发送凭证
                 .maxAge(3600);
     }
-
     /**
      * 通过knife4j生成接口文档
      * @return

@@ -73,15 +73,21 @@ public class TaskServiceImpl implements TaskService {
         
         // 4. 持久化任务
         taskMapper.insert(task);
+        log.info("任务创建成功，ID: {}", task.getId());
         
         // 5. 处理标签关联
         if (taskDTO.getTagIds() != null && !taskDTO.getTagIds().isEmpty()) {
-            taskTagService.batchAddTaskTags(task.getId(), taskDTO.getTagIds());
+            log.info("开始处理任务标签关联，任务ID: {}, 标签IDs: {}", task.getId(), taskDTO.getTagIds());
+            int addedCount = taskTagService.batchAddTaskTags(task.getId(), taskDTO.getTagIds());
+            log.info("成功添加 {} 个标签关联到任务 {}", addedCount, task.getId());
         }
         
         // 6. 返回DTO
         TaskDTO resultDTO = new TaskDTO();
         BeanUtils.copyProperties(task, resultDTO);
+        
+        // 设置标签ID列表到返回DTO
+        resultDTO.setTagIds(taskDTO.getTagIds());
         
         return resultDTO;
     }
@@ -107,7 +113,7 @@ public class TaskServiceImpl implements TaskService {
         
         // 添加关键词查询条件
         if (StringUtils.isNotEmpty(keyword)) {
-            queryWrapper.like(Task::getTitle, keyword)
+            queryWrapper.like(Task::getName, keyword)
                     .or()
                     .like(Task::getDescription, keyword);
         }
@@ -174,7 +180,7 @@ public class TaskServiceImpl implements TaskService {
         TaskDTO taskDTO = new TaskDTO();
         BeanUtils.copyProperties(task, taskDTO);
         
-        // 3. 查询任务标签ID（标签颜色统一为浅蓝灰色#E0E7F1，由前端渲染）
+        // 3. 查询任务标签ID
         List<Long> tagIds = taskTagService.getTagIdsByTaskId(id);
         taskDTO.setTagIds(tagIds);
         
@@ -208,6 +214,7 @@ public class TaskServiceImpl implements TaskService {
         taskDTO.setId(id);
         Task updateTask = new Task();
         BeanUtils.copyProperties(taskDTO, updateTask);
+        
         updateTask.setUpdateUser(currentUserId);
         updateTask.setUpdateTime(LocalDateTime.now());
         
@@ -315,7 +322,7 @@ public class TaskServiceImpl implements TaskService {
         // 添加关键词查询条件
         if (StringUtils.isNotEmpty(keyword)) {
             queryWrapper.and(wrapper -> 
-                wrapper.like(Task::getTitle, keyword)
+                wrapper.like(Task::getName, keyword)
                     .or()
                     .like(Task::getDescription, keyword)
             );

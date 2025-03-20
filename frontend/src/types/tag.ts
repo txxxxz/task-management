@@ -6,9 +6,11 @@ export interface Tag {
   name: string;
   color: string;
   projectId?: string;
+  taskId?: string;
   description?: string;
   createTime?: string;
   updateTime?: string;
+  isNew?: boolean;
 }
 
 /**

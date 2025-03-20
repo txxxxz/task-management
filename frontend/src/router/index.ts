@@ -159,6 +159,35 @@ const routes: RouteRecordRaw[] = [
           requiresAuth: true,
           requiresAdmin: true
         }
+      },
+      {
+        path: 'tag/list',
+        name: 'TagList',
+        component: () => import('@/views/tag/list.vue'),
+        meta: {
+          title: '标签列表',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'tag/create',
+        name: 'TagCreate',
+        component: () => import('@/views/tag/form.vue'),
+        meta: {
+          title: '创建标签',
+          requiresAuth: true,
+          requiresLeader: true
+        }
+      },
+      {
+        path: 'tag/edit/:id',
+        name: 'TagEdit',
+        component: () => import('@/views/tag/form.vue'),
+        meta: {
+          title: '编辑标签',
+          requiresAuth: true,
+          requiresLeader: true
+        }
       }
     ]
   },

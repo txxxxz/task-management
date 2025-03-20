@@ -539,14 +539,23 @@ const handleSave = async () => {
 
   saveLoading.value = true
   try {
+    // 将优先级字符串转换为数字
+    const priorityMap: Record<string, number> = {
+      'CRITICAL': 4,
+      'HIGH': 3,
+      'MEDIUM': 2,
+      'LOW': 1
+    }
+    
     const updateData = {
       name: taskForm.name,
       description: taskForm.description,
       dueTime: taskForm.dueTime,
-      priority: taskForm.priority,
+      priority: priorityMap[taskForm.priority] || 2, // 默认为中等优先级
       members: taskForm.members,
       tags: taskForm.tags
     }
+    
     await updateTask(route.params.id as string, updateData)
     ElMessage.success('Save successfully')
   } catch (err: any) {

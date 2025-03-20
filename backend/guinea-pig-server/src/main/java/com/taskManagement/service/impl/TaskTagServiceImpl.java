@@ -53,23 +53,37 @@ public class TaskTagServiceImpl extends ServiceImpl<TaskTagRelMapper, TaskTag> i
     public int batchAddTaskTags(Long taskId, List<Long> tagIds) {
         log.info("批量添加任务标签关联: taskId={}, tagIds={}", taskId, tagIds);
         
+        // 参数校验
+        if (taskId == null) {
+            log.error("任务ID不能为空");
+            return 0;
+        }
+        
         if (tagIds == null || tagIds.isEmpty()) {
+            log.info("标签ID列表为空，无需添加关联");
             return 0;
         }
         
-        // 过滤掉已存在的关联
-        List<Long> existingTagIds = getExistingTagIds(taskId);
-        List<Long> newTagIds = tagIds.stream()
-                .filter(tagId -> !existingTagIds.contains(tagId))
-                .collect(Collectors.toList());
-        
-        if (newTagIds.isEmpty()) {
-            log.info("没有新的任务标签关联需要添加");
-            return 0;
+        try {
+            // 过滤掉已存在的关联
+            List<Long> existingTagIds = getExistingTagIds(taskId);
+            List<Long> newTagIds = tagIds.stream()
+                    .filter(tagId -> tagId != null && !existingTagIds.contains(tagId))
+                    .collect(Collectors.toList());
+            
+            if (newTagIds.isEmpty()) {
+                log.info("没有新的任务标签关联需要添加");
+                return 0;
+            }
+            
+            // 批量添加新的关联
+            int affectedRows = taskTagRelMapper.batchInsert(taskId, newTagIds);
+            log.info("成功批量添加 {} 个任务标签关联", affectedRows);
+            return affectedRows;
+        } catch (Exception e) {
+            log.error("批量添加任务标签关联失败: taskId={}, tagIds={}, 错误: {}", taskId, tagIds, e.getMessage(), e);
+            throw e; // 继续抛出异常，由事务管理
         }
-        
-        // 批量添加新的关联
-        return taskTagRelMapper.batchInsert(taskId, newTagIds);
     }
 
     @Override

@@ -34,6 +34,11 @@ public class TagDTO {
      * 标签描述
      */
     private String description;
+    
+    /**
+     * 标签颜色
+     */
+    private String color;
 
     /**
      * 创建时间
@@ -70,6 +75,7 @@ public class TagDTO {
         tagDTO.setName(tag.getName());
         tagDTO.setTaskIds(tag.getTaskIds());
         tagDTO.setDescription(tag.getDescription());
+        tagDTO.setColor(tag.getColor());
         tagDTO.setCreateTime(tag.getCreateTime());
         tagDTO.setUpdateTime(tag.getUpdateTime());
         tagDTO.setCreateUser(tag.getCreateUser());

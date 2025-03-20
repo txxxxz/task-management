@@ -11,18 +11,18 @@ import java.util.List;
 public class TaskDTO {
     private Long id;
     
-    @NotBlank(message = "任务标题不能为空")
-    private String title;
+    @NotBlank(message = "Task name cannot be empty")
+    private String name;
     
     private String description;
     
-    @NotNull(message = "所属项目不能为空")
+    @NotNull(message = "Project ID cannot be empty")
     private Long projectId;
     
-    @NotNull(message = "任务状态不能为空")
+    @NotNull(message = "Task status cannot be empty")
     private Integer status;
     
-    @NotNull(message = "任务优先级不能为空")
+    @NotNull(message = "Task priority cannot be empty")
     private Integer priority;
     
     private LocalDateTime startTime;

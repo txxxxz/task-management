@@ -6,7 +6,8 @@ import {
   User,
   Grid,
   Folder,
-  UserFilled
+  UserFilled,
+  PriceTag
 } from '@element-plus/icons-vue'
 
 export const menuItems = [
@@ -48,6 +49,18 @@ export const menuItems = [
     icon: List,
     path: '/list'
   },
+  {
+    title: '创建标签',
+    icon: Plus,
+    path: '/tag/create',
+    roles: ['1'] // 只有 leader 可见
+  },
+  {
+    title: '标签列表',
+    icon: PriceTag,
+    path: '/tag/list'
+  },
+  
   {
     title: '员工管理',
     icon: UserFilled,

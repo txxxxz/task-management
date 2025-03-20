@@ -151,17 +151,20 @@
                   v-for="tag in tagOptions"
                   :key="typeof tag === 'string' ? tag : tag.id"
                   :label="typeof tag === 'string' ? tag : tag.name"
-                  :value="tag"
+                  :value="typeof tag === 'string' ? tag : tag.id"
                 >
                   <div class="tag-option">
                     <el-tag 
-                      :color="typeof tag === 'object' && tag.color ? tag.color : ''" 
-                      size="small" 
-                      effect="plain"
+                      :style="{
+                        backgroundColor: typeof tag === 'object' && tag.color ? tag.color + '22' : '#409EFF22',
+                        borderColor: typeof tag === 'object' && tag.color ? tag.color : '#409EFF',
+                        color: typeof tag === 'object' && tag.color ? tag.color : '#409EFF'
+                      }"
+                      size="small"
                     >
-                      {{ typeof tag === 'string' ? tag : tag.name }}
+                      <span class="tag-text">{{ typeof tag === 'string' ? tag : tag.name }}</span>
                     </el-tag>
-                    <span v-if="typeof tag === 'object' && tag.id === 'new'" class="tag-new-hint">
+                    <span v-if="typeof tag === 'object' && tag.isNew" class="tag-new-hint">
                       (新建)
                     </span>
                   </div>
@@ -219,7 +222,7 @@
                 </el-option>
                 <template #empty>
                   <div class="empty-members">
-                    <p>未找到成员，请尝试其他关键词</p>
+                    <p>cannot find users, try another keyword</p>
                   </div>
                 </template>
               </el-select>
@@ -306,7 +309,7 @@
               <el-descriptions-item label="开始时间">{{ taskForm.startTime || '未设置' }}</el-descriptions-item>
               <el-descriptions-item label="截止时间">{{ taskForm.dueTime }}</el-descriptions-item>
               <el-descriptions-item label="标签">
-                {{ taskForm.tags.join(', ') || '无' }}
+                {{ formatTagsDisplay }}
               </el-descriptions-item>
               <el-descriptions-item label="任务成员">
                 {{ taskForm.members.join(', ') || '无' }}
@@ -375,7 +378,7 @@ const taskForm = reactive({
   status: 0,
   startTime: '',
   dueTime: '',
-  tags: [] as string[],
+  tags: [] as any[],
   members: [] as string[],
   attachments: [] as any[],
   projectId: ''
@@ -708,13 +711,13 @@ const handleSubmit = async () => {
       await updateTask(taskId, submitData)
       ElMessage.success('更新成功')
       // 更新成功后跳转到任务列表
-      router.push('/task/list')
+      router.push('/list')
     } else {
       // 创建任务
       await createTask(submitData)
       ElMessage.success('创建成功')
       // 创建成功后跳转到任务列表
-      router.push('/task/list')
+      router.push('/list')
     }
   } catch (error: any) {
     console.error('操作失败:', error)
@@ -725,49 +728,72 @@ const handleSubmit = async () => {
 }
 
 // 处理标签，将新创建的标签保存到数据库
-const processTags = async (tags: (Tag | string)[], projectId?: string): Promise<string[]> => {
+const processTags = async (tags: (string)[], projectId?: string): Promise<string[]> => {
   if (!tags || !Array.isArray(tags)) {
     return []
   }
   
   const processedTags: string[] = []
   
-  for (const tag of tags) {
-    if (typeof tag === 'string') {
-      // 创建新标签
-      try {
-        const response = await createTag({
-          name: tag,
-          color: getRandomColor(),
-          projectId
-        })
-        if (response.data && response.data.data && response.data.data.id) {
-          processedTags.push(response.data.data.id)
+  for (const tagId of tags) {
+    if (typeof tagId === 'string') {
+      // 检查是否是新建标签（带有特殊前缀）
+      if (tagId.startsWith('new-')) {
+        // 查找对应的标签对象
+        const newTagObj = tagOptions.value.find(t => t.id === tagId);
+        if (newTagObj && newTagObj.isNew) {
+          // 解析标签名称，去掉"创建: "前缀
+          const tagName = newTagObj.name.replace('创建: ', '');
+          const tagColor = newTagObj.color || getRandomColor();
+          
+          try {
+            const response = await createTag({
+              name: tagName,
+              color: tagColor,
+              projectId
+            });
+            console.log('创建新标签响应:', response);
+            
+            if (response.data && response.data.data && response.data.data.id) {
+              processedTags.push(response.data.data.id);
+              
+              // 添加到标签选项中，以便下次直接选择
+              // 同时更新当前列表中的这个临时标签
+              const newTag = {
+                id: response.data.data.id,
+                name: tagName,
+                color: tagColor,
+                projectId
+              };
+              
+              // 查找临时标签在选项中的位置
+              const tempIndex = tagOptions.value.findIndex(t => t.id === tagId);
+              if (tempIndex !== -1) {
+                // 替换临时标签
+                tagOptions.value.splice(tempIndex, 1, newTag);
+                
+                // 同时更新taskForm.tags中的ID值
+                const formIndex = taskForm.tags.indexOf(tagId);
+                if (formIndex !== -1) {
+                  taskForm.tags.splice(formIndex, 1, response.data.data.id);
+                }
+              } else {
+                // 如果找不到临时标签，就添加到列表末尾
+                tagOptions.value.push(newTag);
+              }
+            }
+          } catch (error) {
+            console.error('创建标签失败:', error);
+          }
         }
-      } catch (error) {
-        console.error('创建标签失败:', error)
+      } else {
+        // 使用现有标签ID
+        processedTags.push(tagId);
       }
-    } else if (tag.id === 'new') {
-      // 创建新标签（从搜索结果中）
-      const tagName = tag.name.replace('创建: ', '')
-      try {
-        const response = await createTag({
-          name: tagName,
-          color: getRandomColor(),
-          projectId
-        })
-        if (response.data && response.data.data && response.data.data.id) {
-          processedTags.push(response.data.data.id)
-        }
-      } catch (error) {
-        console.error('创建标签失败:', error)
-      }
-    } else {
-      // 使用现有标签ID
-      processedTags.push(tag.id)
     }
   }
   
+  console.log('处理后的标签IDs:', processedTags);
   return processedTags
 }
 
@@ -801,7 +827,7 @@ const getProjectLabel = (projectId: string) => {
 
 // 查看任务
 const handleCheckTask = () => {
-  router.push('/task/list')
+  router.push('/list')
 }
 
 // 继续创建
@@ -836,7 +862,27 @@ const fetchTaskDetail = async (taskId: string) => {
       taskForm.status = typeof taskData.status === 'number' ? taskData.status : 0 // 默认待办状态
       taskForm.startTime = taskData.startTime || ''
       taskForm.dueTime = taskData.deadline || ''
-      taskForm.tags = taskData.tags || []
+      
+      // 特殊处理标签数据
+      if (taskData.tags && Array.isArray(taskData.tags)) {
+        // 如果返回的是标签对象数组，则直接使用
+        if (taskData.tags.length > 0 && typeof taskData.tags[0] === 'object') {
+          taskForm.tags = taskData.tags.map((tag: any) => ({
+            id: tag.id,
+            name: tag.name,
+            color: tag.color || '#409EFF',
+            projectId: tag.projectId
+          }));
+        } else {
+          // 如果只是ID数组，则需要加载标签详细信息
+          taskForm.tags = taskData.tags;
+          // 尝试加载标签详情
+          await fetchTags(taskData.projectId);
+        }
+      } else {
+        taskForm.tags = [];
+      }
+      
       taskForm.members = taskData.members || []
       taskForm.projectId = taskData.projectId
       taskForm.attachments = taskData.attachments || []
@@ -863,22 +909,80 @@ const searchTagsLocal = async (query: string) => {
   tagsLoading.value = true
   try {
     const response = await searchTags(query, taskForm.projectId ? Number(taskForm.projectId) : undefined)
-    if (response.data && response.data.data && Array.isArray(response.data.data)) {
-      tagOptions.value = response.data.data
-      
-      // 如果没有找到匹配的标签，允许创建新标签
-      if (tagOptions.value.length === 0) {
-        tagOptions.value = [{ id: 'new', name: `创建: ${query}`, color: '#409EFF', projectId: taskForm.projectId }]
+    console.log('搜索标签响应:', response)
+    
+    if (response.data) {
+      if (response.data.code === 1) {
+        const tagsData = response.data.data;
+        if (tagsData && Array.isArray(tagsData)) {
+          // 处理标签数据，确保color字段存在
+          tagOptions.value = tagsData.map(tag => ({
+            id: tag.id,
+            name: tag.name,
+            color: tag.color || '#409EFF',
+            projectId: tag.projectId
+          }));
+          
+          // 如果没有找到匹配的标签，允许创建新标签
+          // 使用特殊标识的ID，在显示时会显示为"创建：xxx"，但value是一个ID格式
+          if (tagOptions.value.length === 0) {
+            // 创建一个临时ID，用于新建标签
+            const newTagId = `new-${Date.now()}`;
+            tagOptions.value = [{ 
+              id: newTagId,
+              name: `创建: ${query}`, 
+              color: '#409EFF', 
+              projectId: taskForm.projectId,
+              isNew: true // 添加标记，表示这是新建标签
+            }];
+          }
+          
+          console.log('搜索标签结果处理完成:', tagOptions.value);
+        } else {
+          console.warn('搜索标签数据格式异常:', tagsData);
+          const newTagId = `new-${Date.now()}`;
+          tagOptions.value = [{ 
+            id: newTagId,
+            name: `创建: ${query}`, 
+            color: '#409EFF', 
+            projectId: taskForm.projectId,
+            isNew: true
+          }];
+        }
+      } else {
+        console.warn('搜索标签失败:', response.data.message || '未知错误');
+        const newTagId = `new-${Date.now()}`;
+        tagOptions.value = [{ 
+          id: newTagId,
+          name: `创建: ${query}`, 
+          color: '#409EFF', 
+          projectId: taskForm.projectId,
+          isNew: true
+        }];
       }
     } else {
-      console.warn('搜索标签响应格式不正确:', response)
-      tagOptions.value = [{ id: 'new', name: `创建: ${query}`, color: '#409EFF', projectId: taskForm.projectId }]
+      console.warn('搜索标签响应异常:', response);
+      const newTagId = `new-${Date.now()}`;
+      tagOptions.value = [{ 
+        id: newTagId,
+        name: `创建: ${query}`, 
+        color: '#409EFF', 
+        projectId: taskForm.projectId,
+        isNew: true
+      }];
     }
   } catch (error) {
-    console.error('搜索标签失败:', error)
-    tagOptions.value = [{ id: 'new', name: `创建: ${query}`, color: '#409EFF', projectId: taskForm.projectId }]
+    console.error('搜索标签失败:', error);
+    const newTagId = `new-${Date.now()}`;
+    tagOptions.value = [{ 
+      id: newTagId,
+      name: `创建: ${query}`, 
+      color: '#409EFF', 
+      projectId: taskForm.projectId,
+      isNew: true
+    }];
   } finally {
-    tagsLoading.value = false
+    tagsLoading.value = false;
   }
 }
 
@@ -888,25 +992,71 @@ const fetchTags = async (projectId?: string) => {
   tagsLoading.value = true
   try {
     const response = await getTagList({ projectId })
-    if (response.data && response.data.data && Array.isArray(response.data.data.items)) {
-      tagOptions.value = response.data.data.items
+    console.log('标签列表响应:', response)
+    
+    // 更完善的响应处理
+    if (response.data) {
+      if (response.data.code === 1) {
+        // 直接接收后端返回的标签数据
+        const tagsData = response.data.data;
+        if (tagsData && tagsData.items && Array.isArray(tagsData.items)) {
+          // 处理标签数据格式，确保color字段存在
+          tagOptions.value = tagsData.items.map(tag => ({
+            id: tag.id,
+            name: tag.name,
+            color: tag.color || '#409EFF', // 如果后端未返回颜色，使用默认颜色
+            projectId: tag.projectId
+          }));
+          console.log('标签列表处理完成:', tagOptions.value);
+        } else if (tagsData && Array.isArray(tagsData)) {
+          // 处理可能的直接数组返回
+          tagOptions.value = tagsData.map(tag => ({
+            id: tag.id,
+            name: tag.name,
+            color: tag.color || '#409EFF',
+            projectId: tag.projectId
+          }));
+          console.log('标签列表处理完成(数组格式):', tagOptions.value);
+        } else {
+          console.warn('标签数据格式异常:', tagsData);
+          tagOptions.value = [];
+        }
+      } else {
+        console.warn('获取标签列表失败:', response.data.message || '未知错误');
+        tagOptions.value = [];
+      }
     } else {
-      console.warn('获取标签列表响应格式不正确:', response)
-      tagOptions.value = []
+      console.warn('获取标签列表响应异常:', response);
+      tagOptions.value = [];
     }
   } catch (error) {
-    console.error('获取标签列表失败:', error)
-    tagOptions.value = []
+    console.error('获取标签列表失败:', error);
+    tagOptions.value = [];
   } finally {
-    tagsLoading.value = false
+    tagsLoading.value = false;
   }
 }
 
+// 获取标签选项的颜色，用于展示
+const getTagColor = (tagId: string) => {
+  // 如果是新建标签（以new-开头）或者是现有标签ID，尝试从标签选项中查找
+  const tagObj = tagOptions.value.find(t => t.id === tagId);
+  return tagObj?.color || '#409EFF';
+};
+
+// 获取标签选项的名称，用于展示
+const getTagName = (tagId: string) => {
+  const tagObj = tagOptions.value.find(t => t.id === tagId);
+  return tagObj?.name || tagId;
+};
+
 // 处理标签下拉框的显示状态
 const handleTagSelectVisibleChange = (visible: boolean) => {
+  console.log('标签选择框显示状态变化:', visible);
   if (visible) {
     // 当标签下拉框显示时，加载标签选项
-    fetchTags(taskForm.projectId)
+    console.log('标签选择框显示，正在加载标签选项...');
+    fetchTags(taskForm.projectId);
   }
 }
 
@@ -919,11 +1069,34 @@ watch(() => taskForm.projectId, (newVal) => {
   }
 })
 
+// 处理标签关闭
+const handleTagClose = (tag: any) => {
+  const index = taskForm.tags.findIndex((item: any) => 
+    typeof item === 'string' 
+      ? item === tag 
+      : typeof tag === 'string'
+        ? item.name === tag
+        : item.id === tag.id
+  );
+  if (index !== -1) {
+    taskForm.tags.splice(index, 1);
+  }
+}
+
+// 在任务摘要中格式化标签显示
+const formatTagsDisplay = computed(() => {
+  if (!taskForm.tags || taskForm.tags.length === 0) {
+    return '无';
+  }
+  
+  return taskForm.tags.map(tagId => getTagName(tagId)).join(', ');
+})
+
 onMounted(async () => {
   // 检查用户权限
   if (userStore.userInfo?.role !== 1) {
     ElMessage.error('只有项目负责人才能创建或编辑任务')
-    router.push('/task/list')
+    router.push('/list')
     return
   }
 
@@ -933,9 +1106,10 @@ onMounted(async () => {
   // 获取用户列表
   await fetchUsers()
   
-  // 获取标签列表
+  // 初始化获取所有标签(不指定项目ID)
   await fetchTags()
-
+  
+  // 处理路由参数
   const taskId = route.params.id as string
   if (taskId) {
     await fetchTaskDetail(taskId)
@@ -1121,14 +1295,27 @@ onMounted(async () => {
 }
 
 :deep(.el-select .el-select__tags .el-tag) {
-  background-color: #ecf5ff;
-  border-color: #d9ecff;
-  color: #409eff;
+  margin: 2px 4px;
+  border-radius: 4px;
+  padding: 0 8px;
+  height: 24px;
+  line-height: 24px;
+  transition: all 0.3s;
 }
 
-:deep(.el-select .el-input__inner) {
-  height: auto;
-  min-height: 40px;
+:deep(.el-select .el-select__tags .el-tag:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-select .el-select__tags .el-tag .el-tag__close) {
+  color: inherit;
+  opacity: 0.8;
+}
+
+:deep(.el-select .el-select__tags .el-tag .el-tag__close:hover) {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: inherit;
 }
 
 .task-summary {
@@ -1146,12 +1333,39 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  padding: 5px 0;
+}
+
+.tag-option .el-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  margin-right: 5px;
+  border-radius: 4px;
+  max-width: calc(100% - 70px);
+  min-width: 50px;
+  flex: 0 1 auto;
+}
+
+.tag-option .el-tag span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:deep(.el-select__tags .el-tag--info) {
+  background-color: var(--el-color-primary-light-9) !important;
+  border-color: var(--el-color-primary-light-8) !important;
+  color: var(--el-color-primary) !important;
 }
 
 .tag-new-hint {
   font-size: 12px;
   color: #909399;
   margin-left: 8px;
+  white-space: nowrap;
 }
 
 .empty-tags {
@@ -1159,5 +1373,64 @@ onMounted(async () => {
   text-align: center;
   color: #909399;
   font-size: 14px;
+}
+
+:deep(.el-select-dropdown__item:hover) {
+  background-color: #f5f7fa;
+}
+
+:deep(.el-select__tags .el-tag) {
+  margin: 2px 4px;
+  padding: 0 8px;
+  height: 24px;
+  line-height: 24px;
+  border-radius: 4px;
+  max-width: calc(100% - 20px);
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--el-color-primary-light-9) !important;
+  border-color: var(--el-color-primary-light-8) !important;
+  color: var(--el-color-primary) !important;
+}
+
+:deep(.el-select__tags .el-tag:hover) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-select__tags .el-tag .el-tag__close) {
+  color: inherit;
+  opacity: 0.8;
+}
+
+:deep(.el-select__tags .el-tag .el-tag__close:hover) {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: inherit;
+}
+
+:deep(.el-select__tags .el-tag span) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+:deep(.el-select .el-input__inner) {
+  height: auto;
+  min-height: 40px;
+}
+
+:deep(.el-select__tags) {
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+
+.tag-option .el-tag .tag-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  max-width: 150px;
 }
 </style> 

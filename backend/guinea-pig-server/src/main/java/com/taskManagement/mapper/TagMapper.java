@@ -20,7 +20,7 @@ public interface TagMapper extends BaseMapper<Tag> {
      * @param projectId 项目ID
      * @return 标签列表
      */
-    @Select("SELECT DISTINCT t.* FROM tb_task_tag t " +
+    @Select("SELECT DISTINCT t.* FROM tb_tag t " +
             "JOIN tb_task_tag_rel r ON t.id = r.tag_id " +
             "JOIN tb_task task ON r.task_id = task.id " +
             "WHERE task.project_id = #{projectId}")
@@ -33,7 +33,7 @@ public interface TagMapper extends BaseMapper<Tag> {
      * @param projectId 项目ID
      * @return 标签列表
      */
-    @Select("SELECT DISTINCT t.* FROM tb_task_tag t " +
+    @Select("SELECT DISTINCT t.* FROM tb_tag t " +
             "JOIN tb_task_tag_rel r ON t.id = r.tag_id " +
             "JOIN tb_task task ON r.task_id = task.id " +
             "WHERE t.name LIKE CONCAT('%', #{keyword}, '%') " +
@@ -45,7 +45,7 @@ public interface TagMapper extends BaseMapper<Tag> {
      * @param keyword 关键词
      * @return 标签列表
      */
-    @Select("SELECT * FROM tb_task_tag WHERE name LIKE CONCAT('%', #{keyword}, '%')")
+    @Select("SELECT * FROM tb_tag WHERE name LIKE CONCAT('%', #{keyword}, '%')")
     List<Tag> selectByKeyword(@Param("keyword") String keyword);
     
     /**
@@ -53,7 +53,7 @@ public interface TagMapper extends BaseMapper<Tag> {
      * @param taskId 任务ID
      * @return 标签列表
      */
-    @Select("SELECT t.* FROM tb_task_tag t " +
+    @Select("SELECT t.* FROM tb_tag t " +
             "JOIN tb_task_tag_rel r ON t.id = r.tag_id " +
             "WHERE r.task_id = #{taskId}")
     List<Tag> selectByTaskId(@Param("taskId") Long taskId);

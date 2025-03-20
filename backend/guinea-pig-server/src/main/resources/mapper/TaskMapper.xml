@@ -5,7 +5,7 @@
     <!-- 任务详情视图结果映射 -->
     <resultMap id="TaskVOMap" type="com.taskManagement.vo.TaskVO">
         <id column="id" property="id"/>
-        <result column="title" property="title"/>
+        <result column="name" property="name"/>
         <result column="description" property="description"/>
         <result column="project_id" property="projectId"/>
         <result column="status" property="status"/>
@@ -58,7 +58,7 @@
         FROM tb_task t
         LEFT JOIN tb_project p ON t.project_id = p.id
         LEFT JOIN tb_user u ON t.create_user = u.id
-        LEFT JOIN tb_task_tag tt ON t.id = tt.task_id
+        LEFT JOIN tb_task_tag_rel tt ON t.id = tt.task_id
         LEFT JOIN tb_tag tag ON tt.tag_id = tag.id
         LEFT JOIN tb_task_member tm ON t.id = tm.task_id
         LEFT JOIN tb_user u2 ON tm.user_id = u2.id
@@ -77,14 +77,14 @@
         FROM tb_task t
         LEFT JOIN tb_project p ON t.project_id = p.id
         LEFT JOIN tb_user u ON t.create_user = u.id
-        LEFT JOIN tb_task_tag tt ON t.id = tt.task_id
+        LEFT JOIN tb_task_tag_rel tt ON t.id = tt.task_id
         LEFT JOIN tb_tag tag ON tt.tag_id = tag.id
         <where>
             <if test="projectId != null">
                 AND t.project_id = #{projectId}
             </if>
             <if test="keyword != null and keyword != ''">
-                AND (t.title LIKE CONCAT('%', #{keyword}, '%') OR t.description LIKE CONCAT('%', #{keyword}, '%'))
+                AND (t.name LIKE CONCAT('%', #{keyword}, '%') OR t.description LIKE CONCAT('%', #{keyword}, '%'))
             </if>
             <if test="status != null">
                 AND t.status = #{status}

@@ -47,8 +47,21 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         
         // 设置创建者和更新者
         Long userId = BaseContext.getCurrentId();
+        log.info("当前用户ID: {}", userId);
+        
+        // 如果 userId 为 null，使用默认值
+        if (userId == null) {
+            log.warn("获取当前用户ID为空，使用默认值1");
+            userId = 1L; // 默认使用 ID 为 1 的用户（通常是管理员）
+        }
+        
         tag.setCreateUser(userId);
         tag.setUpdateUser(userId);
+        
+        // 如果颜色为空，设置默认颜色
+        if (tag.getColor() == null || tag.getColor().isEmpty()) {
+            tag.setColor("#409EFF"); // 默认蓝色
+        }
         
         // 保存标签
         save(tag);

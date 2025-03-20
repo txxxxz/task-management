@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("tb_task_tag")
+@TableName("tb_tag")
 public class Tag extends BaseEntity {
     private String name;
     
@@ -17,8 +17,14 @@ public class Tag extends BaseEntity {
     private List<Long> taskIds;
     
     private String description;
+    
+    private String color;
+    
     private LocalDateTime createTime;
+    
     private LocalDateTime updateTime;
+    
     private Long createUser;
+    
     private Long updateUser;
 } 

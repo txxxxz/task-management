@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("tb_task")
 public class Task extends BaseEntity {
-    private String title;
+    private String name;
     private String description;
     private Long projectId;
     private Integer status;          // 0-待处理，1-进行中，2-已完成，3-已取消

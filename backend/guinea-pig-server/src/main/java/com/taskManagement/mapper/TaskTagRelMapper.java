@@ -3,6 +3,7 @@ package com.taskManagement.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.taskManagement.entity.TaskTag;
 import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -53,14 +54,11 @@ public interface TaskTagRelMapper extends BaseMapper<TaskTag> {
      * @param tagIds 标签ID列表
      * @return 影响行数
      */
-    default int batchInsert(Long taskId, List<Long> tagIds) {
-        int count = 0;
-        for (Long tagId : tagIds) {
-            TaskTag taskTag = new TaskTag();
-            taskTag.setTaskId(taskId);
-            taskTag.setTagId(tagId);
-            count += insert(taskTag);
-        }
-        return count;
-    }
+    @Insert("<script>" +
+            "INSERT INTO tb_task_tag_rel(task_id, tag_id, create_time) VALUES " +
+            "<foreach collection='tagIds' item='tagId' separator=','>" +
+            "(#{taskId}, #{tagId}, NOW())" +
+            "</foreach>" +
+            "</script>")
+    int batchInsert(@Param("taskId") Long taskId, @Param("tagIds") List<Long> tagIds);
 } 
