@@ -4,10 +4,7 @@ import type { TaskDetail, CreateTaskParams, UpdateTaskParams, TaskQueryParams } 
 
 // 获取任务列表
 export function getTaskList(params?: TaskQueryParams) {
-  return request<{
-    total: number
-    items: TaskDetail[]
-  }>({
+  return request({
     url: '/api/tasks',
     method: 'get',
     params

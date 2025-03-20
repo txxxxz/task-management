@@ -6,8 +6,8 @@
         <!-- 第一行：任务编号、任务名称 -->
         <div class="filter-row">
           <div class="filter-item-half">
-            <el-form-item label="Number">
-              <el-input v-model="filterForm.number" placeholder="Please enter task number" clearable />
+            <el-form-item label="Task ID">
+              <el-input v-model="filterForm.number" placeholder="Please enter task ID" clearable />
             </el-form-item>
           </div>
           <div class="filter-item-half">
@@ -49,25 +49,75 @@
         <div class="filter-row">
           <div class="filter-item-half">
             <el-form-item label="Members">
-              <el-select v-model="filterForm.members" placeholder="Please select members" clearable multiple style="width: 100%">
+              <el-select
+                v-model="filterForm.members"
+                placeholder="Please select members"
+                clearable
+                multiple
+                filterable
+                remote
+                :remote-method="handleSearchMembers"
+                :loading="membersLoading"
+                @visible-change="onMemberSelectOpen"
+                style="width: 100%"
+              >
+                <template #prefix>
+                  <el-icon v-if="membersLoading"><Loading /></el-icon>
+                </template>
+                
                 <el-option
                   v-for="item in memberOptions"
                   :key="item.value"
                   :label="item.label"
                   :value="item.value"
-                />
+                >
+                  <div class="member-option">
+                    <el-avatar 
+                      :size="24" 
+                      :src="item.avatar" 
+                      class="member-avatar"
+                    >
+                      {{ item.label.charAt(0).toUpperCase() }}
+                    </el-avatar>
+                    <span class="member-name">{{ item.label }}</span>
+                  </div>
+                </el-option>
+                <template #empty>
+                  <div class="empty-members">
+                    <p>未找到成员，请尝试其他关键词</p>
+                  </div>
+                </template>
               </el-select>
             </el-form-item>
           </div>
           <div class="filter-item-half">
             <el-form-item label="Tags">
-              <el-select v-model="filterForm.tags" placeholder="Please select tags" clearable multiple style="width: 100%">
+              <el-select
+                v-model="filterForm.tags"
+                placeholder="Please select tags"
+                clearable
+                multiple
+                filterable
+                remote
+                :remote-method="handleSearchTags"
+                :loading="tagsLoading"
+                @visible-change="onTagSelectOpen"
+                style="width: 100%"
+              >
                 <el-option
                   v-for="item in tagOptions"
                   :key="item.value"
                   :label="item.label"
                   :value="item.value"
-                />
+                >
+                  <div class="tag-option">
+                    <span 
+                      class="color-dot" 
+                      :style="{ backgroundColor: item.color || '#409EFF' }"
+                    ></span>
+                    {{ item.label }}
+                  </div>
+                </el-option>
               </el-select>
             </el-form-item>
           </div>
@@ -123,7 +173,6 @@
         <el-button type="primary" @click="handleNewTask">
           <el-icon><Plus /></el-icon> New Task
         </el-button>
-        <el-button @click="handleImportBatch">Import Batch</el-button>
       </div>
       <div class="right-buttons">
         <el-button @click="handleDownload">
@@ -139,26 +188,61 @@
       border
       stripe
       v-loading="loading"
+      :header-cell-style="{background:'#f5f7fa', color:'#606266', fontWeight: '600', height: '44px'}"
+      :cell-style="{padding: '4px'}"
+      :row-style="{height: '46px'}"
     >
       <template #empty>
-        <div style="padding: 30px; text-align: center;">
-          <el-empty description="No task data" />
-          <el-button style="margin-top: 20px;" type="primary" @click="handleNewTask">Create Task</el-button>
+        <div class="empty-table">
+          <el-empty description="暂无任务数据" :image-size="100">
+            <template #image>
+              <img src="https://cdn.jsdelivr.net/npm/@element-plus/icons-svg/dist/svg/tickets.svg" 
+                   style="width: 80px; height: 80px; opacity: 0.1;" />
+            </template>
+            <template #description>
+              <p>暂无任务数据</p>
+              <p class="empty-tip">您可以点击下方按钮创建新任务</p>
+            </template>
+            <el-button type="primary" @click="handleNewTask">创建任务</el-button>
+          </el-empty>
         </div>
       </template>
-      <el-table-column prop="number" label="Number" width="80" />
-      <el-table-column prop="name" label="Task Name" min-width="200">
+      <el-table-column label="序号" width="60" align="center">
+        <template #default="scope">
+          <span class="index-cell">{{ getRowIndex(scope.$index) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="name" label="任务名称" min-width="160" align="left">
         <template #default="{ row }">
           <el-link 
             type="primary" 
             :underline="false"
             @click="handleViewDetail(row)"
+            class="task-name-link"
           >
-            {{ row.name || row.title || 'Unnamed Task' }}
+            {{ row.name || row.title || '未命名任务' }}
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column prop="priority" label="Priority" width="100">
+      <el-table-column prop="projectName" label="所属项目" min-width="120" align="center">
+        <template #default="{ row }">
+          <el-tooltip
+            :content="formatProjectName(row.projectName)"
+            placement="top"
+            :disabled="!row.projectName || row.projectName.length < 8"
+          >
+            <el-tag
+              type="info"
+              effect="plain"
+              size="small"
+              class="project-tag"
+            >
+              {{ formatProjectName(row.projectName) }}
+            </el-tag>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+      <el-table-column prop="priority" label="优先级" width="100" align="center">
         <template #default="{ row }">
           <el-tag
             :type="getPriorityType(row.priority)"
@@ -169,7 +253,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="Status" width="100">
+      <el-table-column prop="status" label="状态" width="100" align="center">
         <template #default="{ row }">
           <el-tag
             :type="getStatusType(row.status)"
@@ -180,49 +264,52 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="Create Time" width="160">
+      <el-table-column prop="startTime" label="开始时间" width="160">
         <template #default="{ row }">
-          {{ formatDate(row.createTime) }}
+          {{ formatDate(row.startTime) }}
         </template>
       </el-table-column>
-      <el-table-column prop="deadline" label="Deadline" width="160">
+      <el-table-column prop="deadline" label="截止时间" width="160">
         <template #default="{ row }">
           {{ formatDate(row.deadline || row.dueTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="Action" width="180" fixed="right" align="center">
+      <el-table-column label="操作" width="120" fixed="right" align="center">
         <template #default="{ row }">
-          <el-button-group>
-            <el-tooltip content="View Details" placement="top">
+          <div class="action-buttons">
+            <el-tooltip content="查看详情" placement="top">
               <el-button
                 type="primary"
                 link
                 @click="handleViewDetail(row)"
+                class="action-button"
               >
                 <el-icon><View /></el-icon>
               </el-button>
             </el-tooltip>
             
-            <el-tooltip content="Edit Task" placement="top" v-if="isLeader">
+            <el-tooltip content="编辑任务" placement="top" v-if="isLeader">
               <el-button
                 type="primary"
                 link
                 @click="handleEditTask(row)"
+                class="action-button"
               >
                 <el-icon><Edit /></el-icon>
               </el-button>
             </el-tooltip>
             
-            <el-tooltip content="Delete Task" placement="top" v-if="isLeader">
+            <el-tooltip content="删除任务" placement="top" v-if="isLeader">
               <el-button
                 type="danger"
                 link
                 @click="handleDeleteTask(row)"
+                class="action-button"
               >
                 <el-icon><Delete /></el-icon>
               </el-button>
             </el-tooltip>
-          </el-button-group>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -244,13 +331,16 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch, computed } from 'vue'
-import { Search, Refresh, Plus, Download, View, Edit, Delete } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Download, View, Edit, Delete, Loading } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getTaskList, deleteTask } from '@/api/task'
+import { getAllUsers } from '@/api/user'
+import { getTagList, getTagsByProjectId, searchTags } from '@/api/tag'
 import { formatDate as formatDateUtil } from '@/utils/format'
 import type { TaskDetail, TaskQueryParams } from '@/types/task'
+import { getProjectDetail } from '@/api/project'
 
 const route = useRoute()
 const router = useRouter()
@@ -287,7 +377,7 @@ const filterForm = reactive<FilterForm>({
 
 // 选项数据
 const priorityOptions = [
-  { label: 'Urgent', value: 4 },
+  { label: 'Emergency', value: 4 },
   { label: 'High', value: 3 },
   { label: 'Medium', value: 2 },
   { label: 'Low', value: 1 }
@@ -301,17 +391,41 @@ const statusOptions = [
 ]
 
 // 从API获取这些选项，这里先使用静态数据
-const memberOptions = [
-  { label: 'Member 1', value: 'member1' },
-  { label: 'Member 2', value: 'member2' },
-  { label: 'Member 3', value: 'member3' }
-]
+interface MemberOption {
+  label: string;
+  value: string;
+  avatar: string;
+}
 
-const tagOptions = [
-  { label: 'Bug', value: 'bug' },
-  { label: 'Feature', value: 'feature' },
-  { label: 'Optimization', value: 'optimization' }
-]
+interface TagOption {
+  label: string;
+  value: string;
+  color?: string;
+}
+
+const memberOptions = ref<MemberOption[]>([
+  { label: 'Tom', value: 'member1', avatar: '' },
+  { label: 'Sarah', value: 'member2', avatar: '' },
+  { label: 'David', value: 'member3', avatar: '' }
+])
+
+const tagOptions = ref<TagOption[]>([
+  { label: 'Bug', value: 'bug', color: '#f56c6c' },
+  { label: 'Feature', value: 'feature', color: '#409EFF' },
+  { label: 'Optimization', value: 'optimization', color: '#67c23a' }
+])
+
+// API加载状态
+const membersLoading = ref(false)
+const tagsLoading = ref(false)
+
+// 搜索关键词
+const memberSearchKeyword = ref('')
+const tagSearchKeyword = ref('')
+
+// 搜索防抖定时器
+const memberSearchTimer = ref<number | null>(null)
+const tagSearchTimer = ref<number | null>(null)
 
 // 表格数据
 const loading = ref(false)
@@ -321,6 +435,9 @@ const taskList = ref<TaskDetail[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+
+// 使用loadingCount统计正在加载的部分，当所有部分都加载完成后才清除loading状态
+const loadingCount = ref(0)
 
 // 监听路由参数变化并自动筛选
 onMounted(() => {
@@ -341,6 +458,9 @@ onMounted(() => {
   
   // 加载任务列表
   fetchTaskList()
+  // 加载用户和标签列表
+  fetchMemberOptions()
+  fetchTagOptions()
 })
 
 // 监听筛选条件变化，更新 URL 参数
@@ -367,55 +487,377 @@ const updateUrlParams = (params: Record<string, any>) => {
 
 // 从后端获取任务列表
 const fetchTaskList = async () => {
+  loadingCount.value++
   loading.value = true
   try {
-    // 构建查询参数
-    const params: TaskQueryParams = {
-      keyword: filterForm.name,
-      status: typeof filterForm.status === 'number' ? filterForm.status : undefined,
-      priority: typeof filterForm.priority === 'number' ? filterForm.priority : undefined,
-      projectId: route.query.projectId as string,
-      startTime: filterForm.createDateRange[0] || undefined,
-      endTime: filterForm.createDateRange[1] || undefined,
-      page: currentPage.value,
-      pageSize: pageSize.value
+    // 清除空值参数
+    const cleanParams: Record<string, any> = {}
+    
+    // 基本参数
+    if (filterForm.name) cleanParams.keyword = filterForm.name
+    if (typeof filterForm.status === 'number') cleanParams.status = filterForm.status
+    if (typeof filterForm.priority === 'number') cleanParams.priority = filterForm.priority
+    
+    // 成员筛选
+    if (filterForm.members && filterForm.members.length > 0) {
+      cleanParams.members = filterForm.members.join(',')
     }
     
-    console.log('请求参数:', params)
+    // 标签筛选
+    if (filterForm.tags && filterForm.tags.length > 0) {
+      cleanParams.tags = filterForm.tags.join(',')
+    }
     
-    const response = await getTaskList(params)
-    console.log('API响应:', response)
+    // 日期范围
+    if (filterForm.createDateRange && filterForm.createDateRange.length === 2) {
+      cleanParams.startTime = filterForm.createDateRange[0]
+      cleanParams.endTime = filterForm.createDateRange[1]
+    }
     
-    const { data } = response
+    // 项目ID
+    if (route.query.projectId) {
+      cleanParams.projectId = route.query.projectId as string
+    }
     
-    // 处理响应数据
-    if (data) {
-      console.log('响应数据:', data)
-      // 检查数据结构
-      if (data.items) {
-        taskList.value = data.items || []
-        total.value = data.total || 0
-      } else if (Array.isArray(data)) {
-        // 如果直接返回数组
-        taskList.value = data
-        total.value = data.length
-      } else {
-        console.error('意外的响应数据格式:', data)
-        taskList.value = []
-        total.value = 0
+    // 分页参数
+    cleanParams.page = currentPage.value
+    cleanParams.pageSize = pageSize.value
+    
+    // 打印详细日志
+    console.log('原始表单数据:', JSON.stringify(filterForm))
+    console.log('处理后的请求参数:', JSON.stringify(cleanParams))
+    
+    // 使用处理过的参数发起请求
+    const response = await getTaskList(cleanParams)
+    console.log('API响应状态:', response.status)
+    console.log('API响应头部:', response.headers)
+    console.log('API响应数据:', JSON.stringify(response.data))
+    
+    let tasksData: TaskDetail[] = [];
+    let totalCount = 0;
+    
+    // 提取任务数据 - 根据后端的实际响应格式进行调整
+    if (response && response.data) {
+      if (typeof response.data === 'object') {
+        // 判断响应格式
+        if ('code' in response.data && response.data.code === 1) {
+          // 标准响应格式 {code: 1, data: {...}, message: ...}
+          const apiData = response.data.data;
+          
+          if (apiData && typeof apiData === 'object') {
+            if ('items' in apiData && Array.isArray(apiData.items)) {
+              tasksData = apiData.items;
+              totalCount = apiData.total || apiData.items.length;
+            } else if (Array.isArray(apiData)) {
+              tasksData = apiData;
+              totalCount = apiData.length;
+            }
+          }
+        } else if ('items' in response.data && Array.isArray(response.data.items)) {
+          // 直接返回分页对象 {items: [...], total: ...}
+          tasksData = response.data.items;
+          totalCount = response.data.total || response.data.items.length;
+        } else if (Array.isArray(response.data)) {
+          // 直接返回数组
+          tasksData = response.data;
+          totalCount = response.data.length;
+        }
       }
-    } else {
-      taskList.value = []
-      total.value = 0
     }
-  } catch (error) {
-    console.error('获取任务列表失败', error)
-    ElMessage.error('获取任务列表失败，请稍后重试')
+    
+    console.log('提取的任务数据:', JSON.stringify(tasksData));
+    console.log('总数:', totalCount);
+    
+    // 处理任务数据，确保关键字段存在并格式化
+    taskList.value = processTaskData(tasksData);
+    total.value = totalCount;
+    
+    console.log(`成功加载 ${taskList.value.length} 条任务记录, 总计 ${total.value} 条`);
+    
+    // 检查是否缺少项目名称，并记录信息
+    const missingProjectNames = taskList.value.filter(task => 
+      !task.projectName || task.projectName === '未分配'
+    );
+    
+    if (missingProjectNames.length > 0) {
+      console.warn(`有 ${missingProjectNames.length} 条任务缺少项目名称:`, 
+        missingProjectNames.map(t => ({ id: t.id, projectId: t.projectId }))
+      );
+      
+      // 尝试通过项目ID查询项目名称
+      missingProjectNames.forEach(task => {
+        if (task.projectId) {
+          fetchProjectName(task.projectId).then(projectName => {
+            if (projectName) {
+              task.projectName = projectName;
+              console.log(`已为任务 ${task.id} 补充项目名称(API): ${projectName}`);
+              
+              // 强制更新视图
+              taskList.value = [...taskList.value];
+            }
+          }).catch(err => {
+            console.error(`获取项目详情失败，项目ID: ${task.projectId}`, err);
+          });
+        }
+      });
+    }
+  } catch (error: any) {
+    console.error('获取任务列表失败:', error)
+    if (error.response) {
+      console.error('错误状态码:', error.response.status)
+      console.error('错误响应:', error.response.data)
+    }
+    ElMessage.error(`获取任务失败: ${error.message || '请稍后再试'}`)
     // 清空数据
     taskList.value = []
     total.value = 0
   } finally {
-    loading.value = false
+    loadingCount.value--
+    if (loadingCount.value <= 0) {
+      loading.value = false
+      loadingCount.value = 0 // 确保不会变成负数
+    }
+  }
+}
+
+// 处理任务数据，确保所有必要字段存在
+const processTaskData = (tasks: any[]): TaskDetail[] => {
+  console.log('原始任务数据:', JSON.stringify(tasks));
+  
+  // 记录每个任务的projectId和projectName
+  tasks.forEach((task, index) => {
+    console.log(`任务 #${index + 1} ID=${task.id}:`, {
+      projectId: task.projectId,
+      projectName: task.projectName,
+      // 检查原始数据里是否有项目名称字段
+      hasProjectName: 'projectName' in task,
+      project_name: task.project_name
+    });
+  });
+  
+  return tasks.map(task => {
+    // 尝试从可能的字段中提取项目名称
+    let projectName = null;
+    
+    // 标准驼峰命名
+    if (task.projectName !== undefined && task.projectName !== null) {
+      projectName = task.projectName;
+    }
+    // 下划线命名风格（后端SQL常用）
+    else if (task.project_name !== undefined && task.project_name !== null) {
+      projectName = task.project_name;
+    }
+    // 可能嵌套在project对象中
+    else if (task.project && typeof task.project === 'object') {
+      if (task.project.name) {
+        projectName = task.project.name;
+      }
+    }
+    
+    // 确保基本字段存在
+    const processedTask: TaskDetail = {
+      id: task.id?.toString() || `temp-${Date.now()}`,
+      name: task.name || task.title || '未命名任务',
+      description: task.description || '',
+      createTime: task.createTime || task.createAt || new Date().toISOString(),
+      priority: typeof task.priority === 'number' ? task.priority : 2,
+      status: typeof task.status === 'number' ? task.status : 0,
+      members: Array.isArray(task.members) ? task.members : [],
+      tags: Array.isArray(task.tags) ? task.tags : [],
+      projectId: task.projectId?.toString() || '',
+      // 使用前面提取的项目名称，如果没有则默认为未分配
+      projectName: projectName || '未分配'
+    };
+    
+    // 处理截止时间字段
+    if (task.deadline) {
+      processedTask.deadline = task.deadline;
+    } else if (task.dueTime) {
+      processedTask.dueTime = task.dueTime;
+    }
+    
+    // 处理开始时间 - 重要
+    if (task.startTime) {
+      processedTask.startTime = task.startTime;
+    }
+    
+    // 处理附件
+    if (Array.isArray(task.attachments)) {
+      processedTask.attachments = task.attachments;
+    }
+    
+    // 在全局缓存项目ID和名称的映射，以便后续使用
+    if (processedTask.projectId && processedTask.projectName && processedTask.projectName !== '未分配') {
+      if (!window.taskProjectMapping) {
+        window.taskProjectMapping = {};
+      }
+      window.taskProjectMapping[processedTask.projectId] = processedTask.projectName;
+    }
+    
+    return processedTask;
+  });
+};
+
+// 获取用户列表
+const fetchMemberOptions = async () => {
+  membersLoading.value = true
+  try {
+    const params = {
+      role: '0,1', // 只查询角色为0和1的用户
+      page: 1,
+      pageSize: 50
+    }
+    const response = await getAllUsers(params)
+    
+    if (response && response.data && response.data.code === 1 && response.data.data) {
+      const { items } = response.data.data
+      if (Array.isArray(items)) {
+        memberOptions.value = items.map(user => ({
+          value: user.username,
+          label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+          avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
+        }))
+      } else {
+        console.warn('返回的items不是数组:', items)
+      }
+    } else {
+      console.warn('API响应格式不符合预期:', response)
+    }
+  } catch (error) {
+    console.error('获取用户列表失败', error)
+    // 保持默认选项，不显示错误信息以免影响用户体验
+  } finally {
+    membersLoading.value = false
+  }
+}
+
+// 获取标签列表
+const fetchTagOptions = async () => {
+  tagsLoading.value = true
+  try {
+    // 如果有项目ID，则按项目获取标签
+    const projectId = route.query.projectId ? Number(route.query.projectId) : undefined
+    
+    if (projectId) {
+      const response = await getTagsByProjectId(projectId)
+      if (response?.data?.data) {
+        tagOptions.value = response.data.data.map(tag => ({
+          label: tag.name,
+          value: tag.id,
+          color: tag.color
+        }))
+      }
+    } else {
+      // 否则获取所有标签
+      const response = await getTagList()
+      if (response?.data?.data?.items) {
+        tagOptions.value = response.data.data.items.map(tag => ({
+          label: tag.name,
+          value: tag.id,
+          color: tag.color
+        }))
+      }
+    }
+  } catch (error) {
+    console.error('获取标签列表失败', error)
+    ElMessage.warning('Failed to load tag list')
+  } finally {
+    tagsLoading.value = false
+  }
+}
+
+// 搜索用户 - 添加防抖
+const handleSearchMembers = (query: string) => {
+  // 清除现有定时器
+  if (memberSearchTimer.value) {
+    clearTimeout(memberSearchTimer.value)
+    memberSearchTimer.value = null
+  }
+  
+  // 设置新的定时器，延迟300ms执行搜索
+  memberSearchTimer.value = window.setTimeout(() => {
+    doSearchMembers(query)
+  }, 300)
+}
+
+// 实际执行搜索
+const doSearchMembers = async (query: string) => {
+  if (query) {
+    memberSearchKeyword.value = query
+    membersLoading.value = true
+    try {
+      const params = {
+        keyword: query,
+        role: '0,1', // 只查询角色为0和1的用户
+        page: 1,
+        pageSize: 20
+      }
+      const response = await getAllUsers(params)
+      
+      if (response && response.data && response.data.code === 1 && response.data.data) {
+        const { items } = response.data.data
+        if (Array.isArray(items)) {
+          memberOptions.value = items.map(user => ({
+            value: user.username,
+            label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+            avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
+          }))
+        } else {
+          console.warn('返回的items不是数组:', items)
+        }
+      } else {
+        console.warn('API响应格式不符合预期:', response)
+      }
+    } catch (error) {
+      console.error('搜索用户失败', error)
+      // 不显示错误信息，保持原有数据
+    } finally {
+      membersLoading.value = false
+    }
+  } else {
+    // 如果查询为空，重新获取默认列表
+    fetchMemberOptions()
+  }
+}
+
+// 搜索标签 - 添加防抖
+const handleSearchTags = (query: string) => {
+  // 清除现有定时器
+  if (tagSearchTimer.value) {
+    clearTimeout(tagSearchTimer.value)
+    tagSearchTimer.value = null
+  }
+  
+  // 设置新的定时器，延迟300ms执行搜索
+  tagSearchTimer.value = window.setTimeout(() => {
+    doSearchTags(query)
+  }, 300)
+}
+
+// 实际执行搜索
+const doSearchTags = async (query: string) => {
+  if (query) {
+    tagSearchKeyword.value = query
+    tagsLoading.value = true
+    try {
+      const projectId = route.query.projectId ? Number(route.query.projectId) : undefined
+      const response = await searchTags(query, projectId)
+      
+      if (response?.data?.data) {
+        tagOptions.value = response.data.data.map(tag => ({
+          label: tag.name,
+          value: tag.id,
+          color: tag.color
+        }))
+      }
+    } catch (error) {
+      console.error('搜索标签失败', error)
+    } finally {
+      tagsLoading.value = false
+    }
+  } else {
+    // 如果查询为空，重新获取默认列表
+    fetchTagOptions()
   }
 }
 
@@ -432,11 +874,11 @@ const getPriorityType = (priority: number): 'success' | 'warning' | 'info' | 'da
 
 const getPriorityText = (priority: number): string => {
   switch (priority) {
-    case 4: return 'Urgent'
-    case 3: return 'High'
-    case 2: return 'Medium'
-    case 1: return 'Low'
-    default: return 'Unknown'
+    case 4: return '紧急'
+    case 3: return '高'
+    case 2: return '中'
+    case 1: return '低'
+    default: return '未知'
   }
 }
 
@@ -452,22 +894,55 @@ const getStatusType = (status: number): 'success' | 'warning' | 'info' | 'danger
 
 const getStatusText = (status: number): string => {
   switch (status) {
-    case 0: return 'Pending'
-    case 1: return 'In Progress'
-    case 2: return 'Completed'
-    case 3: return 'Cancelled'
-    default: return 'Unknown'
+    case 0: return '待处理'
+    case 1: return '进行中'
+    case 2: return '已完成'
+    case 3: return '已取消'
+    default: return '未知'
   }
 }
 
 const formatDate = (date: string | undefined): string => {
   if (!date) return '未设置'
-  return formatDateUtil(date)
+  
+  try {
+    // 尝试将日期格式化为本地时间
+    const dateObj = new Date(date)
+    if (isNaN(dateObj.getTime())) {
+      return '日期无效'
+    }
+    
+    // 格式化为 YYYY-MM-DD HH:mm 格式
+    const year = dateObj.getFullYear()
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+    const day = String(dateObj.getDate()).padStart(2, '0')
+    const hours = String(dateObj.getHours()).padStart(2, '0')
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}`
+  } catch (e) {
+    console.error('日期格式化错误:', e)
+    return date
+  }
 }
 
 // 事件处理方法
 const handleSearch = () => {
-  currentPage.value = 1 // 重置为第一页
+  // 重置为第一页
+  currentPage.value = 1 
+  
+  // 记录本次搜索条件
+  console.log('执行搜索，搜索条件:', {
+    keyword: filterForm.name,
+    status: filterForm.status,
+    priority: filterForm.priority,
+    members: filterForm.members,
+    tags: filterForm.tags,
+    createDateRange: filterForm.createDateRange,
+    dueDateRange: filterForm.dueDateRange
+  });
+  
+  // 获取任务列表
   fetchTaskList()
 }
 
@@ -483,11 +958,15 @@ const handleReset = () => {
   filterForm.tags = []
   
   // 清除 URL 参数
-  router.push({ query: {} })
+  router.push({ query: { projectId: route.query.projectId } })
   
   // 重新加载数据
   currentPage.value = 1
   fetchTaskList()
+  
+  // 重新加载用户和标签选项
+  fetchMemberOptions()
+  fetchTagOptions()
 }
 
 const handleViewDetail = (row: TaskDetail) => {
@@ -556,6 +1035,155 @@ const handleDeleteTask = (row: TaskDetail) => {
     .catch(() => {
       // 用户取消删除
     })
+}
+
+// 处理成员选择框打开事件
+const onMemberSelectOpen = (opened: boolean) => {
+  if (opened) {
+    // 如果列表为空或者只有默认值，则加载数据
+    if (memberOptions.value.length <= 3) {
+      fetchMemberOptions()
+    }
+  }
+}
+
+// 处理标签选择框打开事件
+const onTagSelectOpen = (opened: boolean) => {
+  if (opened) {
+    // 如果列表为空或者只有默认值，则加载数据
+    if (tagOptions.value.length <= 3) {
+      fetchTagOptions()
+    }
+  }
+}
+
+// 添加格式化工具函数，确保数据类型安全
+function safelyGetTaskData(data: any): TaskDetail[] {
+  // 如果数据是null或undefined，返回空数组
+  if (data == null) {
+    return [];
+  }
+  
+  // 尝试从各种可能的格式中提取任务列表
+  if (Array.isArray(data)) {
+    // 直接是数组
+    return ensureTaskFields(data);
+  } else if (typeof data === 'object') {
+    // 可能是嵌套对象
+    if (data.items && Array.isArray(data.items)) {
+      // 标准分页格式
+      return ensureTaskFields(data.items);
+    } else if (data.data) {
+      // API包装格式
+      if (Array.isArray(data.data)) {
+        return ensureTaskFields(data.data);
+      } else if (data.data.items && Array.isArray(data.data.items)) {
+        return ensureTaskFields(data.data.items);
+      }
+    } else if (data.list && Array.isArray(data.list)) {
+      // 另一种常见命名
+      return ensureTaskFields(data.list);
+    } else if (data.tasks && Array.isArray(data.tasks)) {
+      // 任务特定命名
+      return ensureTaskFields(data.tasks);
+    }
+  }
+  
+  // 无法识别的格式，返回空数组
+  console.warn('无法从API响应中提取任务数据:', data);
+  return [];
+}
+
+// 序号生成函数
+const getRowIndex = (index: number): number => {
+  // 将currentPage和pageSize转换为数字类型
+  const currentPageNum = Number(currentPage.value);
+  const pageSizeNum = Number(pageSize.value);
+  return (currentPageNum - 1) * pageSizeNum + index + 1;
+};
+
+// 确保任务对象包含所需的所有字段
+function ensureTaskFields(tasks: any[]): TaskDetail[] {
+  return tasks.map(task => {
+    const safeTask: TaskDetail = {
+      id: task.id?.toString() || `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      name: task.name || task.title || '未命名任务',
+      description: task.description || '',
+      createTime: task.createTime || task.createAt || task.createdAt || new Date().toISOString(),
+      priority: typeof task.priority === 'number' ? task.priority : 2,
+      status: typeof task.status === 'number' ? task.status : 0,
+      members: Array.isArray(task.members) ? task.members : [],
+      tags: Array.isArray(task.tags) ? task.tags : [],
+      projectId: task.projectId?.toString() || '',
+      projectName: task.projectName || '',
+    };
+    
+    // 处理截止时间字段
+    if (task.deadline) {
+      safeTask.deadline = task.deadline;
+    } else if (task.dueTime) {
+      safeTask.dueTime = task.dueTime;
+    }
+    
+    // 处理开始时间
+    if (task.startTime) {
+      safeTask.startTime = task.startTime;
+    }
+    
+    // 处理附件
+    if (Array.isArray(task.attachments)) {
+      safeTask.attachments = task.attachments;
+    }
+    
+    return safeTask;
+  });
+}
+
+const formatProjectName = (name?: string): string => {
+  if (!name || name === 'undefined' || name === 'null') {
+    return '未分配';
+  }
+  return name;
+};
+
+// 获取项目名称的辅助函数
+async function fetchProjectName(projectId: string): Promise<string | null> {
+  if (!projectId) return null;
+  
+  // 首先检查缓存
+  if (window.taskProjectMapping?.[projectId]) {
+    return window.taskProjectMapping[projectId];
+  }
+  
+  try {
+    // 从API获取项目详情
+    const response = await getProjectDetail(Number(projectId));
+    console.log('项目详情API响应:', JSON.stringify(response.data));
+    
+    // 处理不同可能的响应格式
+    let projectName = null;
+    if (response?.data?.code === 1 && response.data.data) {
+      projectName = response.data.data.name;
+    } else if (response?.data?.name) {
+      projectName = response.data.name;
+    }
+    
+    // 如果成功获取项目名称
+    if (projectName) {
+      // 更新缓存
+      if (!window.taskProjectMapping) {
+        window.taskProjectMapping = {};
+      }
+      window.taskProjectMapping[projectId] = projectName;
+      
+      return projectName;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`获取项目详情失败，项目ID: ${projectId}`, error);
+    return null;
+  }
 }
 </script>
 
@@ -674,31 +1302,88 @@ const handleDeleteTask = (row: TaskDetail) => {
 
 /* 表格区域 */
 :deep(.el-table) {
-  margin-top: 20px;
+  margin-top: 16px;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  --el-table-header-bg-color: #f5f7fa;
+  --el-table-border-color: #ebeef5;
+  --el-table-row-hover-bg-color: #f5f7fa;
 }
 
 :deep(.el-table th) {
-  background-color: #f2f6fc;
+  background-color: var(--el-table-header-bg-color);
   color: #606266;
   font-weight: 600;
-  padding: 12px 0;
+  padding: 6px 0;
+  height: 44px;
 }
 
 :deep(.el-table td) {
-  padding: 12px 0;
+  padding: 4px;
+  height: 50px;
 }
 
-:deep(.el-button--link) {
-  padding: 4px 8px;
-  margin: 0 2px;
+:deep(.el-table--border th.el-table__cell,
+       .el-table--border td.el-table__cell,
+       .el-table__inner-wrapper::before) {
+  border-color: var(--el-table-border-color);
 }
 
-:deep(.el-button-group) {
-  display: flex;
+:deep(.el-table__row.hover-row) {
+  background-color: var(--el-table-row-hover-bg-color);
+}
+
+:deep(.el-table .cell) {
+  line-height: 20px;
+  padding-left: 8px;
+  padding-right: 8px;
+  word-break: break-word;
+}
+
+:deep(.el-table .el-table__cell) {
+  padding: 0;
+}
+
+:deep(.el-table .el-table__cell[align="center"] .cell) {
   justify-content: center;
+  text-align: center;
+}
+
+:deep(.el-table .el-table__cell[align="left"] .cell) {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.task-name-link {
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
+  padding: 0 4px;
+}
+
+.index-cell {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  border-radius: 4px;
+  background-color: #f0f2f5;
+  color: #606266;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+:deep(.el-tag) {
+  font-size: 12px;
+  padding: 0 8px;
+  height: 22px;
+  line-height: 22px;
 }
 
 /* 分页 */
@@ -774,6 +1459,39 @@ const handleDeleteTask = (row: TaskDetail) => {
   padding-top: 3px;
 }
 
+:deep(.el-select__tags-text) {
+  display: inline-flex;
+  align-items: center;
+  color: #606266;
+  font-size: 14px;
+  font-family: var(--el-font-family);
+}
+
+/* 成员选择下拉框中的文本 */
+:deep(.el-select-dropdown__item) {
+  font-size: 14px;
+  font-family: var(--el-font-family);
+  color: #68696c;
+}
+
+/* 选中的成员标签样式 */
+:deep(.el-select .el-tag) {
+  background-color: var(--el-color-primary-light-9) !important;
+  border-color: var(--el-color-primary-light-8) !important;
+  color: #606266 !important;
+  font-size: 14px;
+  font-family: var(--el-font-family);
+}
+
+:deep(.el-select .el-tag__close) {
+  color: #909399;
+}
+
+:deep(.el-select .el-tag__close:hover) {
+  background-color: #909399;
+  color: #fff;
+}
+
 /* 标签样式 */
 :deep(.el-tag) {
   display: inline-flex;
@@ -804,5 +1522,191 @@ const handleDeleteTask = (row: TaskDetail) => {
     justify-content: center;
     width: 100%;
   }
+}
+
+/* 标签选择器样式 */
+.tag-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* 成员选项样式 */
+.member-option {
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+  width: 100%;
+}
+
+.member-avatar {
+  margin-right: 8px;
+  background-color: #f0f2f5;
+  flex-shrink: 0;
+}
+
+.member-name {
+  font-weight: 500;
+  color: #606266;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 已选择的成员标签内的用户名显示优化 */
+:deep(.el-select__tags .el-tag) {
+  max-width: calc(100% - 10px);
+  display: inline-flex;
+  align-items: center;
+  margin: 2px 4px;
+  border-radius: 4px;
+  padding: 0 8px;
+  height: 24px;
+  line-height: 24px;
+  transition: all 0.3s;
+}
+
+:deep(.el-select__tags .el-tag:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-select .el-tag__content) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  color: #606266;
+}
+
+/* 自定义成员标签样式 */
+.custom-member-tag {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  margin: 2px 4px 2px 0;
+  height: 24px;
+  line-height: 24px;
+}
+
+.tag-content {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tag-avatar {
+  height: 18px;
+  width: 18px;
+  font-size: 10px;
+  line-height: 18px;
+  margin-right: 0;
+}
+
+.empty-members {
+  text-align: center;
+  padding: 20px 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+/* 下拉菜单样式优化 */
+:deep(.el-popper.is-light) {
+  border-radius: 4px;
+}
+
+:deep(.el-popper.is-light .el-select-dropdown__item) {
+  height: auto;
+  line-height: 1.5;
+  padding: 8px 20px;
+  color: #606266;
+  font-family: var(--el-font-family);
+}
+
+:deep(.el-popper.is-light .el-select-dropdown__item.selected) {
+  color: #606266;
+  font-weight: 600;
+  background-color: var(--el-color-primary-light-9);
+}
+
+:deep(.el-popper.is-light .el-select-dropdown__item:hover) {
+  background-color: var(--el-fill-color-light);
+}
+
+:deep(.empty-members p) {
+  color: #909399;
+  font-family: var(--el-font-family);
+}
+
+/* 确保成员和标签选项在下拉菜单中垂直居中对齐 */
+:deep(.member-option),
+:deep(.tag-option) {
+  padding: 3px 0;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.el-button--link) {
+  padding: 4px;
+  margin: 0 1px;
+  height: 24px;
+  width: 24px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1px;
+}
+
+.action-button {
+  font-size: 16px;
+}
+
+/* 操作按钮悬停效果 */
+:deep(.el-button--link.action-button:hover) {
+  color: var(--el-color-primary-light-3);
+  transform: scale(1.1);
+  transition: all 0.2s ease;
+}
+
+:deep(.el-button--link.action-button.is-link.is-danger:hover) {
+  color: var(--el-color-danger-light-3);
+}
+
+.empty-table {
+  padding: 30px 0;
+  text-align: center;
+}
+
+.empty-tip {
+  color: #909399;
+  font-size: 12px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.project-tag {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  font-size: 12px;
+  padding: 0 8px;
+  height: 22px;
+  line-height: 20px;
+  border-radius: 4px;
+  background-color: rgba(64, 158, 255, 0.1);
+  color: #606266;
+  border: 1px solid rgba(64, 158, 255, 0.2);
 }
 </style> 

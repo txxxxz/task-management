@@ -10,14 +10,7 @@ export function getProjectList(params?: {
   page?: number
   pageSize?: number
 }) {
-  return request<{
-    code: number
-    data: {
-      total: number
-      items: Project[]
-    }
-    message: string
-  }>({
+  return request({
     url: '/api/projects',
     method: 'get',
     params
@@ -26,11 +19,7 @@ export function getProjectList(params?: {
 
 // 获取项目详情
 export function getProjectDetail(id: number) {
-  return request<{
-    code: number
-    data: Project
-    message: string
-  }>({
+  return request({
     url: `/api/projects/${id}`,
     method: 'get'
   })
@@ -38,11 +27,7 @@ export function getProjectDetail(id: number) {
 
 // 创建项目
 export function createProject(data: ProjectForm) {
-  return request<{
-    code: number
-    data: Project
-    message: string
-  }>({
+  return request({
     url: '/api/projects',
     method: 'post',
     data
@@ -51,11 +36,7 @@ export function createProject(data: ProjectForm) {
 
 // 更新项目
 export function updateProject(id: number, data: Partial<ProjectForm>) {
-  return request<{
-    code: number
-    data: Project
-    message: string
-  }>({
+  return request({
     url: `/api/projects/${id}`,
     method: 'put',
     data
@@ -64,10 +45,7 @@ export function updateProject(id: number, data: Partial<ProjectForm>) {
 
 // 删除项目
 export function deleteProject(id: number) {
-  return request<{
-    code: number
-    message: string
-  }>({
+  return request({
     url: `/api/projects/${id}`,
     method: 'delete'
   })
@@ -75,11 +53,7 @@ export function deleteProject(id: number) {
 
 // 获取项目成员
 export function getProjectMembers(id: number) {
-  return request<{
-    code: number
-    data: string[]
-    message: string
-  }>({
+  return request({
     url: `/api/projects/${id}/members`,
     method: 'get'
   })
