@@ -24,6 +24,9 @@ public class FileServiceImpl implements FileService {
 
     @Autowired
     private AliyunOSSConfig ossConfig;
+    
+    // 任务文件夹路径
+    private static final String TASK_FOLDER = "task/";
 
     @Override
     public String uploadEncryptedFile(MultipartFile file) {
@@ -61,6 +64,48 @@ public class FileServiceImpl implements FileService {
         
         for (MultipartFile file : files) {
             String url = uploadEncryptedFile(file);
+            urls.add(url);
+        }
+        
+        return urls;
+    }
+    
+    @Override
+    public String uploadTaskFile(MultipartFile file) {
+        String fileName = file.getOriginalFilename();
+        String objectName = null;
+        
+        try {
+            // 生成加密文件名
+            String encryptedFileName = FileEncryptionUtil.generateEncryptedFileName(fileName);
+            objectName = TASK_FOLDER + encryptedFileName;
+            
+            // 加密文件内容
+            InputStream encryptedStream = FileEncryptionUtil.encryptFile(file, ossConfig.getEncryptionKey());
+            
+            // 设置元数据
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentType(file.getContentType());
+            metadata.setContentLength(encryptedStream.available());
+            
+            // 上传到OSS
+            ossClient.putObject(ossConfig.getBucketName(), objectName, encryptedStream, metadata);
+            log.info("任务文件[{}]加密上传成功，OSS路径：{}", fileName, objectName);
+            
+            // 返回访问URL
+            return ossConfig.getUrlPrefix() + "/" + objectName;
+        } catch (Exception e) {
+            log.error("任务文件[{}]加密上传失败", fileName, e);
+            throw new RuntimeException("任务文件上传失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public List<String> uploadTaskFiles(List<MultipartFile> files) {
+        List<String> urls = new ArrayList<>();
+        
+        for (MultipartFile file : files) {
+            String url = uploadTaskFile(file);
             urls.add(url);
         }
         

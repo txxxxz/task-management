@@ -19,7 +19,7 @@ import java.util.Map;
  * 项目管理相关接口
  */
 @RestController
-@RequestMapping("/api/projects")
+@RequestMapping("/projects")
 @RequiredArgsConstructor
 @Slf4j
 public class ProjectController {

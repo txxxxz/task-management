@@ -13,7 +13,7 @@ import java.util.List;
  * 文件上传控制器
  */
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/files")
 @Slf4j
 public class FileController {
 
@@ -57,6 +57,46 @@ public class FileController {
         } catch (Exception e) {
             log.error("批量文件上传失败", e);
             return Result.error("批量文件上传失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 上传单个任务文件到阿里云OSS的task/文件夹
+     */
+    @PostMapping("/task/upload")
+    public Result<String> uploadTaskFile(@RequestParam("file") MultipartFile file) {
+        log.info("上传任务文件: {}, 大小: {}", file.getOriginalFilename(), file.getSize());
+        
+        if (file.isEmpty()) {
+            return Result.error("上传文件不能为空");
+        }
+        
+        try {
+            String fileUrl = fileService.uploadTaskFile(file);
+            return Result.success(fileUrl);
+        } catch (Exception e) {
+            log.error("任务文件上传失败", e);
+            return Result.error("任务文件上传失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 批量上传任务文件到阿里云OSS的task/文件夹
+     */
+    @PostMapping("/task/batch-upload")
+    public Result<List<String>> batchUploadTaskFiles(@RequestParam("files") List<MultipartFile> files) {
+        log.info("批量上传任务文件, 数量: {}", files.size());
+        
+        if (files.isEmpty()) {
+            return Result.error("上传文件不能为空");
+        }
+        
+        try {
+            List<String> fileUrls = fileService.uploadTaskFiles(files);
+            return Result.success(fileUrls);
+        } catch (Exception e) {
+            log.error("批量任务文件上传失败", e);
+            return Result.error("批量任务文件上传失败: " + e.getMessage());
         }
     }
 } 

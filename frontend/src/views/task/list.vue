@@ -93,7 +93,7 @@
         </div>
         <!-- 查询和重置按钮 -->
         <div class="filter-buttons">
-          <el-button type="primary" @click="handleCheck">
+          <el-button type="primary" @click="handleSearch">
             <el-icon><Search /></el-icon> Search
           </el-button>
           <el-button @click="handleReset">
@@ -120,14 +120,24 @@
 
     <!-- 表格区域 -->
     <el-table
-      :data="tableData"
+      :data="taskList"
       style="width: 100%"
       border
       stripe
       v-loading="loading"
     >
-      <el-table-column prop="taskNumber" label="Task Number" width="120" />
-      <el-table-column prop="taskName" label="Task Name" min-width="200" />
+      <el-table-column prop="number" label="Task Number" width="120" />
+      <el-table-column prop="name" label="Task Name" min-width="200">
+        <template #default="{ row }">
+          <el-link 
+            type="primary" 
+            :underline="false"
+            @click="handleViewDetail(row)"
+          >
+            {{ row.name || row.title }}
+          </el-link>
+        </template>
+      </el-table-column>
       <el-table-column prop="priority" label="Priority" width="100">
         <template #default="{ row }">
           <el-tag
@@ -135,7 +145,7 @@
             effect="light"
             size="small"
           >
-            {{ row.priority }}
+            {{ getPriorityText(row.priority) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -146,18 +156,26 @@
             effect="light"
             size="small"
           >
-            {{ row.status }}
+            {{ getStatusText(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createDate" label="Create Date" width="180" />
-      <el-table-column prop="dueDate" label="Due Date" width="180" />
+      <el-table-column prop="createTime" label="Create Date" width="180">
+        <template #default="{ row }">
+          {{ formatDate(row.createTime) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="deadline" label="Due Date" width="180">
+        <template #default="{ row }">
+          {{ formatDate(row.deadline || row.dueTime) }}
+        </template>
+      </el-table-column>
       <el-table-column label="Operation" width="100" fixed="right">
         <template #default="{ row }">
           <el-button
             type="primary"
             link
-            @click="handleCheck()"
+            @click="handleViewDetail(row)"
           >
             Check
           </el-button>
@@ -185,12 +203,27 @@ import { ref, reactive, onMounted, watch } from 'vue'
 import { Search, Refresh, Plus, Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
+import { getTaskList } from '@/api/task'
+import { formatDate as formatDateUtil } from '@/utils/format'
+import type { TaskDetail, TaskQueryParams } from '@/types/task'
 
 const route = useRoute()
 const router = useRouter()
 
+// 定义filterForm的类型，确保status和priority能够接受数字类型
+interface FilterForm {
+  number: string;
+  name: string;
+  priority: number | '';
+  status: number | '';
+  createDateRange: string[];
+  dueDateRange: string[];
+  members: string[];
+  tags: string[];
+}
+
 // 筛选表单数据
-const filterForm = reactive({
+const filterForm = reactive<FilterForm>({
   number: '',
   name: '',
   priority: '',
@@ -203,65 +236,60 @@ const filterForm = reactive({
 
 // 选项数据
 const priorityOptions = [
-  { label: 'Critical', value: 'Critical' },
-  { label: 'High', value: 'High' },
-  { label: 'Medium', value: 'Medium' },
-  { label: 'Low', value: 'Low' }
+  { label: '紧急', value: 4 },
+  { label: '高', value: 3 },
+  { label: '中', value: 2 },
+  { label: '低', value: 1 }
 ]
 
 const statusOptions = [
-  { label: 'Pending', value: 'Pending' },
-  { label: 'In progress', value: 'In progress' },
-  { label: 'Completed', value: 'Completed' },
-  { label: 'Expired', value: 'Expired' }
+  { label: '待处理', value: 0 },
+  { label: '进行中', value: 1 },
+  { label: '已完成', value: 2 },
+  { label: '已取消', value: 3 }
 ]
 
+// 从API获取这些选项，这里先使用静态数据
 const memberOptions = [
-  { label: 'Member 1', value: 1 },
-  { label: 'Member 2', value: 2 },
-  { label: 'Member 3', value: 3 }
+  { label: '成员1', value: 'member1' },
+  { label: '成员2', value: 'member2' },
+  { label: '成员3', value: 'member3' }
 ]
 
 const tagOptions = [
   { label: 'Bug', value: 'bug' },
-  { label: 'Feature', value: 'feature' },
-  { label: 'Optimization', value: 'optimization' }
+  { label: '功能', value: 'feature' },
+  { label: '优化', value: 'optimization' }
 ]
 
 // 表格数据
 const loading = ref(false)
-const tableData = ref([
-  {
-    taskNumber: '232',
-    taskName: 'Fix Login Page Authentication Bug',
-    priority: 'Critical',
-    status: 'In process',
-    createDate: '2021-02-28 10:30',
-    dueDate: '2021-02-28 10:30'
-  },
-  {
-    taskNumber: '254',
-    taskName: 'Fix Login Page Authentication Bug',
-    priority: 'High',
-    status: 'Completed',
-    createDate: '2021-02-28 10:30',
-    dueDate: '2021-02-28 10:30'
-  },
-  // ... 更多数据
-])
+const taskList = ref<TaskDetail[]>([])
 
 // 分页数据
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(687)
+const total = ref(0)
 
 // 监听路由参数变化并自动筛选
 onMounted(() => {
-  const status = route.query.status as string
+  // 从URL参数中获取筛选条件
+  const { status, priority, keyword } = route.query
+  
   if (status) {
-    filterForm.status = status
-    handleCheck()
+    filterForm.status = Number(status)
   }
+  
+  if (priority) {
+    filterForm.priority = Number(priority)
+  }
+  
+  if (keyword) {
+    filterForm.name = keyword as string
+  }
+  
+  // 加载任务列表
+  fetchTaskList()
 })
 
 // 监听筛选条件变化，更新 URL 参数
@@ -269,12 +297,16 @@ watch(() => filterForm.status, (newStatus) => {
   updateUrlParams({ status: newStatus })
 })
 
+watch(() => filterForm.priority, (newPriority) => {
+  updateUrlParams({ priority: newPriority })
+})
+
 // 更新 URL 参数
 const updateUrlParams = (params: Record<string, any>) => {
   const query = { ...route.query }
   Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      query[key] = value
+    if (value !== '' && value !== null && value !== undefined) {
+      query[key] = value.toString()
     } else {
       delete query[key]
     }
@@ -282,94 +314,133 @@ const updateUrlParams = (params: Record<string, any>) => {
   router.push({ query })
 }
 
+// 从后端获取任务列表
+const fetchTaskList = async () => {
+  loading.value = true
+  try {
+    // 构建查询参数
+    const params: TaskQueryParams = {
+      keyword: filterForm.name,
+      status: typeof filterForm.status === 'number' ? filterForm.status : undefined,
+      priority: typeof filterForm.priority === 'number' ? filterForm.priority : undefined,
+      projectId: route.query.projectId as string,
+      startTime: filterForm.createDateRange[0] || undefined,
+      endTime: filterForm.createDateRange[1] || undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value
+    }
+    
+    const response = await getTaskList(params)
+    const { data } = response
+    
+    // 处理响应数据
+    if (data) {
+      taskList.value = data.items || []
+      total.value = data.total || 0
+    }
+  } catch (error) {
+    console.error('获取任务列表失败', error)
+    ElMessage.error('获取任务列表失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
+}
+
 // 工具方法
-const getPriorityType = (priority: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
-  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
-    'Critical': 'danger',
-    'High': 'warning',
-    'Medium': 'success',
-    'Low': 'info'
+const getPriorityType = (priority: number): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+  const types: Record<number, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
+    4: 'danger',    // 紧急
+    3: 'warning',   // 高
+    2: 'success',   // 中
+    1: 'info'       // 低
   }
   return types[priority] || 'primary'
 }
 
-const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
-  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
-    'In process': 'warning',
-    'Completed': 'success',
-    'Pending': 'info'
+const getPriorityText = (priority: number): string => {
+  const textMap: Record<number, string> = {
+    4: '紧急',
+    3: '高',
+    2: '中',
+    1: '低'
+  }
+  return textMap[priority] || '未知'
+}
+
+const getStatusType = (status: number): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+  const types: Record<number, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
+    0: 'info',       // 待处理
+    1: 'warning',    // 进行中
+    2: 'success',    // 已完成
+    3: 'danger'      // 已取消
   }
   return types[status] || 'primary'
 }
 
-// 事件处理方法
-const handleCheck = () => {
-  loading.value = true
-  // 构建查询参数
-  const params = {
-    number: filterForm.number,
-    name: filterForm.name,
-    priority: filterForm.priority,
-    status: filterForm.status,
-    createDateStart: filterForm.createDateRange[0],
-    createDateEnd: filterForm.createDateRange[1],
-    dueDateStart: filterForm.dueDateRange[0],
-    dueDateEnd: filterForm.dueDateRange[1],
-    members: filterForm.members,
-    tags: filterForm.tags
+const getStatusText = (status: number): string => {
+  const textMap: Record<number, string> = {
+    0: '待处理',
+    1: '进行中',
+    2: '已完成',
+    3: '已取消'
   }
-  
-  // 模拟 API 调用
-  setTimeout(() => {
-    // 根据筛选条件过滤数据
-    let filteredData = [...tableData.value]
-    if (params.status) {
-      filteredData = filteredData.filter(item => item.status === params.status)
-    }
-    if (params.priority) {
-      filteredData = filteredData.filter(item => item.priority === params.priority)
-    }
-    // ... 其他筛选条件
-    
-    tableData.value = filteredData
-    loading.value = false
-    ElMessage.success('Query successful')
-  }, 1000)
+  return textMap[status] || '未知'
+}
+
+const formatDate = (date: string | undefined): string => {
+  if (!date) return '未设置'
+  return formatDateUtil(date)
+}
+
+// 事件处理方法
+const handleSearch = () => {
+  currentPage.value = 1 // 重置为第一页
+  fetchTaskList()
 }
 
 const handleReset = () => {
-  Object.keys(filterForm).forEach(key => {
-    const k = key as keyof typeof filterForm
-    if (Array.isArray(filterForm[k])) {
-      filterForm[k] = [] as any
-    }
-  })
+  // 重置筛选表单
+  filterForm.number = ''
+  filterForm.name = ''
+  filterForm.priority = ''
+  filterForm.status = ''
+  filterForm.createDateRange = []
+  filterForm.dueDateRange = []
+  filterForm.members = []
+  filterForm.tags = []
+  
   // 清除 URL 参数
   router.push({ query: {} })
+  
   // 重新加载数据
-  handleCheck()
+  currentPage.value = 1
+  fetchTaskList()
+}
+
+const handleViewDetail = (row: TaskDetail) => {
+  router.push(`/detail/${row.id}`)
 }
 
 const handleNewTask = () => {
-  ElMessage.info('Create new task')
+  router.push('/create')
 }
 
 const handleImportBatch = () => {
-  ElMessage.info('Import batch')
+  ElMessage.info('批量导入功能即将上线')
 }
 
 const handleDownload = () => {
-  ElMessage.info('Download')
+  ElMessage.info('下载功能即将上线')
 }
 
 const handleSizeChange = (val: number) => {
   pageSize.value = val
-  handleCheck()
+  fetchTaskList()
 }
 
 const handleCurrentChange = (val: number) => {
   currentPage.value = val
-  handleCheck()
+  fetchTaskList()
 }
 </script>
 

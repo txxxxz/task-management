@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.taskManagement.mapper.TaskMapper">
+    
+    <!-- 任务详情视图结果映射 -->
+    <resultMap id="TaskVOMap" type="com.taskManagement.vo.TaskVO">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="description" property="description"/>
+        <result column="project_id" property="projectId"/>
+        <result column="status" property="status"/>
+        <result column="priority" property="priority"/>
+        <result column="start_time" property="startTime"/>
+        <result column="deadline" property="deadline"/>
+        <result column="completed_time" property="completedTime"/>
+        <result column="estimated_hours" property="estimatedHours"/>
+        <result column="actual_hours" property="actualHours"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="attachment_count" property="attachmentCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_user" property="createUser"/>
+        <result column="update_user" property="updateUser"/>
+        
+        <!-- 项目信息 -->
+        <result column="project_name" property="projectName"/>
+        
+        <!-- 创建者信息 -->
+        <result column="creator_name" property="creatorName"/>
+        
+        <!-- 标签集合 -->
+        <collection property="tags" ofType="com.taskManagement.entity.Tag">
+            <id column="tag_id" property="id"/>
+            <result column="tag_name" property="name"/>
+            <result column="tag_color" property="color"/>
+        </collection>
+        
+        <!-- 任务成员集合 -->
+        <collection property="members" ofType="com.taskManagement.entity.User">
+            <id column="member_id" property="id"/>
+            <result column="member_name" property="name"/>
+            <result column="member_avatar" property="avatar"/>
+        </collection>
+    </resultMap>
+    
+    <!-- 查询任务详情（包含项目、标签、成员信息） -->
+    <select id="getTaskWithDetails" resultMap="TaskVOMap">
+        SELECT 
+            t.*,
+            p.name AS project_name,
+            u.username AS creator_name,
+            tag.id AS tag_id,
+            tag.name AS tag_name,
+            tag.color AS tag_color,
+            u2.id AS member_id,
+            u2.username AS member_name,
+            u2.avatar AS member_avatar
+        FROM tb_task t
+        LEFT JOIN tb_project p ON t.project_id = p.id
+        LEFT JOIN tb_user u ON t.create_user = u.id
+        LEFT JOIN tb_task_tag tt ON t.id = tt.task_id
+        LEFT JOIN tb_tag tag ON tt.tag_id = tag.id
+        LEFT JOIN tb_task_member tm ON t.id = tm.task_id
+        LEFT JOIN tb_user u2 ON tm.user_id = u2.id
+        WHERE t.id = #{taskId}
+    </select>
+    
+    <!-- 分页查询任务列表（包含项目、标签信息） -->
+    <select id="getTaskPageWithDetails" resultMap="TaskVOMap">
+        SELECT 
+            t.*,
+            p.name AS project_name,
+            u.username AS creator_name,
+            tag.id AS tag_id,
+            tag.name AS tag_name,
+            tag.color AS tag_color
+        FROM tb_task t
+        LEFT JOIN tb_project p ON t.project_id = p.id
+        LEFT JOIN tb_user u ON t.create_user = u.id
+        LEFT JOIN tb_task_tag tt ON t.id = tt.task_id
+        LEFT JOIN tb_tag tag ON tt.tag_id = tag.id
+        <where>
+            <if test="projectId != null">
+                AND t.project_id = #{projectId}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (t.title LIKE CONCAT('%', #{keyword}, '%') OR t.description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">
+                AND t.status = #{status}
+            </if>
+            <if test="priority != null">
+                AND t.priority = #{priority}
+            </if>
+        </where>
+        GROUP BY t.id
+        ORDER BY t.priority DESC, t.update_time DESC
+    </select>
+    
+</mapper> 

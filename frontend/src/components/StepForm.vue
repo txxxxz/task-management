@@ -15,7 +15,7 @@
       <slot :name="'step-' + currentStep" />
     </div>
 
-    <div class="step-footer">
+    <div class="step-footer" v-if="showFooter">
       <el-button 
         v-if="currentStep > 0" 
         @click="handlePrevious"
@@ -45,6 +45,7 @@ interface Props {
   steps: Step[]
   currentStep: number
   loading?: boolean
+  showFooter?: boolean
 }
 
 interface Emits {
@@ -54,7 +55,8 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  loading: false
+  loading: false,
+  showFooter: true
 })
 
 const emit = defineEmits<Emits>()

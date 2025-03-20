@@ -18,19 +18,23 @@ export interface Project {
 // 任务详情接口
 export interface TaskDetail {
   id: string
-  number: string
-  name: string
+  number?: string
+  name?: string
+  title?: string
   description: string
   createTime: string
-  dueTime: string
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE'
+  dueTime?: string
+  deadline?: string  // 后端返回的截止时间字段
+  startTime?: string
+  priority: number // 1-低，2-中，3-高，4-紧急
+  status: number // 0-待处理，1-进行中，2-已完成，3-已取消
   members: string[]
   tags: string[]
-  files: TaskFile[]
-  comments: TaskComment[]
+  files?: TaskFile[]
+  comments?: TaskComment[]
   projectId: string
-  projectName: string
+  projectName?: string
+  attachments?: string[]
 }
 
 // 任务文件接口
@@ -57,16 +61,18 @@ export interface TaskComment {
 export interface CreateTaskParams {
   name: string
   description: string
-  dueTime: string
-  priority: TaskDetail['priority']
+  deadline: string // ISO格式：YYYY-MM-DDTHH:mm:ss
+  startTime?: string // ISO格式：YYYY-MM-DDTHH:mm:ss
+  priority: number // 1-低，2-中，3-高，4-紧急
   members: string[]
   tags: string[]
   projectId: string
+  attachments?: string[]
 }
 
 // 更新任务参数
 export interface UpdateTaskParams extends Partial<CreateTaskParams> {
-  status?: TaskDetail['status']
+  status?: number // 0-待处理，1-进行中，2-已完成，3-已取消
   projectId?: string
 }
 
@@ -80,8 +86,8 @@ export interface CommentParams {
 // 任务查询参数
 export interface TaskQueryParams {
   keyword?: string
-  status?: TaskDetail['status']
-  priority?: TaskDetail['priority']
+  status?: number // 0-待处理，1-进行中，2-已完成，3-已取消
+  priority?: number // 1-低，2-中，3-高，4-紧急
   projectId?: string
   startTime?: string
   endTime?: string

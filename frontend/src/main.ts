@@ -8,6 +8,10 @@ import router from './router'
 
 import './assets/main.css'
 import 'animate.css'
+// 导入自定义的frappe-gantt样式文件，覆盖原始样式
+import './styles/frappe-gantt-custom.scss'
+// 导入自定义的gantt样式覆盖
+import './styles/gantt-overrides.scss'
 
 const app = createApp(App)
 

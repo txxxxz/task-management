@@ -26,6 +26,9 @@ public class ProjectVO {
     // 项目成员列表
     private List<String> members;
     
+    // 项目附件链接列表
+    private List<String> attachments;
+    
     // 当前用户是否为创建者
     private Boolean isCreator;
     

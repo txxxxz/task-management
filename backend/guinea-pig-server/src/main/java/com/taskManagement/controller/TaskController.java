@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping("/tasks")
 @Slf4j
 @Api(tags = "任务管理接口")
 public class TaskController {
@@ -30,9 +30,10 @@ public class TaskController {
     @ApiOperation("创建任务")
     public Result<TaskDTO> createTask(@RequestBody TaskDTO taskDTO) {
         log.info("创建任务：{}", taskDTO);
-        // 这里暂时返回模拟数据，实际应该调用service
-        taskDTO.setId(1L);
-        return Result.success(taskDTO);
+        
+        // 调用service创建任务
+        TaskDTO createdTask = taskService.createTask(taskDTO);
+        return Result.success(createdTask);
     }
 
     /**
@@ -57,11 +58,9 @@ public class TaskController {
         log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, page={}, pageSize={}",
                 keyword, status, priority, projectId, page, pageSize);
         
-        // 这里返回模拟数据，实际项目应该调用service
-        Map<String, Object> result = new HashMap<>();
-        result.put("total", 0);
-        result.put("items", new Object[0]);
-        return Result.success(result);
+        // 调用service
+        Map<String, Object> taskList = taskService.getTaskList(keyword, status, priority, projectId, page, pageSize);
+        return Result.success(taskList);
     }
 
     /**
@@ -73,14 +72,9 @@ public class TaskController {
     @ApiOperation("获取任务详情")
     public Result<TaskDTO> getTaskDetail(@PathVariable Long id) {
         log.info("获取任务详情: id={}", id);
-        // 这里返回模拟数据，实际项目应该调用service
-        TaskDTO task = new TaskDTO();
-        task.setId(id);
-        task.setTitle("示例任务");
-        task.setDescription("这是一个示例任务");
-        task.setStatus(0);
-        task.setPriority(1);
-        return Result.success(task);
+        // 调用service
+        TaskDTO taskDetail = taskService.getTaskDetail(id);
+        return Result.success(taskDetail);
     }
 
     /**
@@ -93,9 +87,9 @@ public class TaskController {
     @ApiOperation("更新任务")
     public Result<TaskDTO> updateTask(@PathVariable Long id, @RequestBody TaskDTO taskDTO) {
         log.info("更新任务: id={}, task={}", id, taskDTO);
-        taskDTO.setId(id);
-        // 这里返回模拟数据，实际项目应该调用service
-        return Result.success(taskDTO);
+        // 调用service
+        TaskDTO updatedTask = taskService.updateTask(id, taskDTO);
+        return Result.success(updatedTask);
     }
 
     /**
@@ -107,7 +101,8 @@ public class TaskController {
     @ApiOperation("删除任务")
     public Result<String> deleteTask(@PathVariable Long id) {
         log.info("删除任务: id={}", id);
-        // 这里返回模拟成功，实际项目应该调用service
+        // 调用service
+        taskService.deleteTask(id);
         return Result.success("删除成功");
     }
 
@@ -121,13 +116,8 @@ public class TaskController {
     public Result<Map<String, Object>> getTaskStats(@RequestParam(required = false) Long projectId) {
         log.info("获取任务统计信息: projectId={}", projectId);
         
-        // 这里返回模拟数据，实际项目应该调用service
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", 10);
-        stats.put("pending", 3);
-        stats.put("inProgress", 4);
-        stats.put("completed", 3);
-        
+        // 调用service
+        Map<String, Object> stats = taskService.getTaskStats(projectId);
         return Result.success(stats);
     }
 
@@ -153,10 +143,8 @@ public class TaskController {
         log.info("获取项目任务列表: projectId={}, keyword={}, status={}, priority={}, page={}, pageSize={}",
                 projectId, keyword, status, priority, page, pageSize);
         
-        // 这里返回模拟数据，实际项目应该调用service
-        Map<String, Object> result = new HashMap<>();
-        result.put("total", 0);
-        result.put("items", new Object[0]);
-        return Result.success(result);
+        // 调用service
+        Map<String, Object> projectTasks = taskService.getProjectTasks(projectId, keyword, status, priority, page, pageSize);
+        return Result.success(projectTasks);
     }
 } 

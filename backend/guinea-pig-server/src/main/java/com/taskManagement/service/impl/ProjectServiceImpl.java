@@ -28,6 +28,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Arrays;
 
 /**
  * 项目管理服务实现
@@ -161,6 +162,12 @@ public class ProjectServiceImpl implements ProjectService {
             project.setEndTime(endDate.atStartOfDay());
         }
         
+        // 处理附件列表，将其转换为逗号分隔的文件链接字符串
+        if (projectDTO.getAttachments() != null && !projectDTO.getAttachments().isEmpty()) {
+            String files = String.join(",", projectDTO.getAttachments());
+            project.setFiles(files);
+        }
+        
         // 设置创建者信息
         Long userId = BaseContext.getCurrentId();
         // 如果无法获取当前用户ID，则使用默认值1
@@ -236,6 +243,18 @@ public class ProjectServiceImpl implements ProjectService {
             // 将LocalDate转换为LocalDateTime
             LocalDate endDate = projectDTO.getEndTime();
             project.setEndTime(endDate.atStartOfDay());
+        }
+        
+        // 处理附件列表，将其转换为逗号分隔的文件链接字符串
+        if (projectDTO.getAttachments() != null) {
+            if (projectDTO.getAttachments().isEmpty()) {
+                // 如果附件列表为空，则清空文件字段
+                project.setFiles("");
+            } else {
+                // 将附件列表转换为逗号分隔的字符串
+                String files = String.join(",", projectDTO.getAttachments());
+                project.setFiles(files);
+            }
         }
         
         // 设置更新者
@@ -492,6 +511,12 @@ public class ProjectServiceImpl implements ProjectService {
         // 创建VO对象
         ProjectVO projectVO = new ProjectVO();
         BeanUtils.copyProperties(project, projectVO);
+        
+        // 处理文件链接，将逗号分隔的字符串转换为列表
+        if (project.getFiles() != null && !project.getFiles().isEmpty()) {
+            List<String> attachments = Arrays.asList(project.getFiles().split(","));
+            projectVO.setAttachments(attachments);
+        }
         
         // 获取创建者信息
         User creator = userMapper.selectById(project.getCreateUser());

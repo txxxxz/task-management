@@ -49,7 +49,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'list',
         name: 'List',
-        component: () => import('@/views/table/updateTask.vue'),
+        component: () => import('@/views/task/list.vue'),
         meta: {
           title: 'Task List',
           requiresAuth: true
@@ -67,7 +67,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'create',
         name: 'CreateTask',
-        component: () => import('@/views/table/createTask.vue'),
+        component: () => import('@/views/task/form.vue'),
         meta: {
           title: 'Create Task',
           requiresAuth: true,
@@ -77,7 +77,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'detail/:id',
         name: 'TaskDetail',
-        component: () => import('@/views/table/taskDetail.vue'),
+        component: () => import('@/views/task/detail.vue'),
         meta: {
           title: 'Task Detail',
           requiresAuth: true

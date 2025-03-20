@@ -3,7 +3,6 @@ package com.taskManagement.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskManagement.interceptor.JwtTokenAdminInterceptor;
 import com.taskManagement.interceptor.JwtTokenUserInterceptor;
-import com.taskManagement.json.JacksonObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +36,9 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
 
     @Autowired
     private JwtTokenUserInterceptor jwtTokenUserInterceptor;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     /**
      * 注册自定义拦截器
@@ -104,13 +106,13 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
      * 扩展Spring MVC 框架的消息转换器
      * @param converters
      */
-    protected void  extendMessageConverters(List<HttpMessageConverter<?>> converters){
+    protected void extendMessageConverters(List<HttpMessageConverter<?>> converters){
         log.info("扩展消息转换器……");
         //创建消息转换器对象
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
 
-        //需要为消息转换器设置一个对象转换器，对象转换器可以将对象jva对象序列化为json数据
-        converter.setObjectMapper(new JacksonObjectMapper());
+        //需要为消息转换器设置注入的ObjectMapper
+        converter.setObjectMapper(objectMapper);
 
         //将自己的消息转换器加入容器中
         converters.add(0,converter);

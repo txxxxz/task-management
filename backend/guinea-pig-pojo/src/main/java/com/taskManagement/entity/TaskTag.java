@@ -6,7 +6,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("tb_task_tag")
+@TableName("tb_task_tag_rel")
 public class TaskTag extends BaseEntity {
     private Long taskId;
     private Long tagId;

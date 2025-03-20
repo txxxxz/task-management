@@ -19,4 +19,18 @@ public interface FileService {
      * @return 文件URL列表
      */
     List<String> uploadEncryptedFiles(List<MultipartFile> files);
+    
+    /**
+     * 上传任务文件到阿里云OSS的task/文件夹
+     * @param file 文件
+     * @return 文件URL
+     */
+    String uploadTaskFile(MultipartFile file);
+    
+    /**
+     * 批量上传任务文件到阿里云OSS的task/文件夹
+     * @param files 文件列表
+     * @return 文件URL列表
+     */
+    List<String> uploadTaskFiles(List<MultipartFile> files);
 } 

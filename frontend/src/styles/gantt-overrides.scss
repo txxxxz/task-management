@@ -1,0 +1,27 @@
+// 覆盖frappe-gantt库中的弃用样式
+@use "sass:color" as c;
+
+$bar-color: #b8c2cc;
+$blue: #2196f3;
+
+.bar {
+  &-progress {
+    fill: c.adjust($bar-color, $lightness: -5%);
+  }
+  
+  &-invalid {
+    fill: c.adjust($blue, $lightness: -5%);
+  }
+
+  &.milestone {
+    .bar-progress {
+      fill: c.adjust($bar-color, $lightness: -5%);
+    }
+    
+    &.invalid {
+      .bar-progress {
+        fill: c.adjust($blue, $lightness: -5%);
+      }
+    }
+  }
+} 

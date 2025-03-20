@@ -4,6 +4,7 @@
       :steps="steps"
       v-model:currentStep="currentStep"
       :loading="loading"
+      :showFooter="currentStep !== 2"
       @previous="handlePrevious"
       @next="handleNext"
     >

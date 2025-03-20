@@ -8,17 +8,25 @@ import com.taskManagement.entity.Task;
 import com.taskManagement.mapper.ProjectMapper;
 import com.taskManagement.mapper.TaskMapper;
 import com.taskManagement.service.TaskService;
+import com.taskManagement.service.TaskTagService;
+import com.taskManagement.vo.TaskVO;
+import com.taskManagement.vo.TagVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 任务服务实现类
@@ -32,6 +40,9 @@ public class TaskServiceImpl implements TaskService {
     
     @Autowired
     private ProjectMapper projectMapper;
+    
+    @Autowired
+    private TaskTagService taskTagService;
 
     /**
      * 创建任务
@@ -61,12 +72,14 @@ public class TaskServiceImpl implements TaskService {
         task.setAttachmentCount(0);
         
         // 4. 持久化任务
-        // taskMapper.insert(task);
+        taskMapper.insert(task);
         
-        // 模拟ID生成
-        task.setId(1L);
+        // 5. 处理标签关联
+        if (taskDTO.getTagIds() != null && !taskDTO.getTagIds().isEmpty()) {
+            taskTagService.batchAddTaskTags(task.getId(), taskDTO.getTagIds());
+        }
         
-        // 5. 返回DTO
+        // 6. 返回DTO
         TaskDTO resultDTO = new TaskDTO();
         BeanUtils.copyProperties(task, resultDTO);
         
@@ -81,7 +94,7 @@ public class TaskServiceImpl implements TaskService {
      * @param projectId 项目ID
      * @param page 页码
      * @param pageSize 每页数量
-     * @return 任务列表和总数
+     * @return 任务列表和总数（仅包含标签ID，不包含颜色等额外信息）
      */
     @Override
     public Map<String, Object> getTaskList(String keyword, Integer status, Integer priority,
@@ -89,11 +102,55 @@ public class TaskServiceImpl implements TaskService {
         log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, page={}, pageSize={}",
                 keyword, status, priority, projectId, page, pageSize);
         
-        // 这里暂时返回模拟数据
-        // 实际项目中应该使用MyBatis-Plus的Page对象和条件构造器进行查询
+        // 使用LambdaQuery构建查询条件
+        LambdaQueryWrapper<Task> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 添加关键词查询条件
+        if (StringUtils.isNotEmpty(keyword)) {
+            queryWrapper.like(Task::getTitle, keyword)
+                    .or()
+                    .like(Task::getDescription, keyword);
+        }
+        
+        // 添加状态过滤条件
+        if (status != null) {
+            queryWrapper.eq(Task::getStatus, status);
+        }
+        
+        // 添加优先级过滤条件
+        if (priority != null) {
+            queryWrapper.eq(Task::getPriority, priority);
+        }
+        
+        // 添加项目ID过滤条件
+        if (projectId != null) {
+            queryWrapper.eq(Task::getProjectId, projectId);
+        }
+        
+        // 排序（按优先级降序，更新时间降序）
+        queryWrapper.orderByDesc(Task::getPriority)
+                  .orderByDesc(Task::getUpdateTime);
+        
+        // 执行分页查询
+        Page<Task> pageInfo = new Page<>(page, pageSize);
+        Page<Task> taskPage = taskMapper.selectPage(pageInfo, queryWrapper);
+        
+        // 构建返回结果
+        List<TaskDTO> taskDTOs = new ArrayList<>();
+        for (Task task : taskPage.getRecords()) {
+            TaskDTO taskDTO = new TaskDTO();
+            BeanUtils.copyProperties(task, taskDTO);
+            
+            // 仅查询任务标签ID（标签颜色统一为浅蓝灰色#E0E7F1，由前端渲染）
+            List<Long> tagIds = taskTagService.getTagIdsByTaskId(task.getId());
+            taskDTO.setTagIds(tagIds);
+            
+            taskDTOs.add(taskDTO);
+        }
+        
         Map<String, Object> result = new HashMap<>();
-        result.put("total", 0);
-        result.put("items", new ArrayList<>());
+        result.put("total", taskPage.getTotal());
+        result.put("items", taskDTOs);
         
         return result;
     }
@@ -101,21 +158,25 @@ public class TaskServiceImpl implements TaskService {
     /**
      * 获取任务详情
      * @param id 任务ID
-     * @return 任务详情
+     * @return 任务详情（仅包含标签ID，不包含颜色等额外信息）
      */
     @Override
     public TaskDTO getTaskDetail(Long id) {
         log.info("获取任务详情: id={}", id);
         
-        // 这里暂时返回模拟数据
-        // 实际项目中应该从数据库查询任务，并转换为DTO
+        // 1. 查询任务基本信息
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        
+        // 2. 转换为DTO
         TaskDTO taskDTO = new TaskDTO();
-        taskDTO.setId(id);
-        taskDTO.setTitle("示例任务");
-        taskDTO.setDescription("这是一个示例任务，ID为" + id);
-        taskDTO.setStatus(0);
-        taskDTO.setPriority(1);
-        taskDTO.setProjectId(1L);
+        BeanUtils.copyProperties(task, taskDTO);
+        
+        // 3. 查询任务标签ID（标签颜色统一为浅蓝灰色#E0E7F1，由前端渲染）
+        List<Long> tagIds = taskTagService.getTagIdsByTaskId(id);
+        taskDTO.setTagIds(tagIds);
         
         return taskDTO;
     }
@@ -132,26 +193,31 @@ public class TaskServiceImpl implements TaskService {
         log.info("更新任务: id={}, task={}", id, taskDTO);
         
         // 1. 检查任务是否存在
-        // Task task = taskMapper.selectById(id);
-        // if (task == null) {
-        //     throw new BusinessException("任务不存在");
-        // }
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
         
         // 2. 检查是否有权限修改
-        // Long currentUserId = BaseContext.getCurrentId();
-        // if (!task.getCreateUser().equals(currentUserId)) {
-        //     throw new BusinessException("没有权限修改该任务");
-        // }
+        Long currentUserId = BaseContext.getCurrentId();
+        if (!task.getCreateUser().equals(currentUserId)) {
+            throw new BusinessException("没有权限修改该任务");
+        }
         
         // 3. 更新任务
         taskDTO.setId(id);
-        // Task updateTask = new Task();
-        // BeanUtils.copyProperties(taskDTO, updateTask);
-        // updateTask.setUpdateUser(currentUserId);
-        // updateTask.setUpdateTime(LocalDateTime.now());
+        Task updateTask = new Task();
+        BeanUtils.copyProperties(taskDTO, updateTask);
+        updateTask.setUpdateUser(currentUserId);
+        updateTask.setUpdateTime(LocalDateTime.now());
         
         // 4. 持久化更新
-        // taskMapper.updateById(updateTask);
+        taskMapper.updateById(updateTask);
+        
+        // 5. 处理标签关联
+        if (taskDTO.getTagIds() != null) {
+            taskTagService.updateTaskTags(id, taskDTO.getTagIds());
+        }
         
         return taskDTO;
     }
@@ -166,19 +232,22 @@ public class TaskServiceImpl implements TaskService {
         log.info("删除任务: id={}", id);
         
         // 1. 检查任务是否存在
-        // Task task = taskMapper.selectById(id);
-        // if (task == null) {
-        //     throw new BusinessException("任务不存在");
-        // }
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
         
         // 2. 检查是否有权限删除
-        // Long currentUserId = BaseContext.getCurrentId();
-        // if (!task.getCreateUser().equals(currentUserId)) {
-        //     throw new BusinessException("没有权限删除该任务");
-        // }
+        Long currentUserId = BaseContext.getCurrentId();
+        if (!task.getCreateUser().equals(currentUserId)) {
+            throw new BusinessException("没有权限删除该任务");
+        }
         
-        // 3. 删除任务
-        // taskMapper.deleteById(id);
+        // 3. 删除任务标签关联
+        taskTagService.removeTaskTags(id);
+        
+        // 4. 删除任务
+        taskMapper.deleteById(id);
     }
 
     /**
@@ -190,13 +259,27 @@ public class TaskServiceImpl implements TaskService {
     public Map<String, Object> getTaskStats(Long projectId) {
         log.info("获取任务统计信息: projectId={}", projectId);
         
-        // 这里暂时返回模拟数据
-        // 实际项目中应该基于projectId从数据库统计各状态任务数量
         Map<String, Object> stats = new HashMap<>();
-        stats.put("total", 10);
-        stats.put("pending", 3);
-        stats.put("inProgress", 4);
-        stats.put("completed", 3);
+        
+        // 使用自定义Mapper方法获取总任务数
+        Long total = taskMapper.countTasks(projectId, null);
+        stats.put("total", total);
+        
+        // 查询待处理任务数 (状态0)
+        Long pending = taskMapper.countTasks(projectId, 0);
+        stats.put("pending", pending);
+        
+        // 查询进行中任务数 (状态1)
+        Long inProgress = taskMapper.countTasks(projectId, 1);
+        stats.put("inProgress", inProgress);
+        
+        // 查询已完成任务数 (状态2)
+        Long completed = taskMapper.countTasks(projectId, 2);
+        stats.put("completed", completed);
+        
+        // 查询已取消任务数 (状态3)
+        Long canceled = taskMapper.countTasks(projectId, 3);
+        stats.put("canceled", canceled);
         
         return stats;
     }
@@ -209,7 +292,7 @@ public class TaskServiceImpl implements TaskService {
      * @param priority 优先级
      * @param page 页码
      * @param pageSize 每页数量
-     * @return 任务列表和总数
+     * @return 任务列表和总数（仅包含标签ID，不包含颜色等额外信息）
      */
     @Override
     public Map<String, Object> getProjectTasks(Long projectId, String keyword, Integer status,
@@ -223,11 +306,55 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException("项目不存在");
         }
         
-        // 这里暂时返回模拟数据
-        // 实际项目中应该使用MyBatis-Plus的Page对象和条件构造器进行查询
+        // 使用LambdaQuery构建查询条件
+        LambdaQueryWrapper<Task> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 项目ID是必须条件
+        queryWrapper.eq(Task::getProjectId, projectId);
+        
+        // 添加关键词查询条件
+        if (StringUtils.isNotEmpty(keyword)) {
+            queryWrapper.and(wrapper -> 
+                wrapper.like(Task::getTitle, keyword)
+                    .or()
+                    .like(Task::getDescription, keyword)
+            );
+        }
+        
+        // 添加状态过滤条件
+        if (status != null) {
+            queryWrapper.eq(Task::getStatus, status);
+        }
+        
+        // 添加优先级过滤条件
+        if (priority != null) {
+            queryWrapper.eq(Task::getPriority, priority);
+        }
+        
+        // 排序（按优先级降序，更新时间降序）
+        queryWrapper.orderByDesc(Task::getPriority)
+                  .orderByDesc(Task::getUpdateTime);
+        
+        // 执行分页查询
+        Page<Task> pageInfo = new Page<>(page, pageSize);
+        Page<Task> taskPage = taskMapper.selectPage(pageInfo, queryWrapper);
+        
+        // 构建返回结果
+        List<TaskDTO> taskDTOs = new ArrayList<>();
+        for (Task task : taskPage.getRecords()) {
+            TaskDTO taskDTO = new TaskDTO();
+            BeanUtils.copyProperties(task, taskDTO);
+            
+            // 仅查询任务标签ID（标签颜色统一为浅蓝灰色#E0E7F1，由前端渲染）
+            List<Long> tagIds = taskTagService.getTagIdsByTaskId(task.getId());
+            taskDTO.setTagIds(tagIds);
+            
+            taskDTOs.add(taskDTO);
+        }
+        
         Map<String, Object> result = new HashMap<>();
-        result.put("total", 0);
-        result.put("items", new ArrayList<>());
+        result.put("total", taskPage.getTotal());
+        result.put("items", taskDTOs);
         
         return result;
     }

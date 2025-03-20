@@ -13,6 +13,40 @@ export function uploadFile(data: FormData) {
   })
 }
 
+// 上传任务文件到阿里云OSS的task/文件夹
+export function uploadTaskFile(data: FormData) {
+  return request<TaskFile>({
+    url: '/api/files/task/upload',
+    method: 'post',
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    data
+  })
+}
+
+// 批量上传任务文件到阿里云OSS的task/文件夹
+export function batchUploadTaskFiles(files: File[]) {
+  const formData = new FormData()
+  
+  files.forEach(file => {
+    formData.append('files', file)
+  })
+  
+  return request<{
+    code: number
+    data: string[]
+    message: string
+  }>({
+    url: '/api/files/task/batch-upload',
+    method: 'post',
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+  })
+}
+
 // 删除文件
 export function deleteFile(id: string) {
   return request<void>({
