@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 public class TaskVO {
     private Long id;
-    private String title;
+    private String name;
     private String description;
     private Long projectId;
     private Integer status;

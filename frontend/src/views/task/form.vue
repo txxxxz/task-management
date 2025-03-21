@@ -365,9 +365,9 @@ const isEdit = computed(() => !!route.params.id)
 
 // 步骤配置
 const steps = [
-  { title: '基本信息', component: 'BasicInfo' },
-  { title: '上传文件', component: 'UploadFiles' },
-  { title: '完成', component: 'Finish' }
+  { title: 'BasicInfo', component: 'BasicInfo' },
+  { title: 'UploadFiles', component: 'UploadFiles' },
+  { title: 'Finish', component: 'Finish' }
 ]
 
 // 表单数据
@@ -400,10 +400,10 @@ const priorityOptions = [
 
 // 状态选项
 const statusOptions = [
-  { value: 0, label: '待办' },
-  { value: 1, label: '进行中' },
-  { value: 2, label: '已完成' },
-  { value: 3, label: '已取消' }
+  { value: 0, label: 'Pending' },
+  { value: 1, label: 'In Progress' },
+  { value: 2, label: 'Finished' },
+  { value: 3, label: 'Canceled' }
 ]
 
 // 项目选项

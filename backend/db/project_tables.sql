@@ -26,4 +26,22 @@ CREATE TABLE IF NOT EXISTS `tb_project_member` (
     UNIQUE KEY `uk_project_user` (`project_id`,`user_id`),
     KEY `idx_project_id` (`project_id`),
     KEY `idx_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目成员关系表'; 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目成员关系表';
+
+-- 项目附件表
+CREATE TABLE IF NOT EXISTS `tb_project_attachment` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `project_id` bigint(20) NOT NULL COMMENT '项目ID',
+    `file_name` varchar(200) NOT NULL COMMENT '文件名',
+    `file_path` varchar(500) NOT NULL COMMENT '文件路径',
+    `file_size` bigint(20) NOT NULL COMMENT '文件大小（字节）',
+    `file_type` varchar(100) DEFAULT NULL COMMENT '文件类型',
+    `md5` varchar(32) DEFAULT NULL COMMENT '文件MD5值',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `create_user` bigint(20) DEFAULT NULL COMMENT '创建者ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `update_user` bigint(20) DEFAULT NULL COMMENT '更新者ID',
+    PRIMARY KEY (`id`),
+    KEY `idx_project_id` (`project_id`),
+    FOREIGN KEY (`project_id`) REFERENCES `tb_project` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目附件表'; 

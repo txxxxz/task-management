@@ -9,13 +9,13 @@ com/taskManagement/vo/CommentVO.class
 com/taskManagement/entity/ProjectMember.class
 com/taskManagement/dto/TaskDTO.class
 com/taskManagement/entity/Task.class
+com/taskManagement/entity/TaskAttachment.class
 com/taskManagement/vo/TaskVO.class
 com/taskManagement/entity/TaskMember.class
 com/taskManagement/dto/ProjectDTO.class
 com/taskManagement/entity/User.class
 com/taskManagement/vo/ProjectVO.class
 com/taskManagement/dto/TagDTO.class
-com/taskManagement/entity/Attachment.class
 com/taskManagement/dto/UserUpdateDTO.class
 com/taskManagement/vo/AttachmentVO.class
 com/taskManagement/vo/UserVO.class
@@ -23,4 +23,5 @@ com/taskManagement/entity/Comment.class
 com/taskManagement/entity/TaskTag.class
 com/taskManagement/entity/BaseEntity.class
 com/taskManagement/vo/LoginVO$LoginVOBuilder.class
+com/taskManagement/entity/ProjectAttachment.class
 com/taskManagement/entity/Tag.class

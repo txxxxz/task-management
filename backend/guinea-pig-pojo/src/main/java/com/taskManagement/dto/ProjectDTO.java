@@ -11,18 +11,18 @@ import java.util.List;
 public class ProjectDTO {
     private Long id;
     
-    @NotBlank(message = "项目名称不能为空")
+    @NotBlank(message = "Project name cannot be empty")
     private String name;
     
     private String description;
     
-    @NotNull(message = "项目状态不能为空")
+    @NotNull(message = "Project status cannot be empty")
     private Integer status;
     
     private LocalDate startTime;
     private LocalDate endTime;
     
-    @NotNull(message = "项目优先级不能为空")
+    @NotNull(message = "Project priority cannot be empty")
     private Integer priority;
     
     /**

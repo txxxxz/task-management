@@ -19,4 +19,6 @@ guineapig:
     access-key-id: LTAI5tD7GdrmDNMvzx6PU6eW
     access-key-secret: XMw7ebPlkEJEdPiqw9lzIIO7wLz2pA
     bucket-name: guinea-pig-task-management
+    url-prefix: https://guinea-pig-task-management.oss-cn-beijing.aliyuncs.com
+    encryption-key: OdHf8JagZ5ls70Rm
 

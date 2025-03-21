@@ -5,10 +5,13 @@ import com.taskManagement.exception.BusinessException;
 import com.taskManagement.dto.TaskDTO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.entity.Task;
+import com.taskManagement.entity.TaskAttachment;
 import com.taskManagement.mapper.ProjectMapper;
 import com.taskManagement.mapper.TaskMapper;
+import com.taskManagement.mapper.TaskAttachmentMapper;
 import com.taskManagement.service.TaskService;
 import com.taskManagement.service.TaskTagService;
+import com.taskManagement.service.FileService;
 import com.taskManagement.vo.TaskVO;
 import com.taskManagement.vo.TagVO;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +19,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -43,6 +47,12 @@ public class TaskServiceImpl implements TaskService {
     
     @Autowired
     private TaskTagService taskTagService;
+    
+    @Autowired
+    private TaskAttachmentMapper taskAttachmentMapper;
+    
+    @Autowired
+    private FileService fileService;
 
     /**
      * 创建任务
@@ -364,5 +374,97 @@ public class TaskServiceImpl implements TaskService {
         result.put("items", taskDTOs);
         
         return result;
+    }
+
+    /**
+     * 上传任务附件
+     * @param taskId 任务ID
+     * @param file 文件
+     * @param userId 用户ID
+     * @return 文件URL
+     */
+    @Override
+    @Transactional
+    public String uploadTaskAttachment(Long taskId, MultipartFile file, Long userId) {
+        log.info("上传任务附件: taskId={}, fileName={}, userId={}", taskId, file.getOriginalFilename(), userId);
+        
+        // 1. 检查任务是否存在
+        Task task = taskMapper.selectById(taskId);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        
+        // 2. 上传文件并保存到任务附件表
+        String fileUrl = fileService.uploadTaskFile(file, taskId, userId);
+        
+        // 3. 更新任务附件数量
+        task.setAttachmentCount(task.getAttachmentCount() + 1);
+        taskMapper.updateById(task);
+        
+        return fileUrl;
+    }
+    
+    /**
+     * 批量上传任务附件
+     * @param taskId 任务ID
+     * @param files 文件列表
+     * @param userId 用户ID
+     * @return 文件URL列表
+     */
+    @Override
+    @Transactional
+    public List<String> batchUploadTaskAttachments(Long taskId, List<MultipartFile> files, Long userId) {
+        log.info("批量上传任务附件: taskId={}, fileCount={}, userId={}", taskId, files.size(), userId);
+        
+        // 1. 检查任务是否存在
+        Task task = taskMapper.selectById(taskId);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        
+        // 2. 批量上传文件并保存到任务附件表
+        List<String> fileUrls = fileService.uploadTaskFiles(files, taskId, userId);
+        
+        // 3. 更新任务附件数量
+        task.setAttachmentCount(task.getAttachmentCount() + files.size());
+        taskMapper.updateById(task);
+        
+        return fileUrls;
+    }
+    
+    /**
+     * 获取任务附件列表
+     * @param taskId 任务ID
+     * @return 附件列表
+     */
+    @Override
+    public List<Map<String, Object>> getTaskAttachments(Long taskId) {
+        log.info("获取任务附件列表: taskId={}", taskId);
+        
+        // 检查任务是否存在
+        Task task = taskMapper.selectById(taskId);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        
+        // 查询附件列表
+        LambdaQueryWrapper<TaskAttachment> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(TaskAttachment::getTaskId, taskId);
+        queryWrapper.orderByDesc(TaskAttachment::getCreateTime);
+        
+        List<TaskAttachment> attachments = taskAttachmentMapper.selectList(queryWrapper);
+        
+        // 转换为前端需要的格式
+        return attachments.stream().map(attachment -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", attachment.getId());
+            map.put("fileName", attachment.getFileName());
+            map.put("filePath", attachment.getFilePath());
+            map.put("fileSize", attachment.getFileSize());
+            map.put("fileType", attachment.getFileType());
+            map.put("createTime", attachment.getCreateTime());
+            map.put("createUser", attachment.getCreateUser());
+            return map;
+        }).collect(Collectors.toList());
     }
 } 

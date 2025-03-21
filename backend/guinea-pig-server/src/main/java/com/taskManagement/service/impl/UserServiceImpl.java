@@ -13,6 +13,7 @@ import com.taskManagement.entity.User;
 import com.taskManagement.vo.LoginVO;
 import com.taskManagement.vo.UserVO;
 import com.taskManagement.service.UserService;
+import com.taskManagement.service.FileService;
 import com.taskManagement.properties.JwtProperties;
 import com.taskManagement.constant.JwtClaimsConstant;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final UserMapper userMapper;
     private final JwtProperties jwtProperties;
     private final AliOssUtil aliOssUtil;
+    private final FileService fileService;
     
     @Override
     public LoginVO login(UserLoginDTO userLoginDTO) {
@@ -207,18 +209,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 throw new UserBusinessException("图片大小不能超过2MB");
             }
 
-            // 4. 生成文件名
-            String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null ? originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
-            String fileName = "avatar/" + userId + "_" + System.currentTimeMillis() + extension;
-
-            // 5. 上传文件到阿里云OSS
-            String avatarUrl = aliOssUtil.upload(file.getBytes(), fileName);
-
-            // 6. 更新用户头像URL
-            user.setAvatar(avatarUrl);
-            this.updateById(user);
-
+            // 4. 使用 FileService 上传头像
+            String avatarUrl = fileService.uploadAvatar(file, userId);
+            
             return avatarUrl;
         } catch (Exception e) {
             throw new UserBusinessException("头像上传失败：" + e.getMessage());

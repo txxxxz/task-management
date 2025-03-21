@@ -2,6 +2,7 @@ package com.taskManagement.service;
 
 import com.taskManagement.dto.TaskDTO;
 import com.taskManagement.entity.Task;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -71,4 +72,29 @@ public interface TaskService {
      */
     Map<String, Object> getProjectTasks(Long projectId, String keyword, Integer status, 
                                        Integer priority, Integer page, Integer pageSize);
+
+    /**
+     * 上传任务附件
+     * @param taskId 任务ID
+     * @param file 文件
+     * @param userId 用户ID
+     * @return 文件URL
+     */
+    String uploadTaskAttachment(Long taskId, MultipartFile file, Long userId);
+    
+    /**
+     * 批量上传任务附件
+     * @param taskId 任务ID
+     * @param files 文件列表
+     * @param userId 用户ID
+     * @return 文件URL列表
+     */
+    List<String> batchUploadTaskAttachments(Long taskId, List<MultipartFile> files, Long userId);
+    
+    /**
+     * 获取任务附件列表
+     * @param taskId 任务ID
+     * @return 附件列表
+     */
+    List<Map<String, Object>> getTaskAttachments(Long taskId);
 } 

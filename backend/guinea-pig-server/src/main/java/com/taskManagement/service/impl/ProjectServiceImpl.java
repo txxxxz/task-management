@@ -7,11 +7,14 @@ import com.taskManagement.dto.ProjectDTO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.entity.ProjectMember;
 import com.taskManagement.entity.User;
+import com.taskManagement.entity.ProjectAttachment;
 import com.taskManagement.exception.BusinessException;
 import com.taskManagement.mapper.ProjectMapper;
 import com.taskManagement.mapper.ProjectMemberMapper;
 import com.taskManagement.mapper.UserMapper;
+import com.taskManagement.mapper.ProjectAttachmentMapper;
 import com.taskManagement.service.ProjectService;
+import com.taskManagement.service.FileService;
 import com.taskManagement.vo.PageResult;
 import com.taskManagement.vo.ProjectVO;
 import com.taskManagement.vo.UserVO;
@@ -22,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.taskManagement.entity.Project;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -29,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 项目管理服务实现
@@ -40,12 +46,16 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMapper projectMapper;
     private final ProjectMemberMapper projectMemberMapper;
     private final UserMapper userMapper;
+    private final ProjectAttachmentMapper projectAttachmentMapper;
+    private final FileService fileService;
     
     @Autowired
-    public ProjectServiceImpl(ProjectMapper projectMapper, ProjectMemberMapper projectMemberMapper, UserMapper userMapper) {
+    public ProjectServiceImpl(ProjectMapper projectMapper, ProjectMemberMapper projectMemberMapper, UserMapper userMapper, ProjectAttachmentMapper projectAttachmentMapper, FileService fileService) {
         this.projectMapper = projectMapper;
         this.projectMemberMapper = projectMemberMapper;
         this.userMapper = userMapper;
+        this.projectAttachmentMapper = projectAttachmentMapper;
+        this.fileService = fileService;
     }
 
     /**
@@ -72,6 +82,7 @@ public class ProjectServiceImpl implements ProjectService {
         
         // 获取当前用户ID
         Long userId = BaseContext.getCurrentId();
+        
         if (userId == null) {
             log.warn("获取当前用户ID为空，使用默认值1");
             userId = 1L;
@@ -136,6 +147,18 @@ public class ProjectServiceImpl implements ProjectService {
             throw new BusinessException("项目不存在");
         }
         
+        // 查询项目附件
+        LambdaQueryWrapper<ProjectAttachment> attachmentWrapper = new LambdaQueryWrapper<>();
+        attachmentWrapper.eq(ProjectAttachment::getProjectId, project.getId());
+        List<ProjectAttachment> projectAttachments = projectAttachmentMapper.selectList(attachmentWrapper);
+
+        List<String> attachments = new ArrayList<>();
+        if (projectAttachments != null && !projectAttachments.isEmpty()) {
+            for (ProjectAttachment attachment : projectAttachments) {
+                attachments.add(attachment.getFilePath());
+            }
+        }
+        
         // 转换为VO并返回
         return convertToVO(project);
     }
@@ -149,6 +172,7 @@ public class ProjectServiceImpl implements ProjectService {
         // 创建项目实体
         Project project = new Project();
         BeanUtils.copyProperties(projectDTO, project);
+        Long userId = BaseContext.getCurrentId();
         
         // 处理日期转换
         if (projectDTO.getStartTime() != null) {
@@ -162,14 +186,6 @@ public class ProjectServiceImpl implements ProjectService {
             project.setEndTime(endDate.atStartOfDay());
         }
         
-        // 处理附件列表，将其转换为逗号分隔的文件链接字符串
-        if (projectDTO.getAttachments() != null && !projectDTO.getAttachments().isEmpty()) {
-            String files = String.join(",", projectDTO.getAttachments());
-            project.setFiles(files);
-        }
-        
-        // 设置创建者信息
-        Long userId = BaseContext.getCurrentId();
         // 如果无法获取当前用户ID，则使用默认值1
         if (userId == null) {
             log.warn("无法获取当前用户ID，使用默认值1");
@@ -212,6 +228,9 @@ public class ProjectServiceImpl implements ProjectService {
             }
         }
         
+        // 处理附件列表 - 通过ProjectAttachment表已经在FileService中处理好了，这里不需要额外处理
+        // 如果传入了附件URL列表，我们只需在FileService中记录即可
+        
         // 返回项目VO
         return convertToVO(project);
     }
@@ -224,6 +243,7 @@ public class ProjectServiceImpl implements ProjectService {
     public ProjectVO updateProject(ProjectDTO projectDTO) {
         // 查询项目是否存在
         Long id = projectDTO.getId();
+        Long userId = BaseContext.getCurrentId();
         Project existingProject = projectMapper.selectById(id);
         if (existingProject == null) {
             throw new BusinessException("项目不存在");
@@ -245,25 +265,18 @@ public class ProjectServiceImpl implements ProjectService {
             project.setEndTime(endDate.atStartOfDay());
         }
         
-        // 处理附件列表，将其转换为逗号分隔的文件链接字符串
-        if (projectDTO.getAttachments() != null) {
-            if (projectDTO.getAttachments().isEmpty()) {
-                // 如果附件列表为空，则清空文件字段
-                project.setFiles("");
-            } else {
-                // 将附件列表转换为逗号分隔的字符串
-                String files = String.join(",", projectDTO.getAttachments());
-                project.setFiles(files);
-            }
-        }
-        
-        // 设置更新者
-        Long userId = BaseContext.getCurrentId();
         project.setUpdateUser(userId);
         project.setUpdateTime(LocalDateTime.now());
         
         // 保存更新
         projectMapper.updateById(project);
+        
+        // 先删除原有的项目附件 - 这部分可能仍需保留，因为更新项目时可能需要删除旧附件
+        LambdaQueryWrapper<ProjectAttachment> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ProjectAttachment::getProjectId, id);
+        projectAttachmentMapper.delete(queryWrapper);
+
+        // 附件处理由FileService完成，这里不需要额外处理
         
         // 如果有指定成员，更新成员
         if (projectDTO.getMembers() != null && !projectDTO.getMembers().isEmpty()) {
@@ -512,12 +525,6 @@ public class ProjectServiceImpl implements ProjectService {
         ProjectVO projectVO = new ProjectVO();
         BeanUtils.copyProperties(project, projectVO);
         
-        // 处理文件链接，将逗号分隔的字符串转换为列表
-        if (project.getFiles() != null && !project.getFiles().isEmpty()) {
-            List<String> attachments = Arrays.asList(project.getFiles().split(","));
-            projectVO.setAttachments(attachments);
-        }
-        
         // 获取创建者信息
         User creator = userMapper.selectById(project.getCreateUser());
         if (creator != null) {
@@ -566,5 +573,89 @@ public class ProjectServiceImpl implements ProjectService {
         }
         
         return projectVO;
+    }
+
+    /**
+     * 上传项目附件
+     * @param projectId 项目ID
+     * @param file 文件
+     * @param userId 用户ID
+     * @return 文件URL
+     */
+    @Override
+    @Transactional
+    public String uploadProjectAttachment(Long projectId, MultipartFile file, Long userId) {
+        log.info("上传项目附件: projectId={}, fileName={}, userId={}", projectId, file.getOriginalFilename(), userId);
+        
+        // 1. 检查项目是否存在
+        Project project = projectMapper.selectById(projectId);
+        if (project == null) {
+            throw new BusinessException("项目不存在");
+        }
+        
+        // 2. 上传文件并保存到项目附件表
+        String fileUrl = fileService.uploadProjectFile(file, projectId, userId);
+        
+        return fileUrl;
+    }
+    
+    /**
+     * 批量上传项目附件
+     * @param projectId 项目ID
+     * @param files 文件列表
+     * @param userId 用户ID
+     * @return 文件URL列表
+     */
+    @Override
+    @Transactional
+    public List<String> batchUploadProjectAttachments(Long projectId, List<MultipartFile> files, Long userId) {
+        log.info("批量上传项目附件: projectId={}, fileCount={}, userId={}", projectId, files.size(), userId);
+        
+        // 1. 检查项目是否存在
+        Project project = projectMapper.selectById(projectId);
+        if (project == null) {
+            throw new BusinessException("项目不存在");
+        }
+        
+        // 2. 批量上传文件并保存到项目附件表
+        List<String> fileUrls = fileService.uploadProjectFiles(files, projectId, userId);
+        
+        return fileUrls;
+    }
+    
+    /**
+     * 获取项目附件列表
+     * @param projectId 项目ID
+     * @return 附件列表
+     */
+    @Override
+    public List<Map<String, Object>> getProjectAttachments(Long projectId) {
+        log.info("获取项目附件列表: projectId={}", projectId);
+        
+        // 检查项目是否存在
+        Project project = projectMapper.selectById(projectId);
+        if (project == null) {
+            throw new BusinessException("项目不存在");
+        }
+        
+        // 查询附件列表
+        LambdaQueryWrapper<ProjectAttachment> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ProjectAttachment::getProjectId, projectId);
+        queryWrapper.orderByDesc(ProjectAttachment::getCreateTime);
+        
+        List<ProjectAttachment> attachments = projectAttachmentMapper.selectList(queryWrapper);
+        
+        // 转换为前端需要的格式
+        return attachments.stream().map(attachment -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", attachment.getId());
+            map.put("fileName", attachment.getFileName());
+            map.put("filePath", attachment.getFilePath());
+            map.put("fileSize", attachment.getFileSize());
+            map.put("fileType", attachment.getFileType());
+            map.put("createTime", attachment.getCreateTime());
+            map.put("createUser", attachment.getCreateUser());
+            return map;
+        }).collect(Collectors.toList());
     }
 } 

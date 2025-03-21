@@ -9,26 +9,23 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AliyunOSSConfig {
 
-    @Value("${aliyun.oss.endpoint}")
+    @Value("${guineapig.alioss.endpoint}")
     private String endpoint;
 
-    @Value("${aliyun.oss.accessKeyId}")
+    @Value("${guineapig.alioss.access-key-id}")
     private String accessKeyId;
 
-    @Value("${aliyun.oss.accessKeySecret}")
+    @Value("${guineapig.alioss.access-key-secret}")
     private String accessKeySecret;
 
-    @Value("${aliyun.oss.bucketName}")
+    @Value("${guineapig.alioss.bucket-name}")
     private String bucketName;
     
-    @Value("${aliyun.oss.urlPrefix}")
+    @Value("${guineapig.alioss.url-prefix}")
     private String urlPrefix;
     
-    @Value("${aliyun.oss.encryption-key}")
+    @Value("${guineapig.alioss.encryption-key}")
     private String encryptionKey;
-    
-    @Value("${aliyun.oss.project-folder}")
-    private String projectFolder;
 
     @Bean
     public OSS ossClient() {
@@ -45,9 +42,5 @@ public class AliyunOSSConfig {
     
     public String getEncryptionKey() {
         return encryptionKey;
-    }
-    
-    public String getProjectFolder() {
-        return projectFolder;
     }
 } 

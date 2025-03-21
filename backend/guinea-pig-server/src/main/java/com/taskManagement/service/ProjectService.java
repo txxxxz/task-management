@@ -4,8 +4,10 @@ import com.taskManagement.dto.ProjectDTO;
 import com.taskManagement.vo.PageResult;
 import com.taskManagement.vo.ProjectVO;
 import com.taskManagement.vo.UserVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 项目管理服务接口
@@ -79,4 +81,29 @@ public interface ProjectService {
      * @param username 用户名
      */
     void removeProjectMember(Long id, String username);
+
+    /**
+     * 上传项目附件
+     * @param projectId 项目ID
+     * @param file 文件
+     * @param userId 用户ID
+     * @return 文件URL
+     */
+    String uploadProjectAttachment(Long projectId, MultipartFile file, Long userId);
+    
+    /**
+     * 批量上传项目附件
+     * @param projectId 项目ID
+     * @param files 文件列表
+     * @param userId 用户ID
+     * @return 文件URL列表
+     */
+    List<String> batchUploadProjectAttachments(Long projectId, List<MultipartFile> files, Long userId);
+    
+    /**
+     * 获取项目附件列表
+     * @param projectId 项目ID
+     * @return 附件列表
+     */
+    List<Map<String, Object>> getProjectAttachments(Long projectId);
 } 
