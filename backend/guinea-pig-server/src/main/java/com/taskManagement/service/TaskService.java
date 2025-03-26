@@ -2,6 +2,7 @@ package com.taskManagement.service;
 
 import com.taskManagement.dto.TaskDTO;
 import com.taskManagement.entity.Task;
+import com.taskManagement.vo.UserVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -73,14 +74,22 @@ public interface TaskService {
     Map<String, Object> getProjectTasks(Long projectId, String keyword, Integer status, 
                                        Integer priority, Integer page, Integer pageSize);
 
+
     /**
      * 上传任务附件
      * @param taskId 任务ID
      * @param file 文件
-     * @param userId 用户ID
-     * @return 文件URL
+     * @return 附件信息
      */
-    String uploadTaskAttachment(Long taskId, MultipartFile file, Long userId);
+    public Map<String, Object> uploadTaskAttachment(Long taskId, Object file);
+    
+    /**
+     * 批量上传任务附件
+     * @param taskId 任务ID
+     * @param file 文件
+     * @return 附件信息
+     */
+    public List<Map<String, Object>> batchUploadTaskAttachments(Long taskId, List<Object> files);
     
     /**
      * 批量上传任务附件
@@ -97,4 +106,49 @@ public interface TaskService {
      * @return 附件列表
      */
     List<Map<String, Object>> getTaskAttachments(Long taskId);
+    
+    /**
+     * 删除任务附件
+     * @param taskId 任务ID
+     * @param attachmentId 附件ID
+     */
+    void deleteTaskAttachment(Long taskId, Long attachmentId);
+
+    /**
+     * 获取任务成员列表
+     * @param taskId 任务ID
+     * @return 成员用户名列表
+     */
+    List<String> getTaskMembers(Long taskId);
+    
+    /**
+     * 添加任务成员
+     * @param taskId 任务ID
+     * @param username 用户名
+     */
+    void addTaskMember(Long taskId, String username);
+    
+    /**
+     * 批量添加任务成员
+     * @param taskId 任务ID
+     * @param usernames 用户名列表
+     * @return 添加成功的数量
+     */
+    int batchAddTaskMembers(Long taskId, List<String> usernames);
+    
+    /**
+     * 移除任务成员
+     * @param taskId 任务ID
+     * @param username 用户名
+     */
+    void removeTaskMember(Long taskId, String username);
+    
+    /**
+     * 根据成员搜索任务
+     * @param memberUsername 成员用户名
+     * @param page 页码
+     * @param pageSize 每页大小
+     * @return 任务列表和总数
+     */
+    Map<String, Object> getTasksByMember(String memberUsername, Integer page, Integer pageSize);
 } 

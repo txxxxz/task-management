@@ -57,7 +57,6 @@ guineapig:
     user-ttl: 7200000
     user-token-name: token
 
-
   alioss:
     access-key-id: ${guineapig.alioss.access-key-id}
     access-key-secret: ${guineapig.alioss.access-key-secret}

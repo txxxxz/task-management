@@ -320,4 +320,21 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         
         return tags;
     }
+
+    @Override
+    public List<Tag> getAllTags() {
+        log.info("获取所有标签");
+        
+        // 获取所有标签
+        List<Tag> tags = list();
+        
+        // 为每个标签添加关联的任务ID
+        for (Tag tag : tags) {
+            List<Long> taskIds = taskTagService.getTaskIdsByTagId(tag.getId());
+            tag.setTaskIds(taskIds);
+        }
+        
+        log.info("成功获取所有标签，共 {} 个", tags.size());
+        return tags;
+    }
 } 

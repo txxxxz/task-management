@@ -9,6 +9,19 @@ export interface Tag {
   projectId?: string
 }
 
+// 通用API响应格式
+interface ApiResponse<T> {
+  code: number
+  data: T
+  message: string
+}
+
+// 通用分页响应格式
+interface PagedResponse<T> {
+  total: number
+  items: T[]
+}
+
 // 获取标签列表
 export function getTagList(params?: {
   keyword?: string
@@ -16,14 +29,7 @@ export function getTagList(params?: {
   page?: number
   pageSize?: number
 }) {
-  return request<{
-    code: number
-    data: {
-      total: number
-      items: Tag[]
-    }
-    message: string
-  }>({
+  return request<ApiResponse<PagedResponse<Tag>>>({
     url: '/api/tags',
     method: 'get',
     params
@@ -32,11 +38,7 @@ export function getTagList(params?: {
 
 // 创建标签
 export function createTag(data: Partial<Tag>) {
-  return request<{
-    code: number
-    data: Tag
-    message: string
-  }>({
+  return request<ApiResponse<Tag>>({
     url: '/api/tags',
     method: 'post',
     data
@@ -45,11 +47,7 @@ export function createTag(data: Partial<Tag>) {
 
 // 更新标签
 export function updateTag(id: number, data: Partial<Tag>) {
-  return request<{
-    code: number
-    data: Tag
-    message: string
-  }>({
+  return request<ApiResponse<Tag>>({
     url: `/api/tags/${id}`,
     method: 'put',
     data
@@ -58,11 +56,7 @@ export function updateTag(id: number, data: Partial<Tag>) {
 
 // 删除标签
 export function deleteTag(id: number) {
-  return request<{
-    code: number
-    data: null
-    message: string
-  }>({
+  return request<ApiResponse<null>>({
     url: `/api/tags/${id}`,
     method: 'delete'
   })
@@ -70,11 +64,7 @@ export function deleteTag(id: number) {
 
 // 根据ID获取标签
 export function getTagById(id: number) {
-  return request<{
-    code: number
-    data: Tag
-    message: string
-  }>({
+  return request<ApiResponse<Tag>>({
     url: `/api/tags/${id}`,
     method: 'get'
   })
@@ -82,11 +72,7 @@ export function getTagById(id: number) {
 
 // 根据项目ID获取标签列表
 export function getTagsByProjectId(projectId: number) {
-  return request<{
-    code: number
-    data: Tag[]
-    message: string
-  }>({
+  return request<ApiResponse<PagedResponse<Tag>>>({
     url: `/api/tags/project/${projectId}`,
     method: 'get'
   })
@@ -94,13 +80,17 @@ export function getTagsByProjectId(projectId: number) {
 
 // 搜索标签
 export function searchTags(keyword: string, projectId?: number) {
-  return request<{
-    code: number
-    data: Tag[]
-    message: string
-  }>({
+  return request<ApiResponse<PagedResponse<Tag>>>({
     url: '/api/tags/search',
     method: 'get',
     params: { keyword, projectId }
+  })
+}
+
+// 获取所有标签
+export function getAllTags() {
+  return request<ApiResponse<PagedResponse<Tag>>>({
+    url: '/api/tags/all',
+    method: 'get'
   })
 } 

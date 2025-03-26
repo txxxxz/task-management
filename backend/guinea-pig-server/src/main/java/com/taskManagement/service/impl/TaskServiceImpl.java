@@ -6,9 +6,13 @@ import com.taskManagement.dto.TaskDTO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.entity.Task;
 import com.taskManagement.entity.TaskAttachment;
+import com.taskManagement.entity.TaskMember;
+import com.taskManagement.entity.User;
 import com.taskManagement.mapper.ProjectMapper;
 import com.taskManagement.mapper.TaskMapper;
 import com.taskManagement.mapper.TaskAttachmentMapper;
+import com.taskManagement.mapper.TaskMemberMapper;
+import com.taskManagement.mapper.UserMapper;
 import com.taskManagement.service.TaskService;
 import com.taskManagement.service.TaskTagService;
 import com.taskManagement.service.FileService;
@@ -52,6 +56,12 @@ public class TaskServiceImpl implements TaskService {
     private TaskAttachmentMapper taskAttachmentMapper;
     
     @Autowired
+    private TaskMemberMapper taskMemberMapper;
+    
+    @Autowired
+    private UserMapper userMapper;
+    
+    @Autowired
     private FileService fileService;
 
     /**
@@ -82,24 +92,47 @@ public class TaskServiceImpl implements TaskService {
         task.setAttachmentCount(0);
         
         // 4. 持久化任务
-        taskMapper.insert(task);
-        log.info("任务创建成功，ID: {}", task.getId());
-        
-        // 5. 处理标签关联
-        if (taskDTO.getTagIds() != null && !taskDTO.getTagIds().isEmpty()) {
-            log.info("开始处理任务标签关联，任务ID: {}, 标签IDs: {}", task.getId(), taskDTO.getTagIds());
-            int addedCount = taskTagService.batchAddTaskTags(task.getId(), taskDTO.getTagIds());
-            log.info("成功添加 {} 个标签关联到任务 {}", addedCount, task.getId());
+        try {
+            taskMapper.insert(task);
+            log.info("任务创建成功，ID: {}", task.getId());
+            
+            // 5. 处理标签关联
+            if (taskDTO.getTagIds() != null && !taskDTO.getTagIds().isEmpty()) {
+                log.info("开始处理任务标签关联，任务ID: {}, 标签IDs: {}", task.getId(), taskDTO.getTagIds());
+                try {
+                    int addedCount = taskTagService.batchAddTaskTags(task.getId(), taskDTO.getTagIds());
+                    log.info("成功添加 {} 个标签关联到任务 {}", addedCount, task.getId());
+                } catch (Exception e) {
+                    log.error("处理任务标签关联失败: {}", e.getMessage(), e);
+                    // 不抛出异常，继续处理其他部分
+                }
+            }
+            
+            // 6. 处理成员关联
+            if (taskDTO.getMembers() != null && !taskDTO.getMembers().isEmpty()) {
+                log.info("开始处理任务成员关联，任务ID: {}, 成员: {}", task.getId(), taskDTO.getMembers());
+                try {
+                    int addedCount = batchAddTaskMembers(task.getId(), taskDTO.getMembers());
+                    log.info("成功添加 {} 个成员关联到任务 {}", addedCount, task.getId());
+                } catch (Exception e) {
+                    log.error("处理任务成员关联失败: {}", e.getMessage(), e);
+                    // 不抛出异常，继续处理其他部分
+                }
+            }
+            
+            // 7. 返回DTO
+            TaskDTO resultDTO = new TaskDTO();
+            BeanUtils.copyProperties(task, resultDTO);
+            
+            // 设置标签ID列表到返回DTO
+            resultDTO.setTagIds(taskDTO.getTagIds());
+            resultDTO.setMembers(taskDTO.getMembers());
+            
+            return resultDTO;
+        } catch (Exception e) {
+            log.error("创建任务失败: {}", e.getMessage(), e);
+            throw new BusinessException("创建任务失败: " + e.getMessage());
         }
-        
-        // 6. 返回DTO
-        TaskDTO resultDTO = new TaskDTO();
-        BeanUtils.copyProperties(task, resultDTO);
-        
-        // 设置标签ID列表到返回DTO
-        resultDTO.setTagIds(taskDTO.getTagIds());
-        
-        return resultDTO;
     }
 
     /**
@@ -110,7 +143,7 @@ public class TaskServiceImpl implements TaskService {
      * @param projectId 项目ID
      * @param page 页码
      * @param pageSize 每页数量
-     * @return 任务列表和总数（仅包含标签ID，不包含颜色等额外信息）
+     * @return 任务列表和总数
      */
     @Override
     public Map<String, Object> getTaskList(String keyword, Integer status, Integer priority,
@@ -157,9 +190,13 @@ public class TaskServiceImpl implements TaskService {
             TaskDTO taskDTO = new TaskDTO();
             BeanUtils.copyProperties(task, taskDTO);
             
-            // 仅查询任务标签ID（标签颜色统一为浅蓝灰色#E0E7F1，由前端渲染）
+            // 查询任务标签ID
             List<Long> tagIds = taskTagService.getTagIdsByTaskId(task.getId());
             taskDTO.setTagIds(tagIds);
+            
+            // 查询任务成员
+            List<String> members = getTaskMembers(task.getId());
+            taskDTO.setMembers(members);
             
             taskDTOs.add(taskDTO);
         }
@@ -174,7 +211,7 @@ public class TaskServiceImpl implements TaskService {
     /**
      * 获取任务详情
      * @param id 任务ID
-     * @return 任务详情（仅包含标签ID，不包含颜色等额外信息）
+     * @return 任务详情
      */
     @Override
     public TaskDTO getTaskDetail(Long id) {
@@ -193,6 +230,10 @@ public class TaskServiceImpl implements TaskService {
         // 3. 查询任务标签ID
         List<Long> tagIds = taskTagService.getTagIdsByTaskId(id);
         taskDTO.setTagIds(tagIds);
+        
+        // 4. 查询任务成员
+        List<String> members = getTaskMembers(id);
+        taskDTO.setMembers(members);
         
         return taskDTO;
     }
@@ -220,23 +261,61 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException("没有权限修改该任务");
         }
         
-        // 3. 更新任务
-        taskDTO.setId(id);
-        Task updateTask = new Task();
-        BeanUtils.copyProperties(taskDTO, updateTask);
-        
-        updateTask.setUpdateUser(currentUserId);
-        updateTask.setUpdateTime(LocalDateTime.now());
-        
-        // 4. 持久化更新
-        taskMapper.updateById(updateTask);
-        
-        // 5. 处理标签关联
-        if (taskDTO.getTagIds() != null) {
-            taskTagService.updateTaskTags(id, taskDTO.getTagIds());
+        try {
+            // 3. 更新任务
+            taskDTO.setId(id);
+            Task updateTask = new Task();
+            BeanUtils.copyProperties(taskDTO, updateTask);
+            
+            updateTask.setUpdateUser(currentUserId);
+            updateTask.setUpdateTime(LocalDateTime.now());
+            
+            // 4. 持久化更新
+            taskMapper.updateById(updateTask);
+            log.info("任务基本信息更新成功，ID: {}", id);
+            
+            // 5. 处理标签关联
+            if (taskDTO.getTagIds() != null) {
+                try {
+                    log.info("开始更新任务标签关联，任务ID: {}, 标签IDs: {}", id, taskDTO.getTagIds());
+                    boolean success = taskTagService.updateTaskTags(id, taskDTO.getTagIds());
+                    log.info("更新任务标签关联结果: {}", success ? "成功" : "失败");
+                } catch (Exception e) {
+                    log.error("更新任务标签关联失败: {}", e.getMessage(), e);
+                    // 不抛出异常，继续处理其他部分
+                }
+            }
+            
+            // 6. 处理成员关联
+            if (taskDTO.getMembers() != null) {
+                try {
+                    log.info("开始更新任务成员关联，任务ID: {}, 成员: {}", id, taskDTO.getMembers());
+                    
+                    // 先删除原有成员关联
+                    LambdaQueryWrapper<TaskMember> memberQueryWrapper = new LambdaQueryWrapper<>();
+                    memberQueryWrapper.eq(TaskMember::getTaskId, id);
+                    int deletedCount = taskMemberMapper.delete(memberQueryWrapper);
+                    log.info("删除任务原有成员关联 {} 条", deletedCount);
+                    
+                    // 添加新成员关联
+                    if (!taskDTO.getMembers().isEmpty()) {
+                        int addedCount = batchAddTaskMembers(id, taskDTO.getMembers());
+                        log.info("添加新成员关联 {} 条", addedCount);
+                    }
+                } catch (Exception e) {
+                    log.error("更新任务成员关联失败: {}", e.getMessage(), e);
+                    // 不抛出异常，继续处理其他部分
+                }
+            }
+            
+            // 7. 返回更新后的DTO
+            TaskDTO resultDTO = getTaskDetail(id);
+            
+            return resultDTO;
+        } catch (Exception e) {
+            log.error("更新任务失败: {}", e.getMessage(), e);
+            throw new BusinessException("更新任务失败: " + e.getMessage());
         }
-        
-        return taskDTO;
     }
 
     /**
@@ -375,34 +454,6 @@ public class TaskServiceImpl implements TaskService {
         
         return result;
     }
-
-    /**
-     * 上传任务附件
-     * @param taskId 任务ID
-     * @param file 文件
-     * @param userId 用户ID
-     * @return 文件URL
-     */
-    @Override
-    @Transactional
-    public String uploadTaskAttachment(Long taskId, MultipartFile file, Long userId) {
-        log.info("上传任务附件: taskId={}, fileName={}, userId={}", taskId, file.getOriginalFilename(), userId);
-        
-        // 1. 检查任务是否存在
-        Task task = taskMapper.selectById(taskId);
-        if (task == null) {
-            throw new BusinessException("任务不存在");
-        }
-        
-        // 2. 上传文件并保存到任务附件表
-        String fileUrl = fileService.uploadTaskFile(file, taskId, userId);
-        
-        // 3. 更新任务附件数量
-        task.setAttachmentCount(task.getAttachmentCount() + 1);
-        taskMapper.updateById(task);
-        
-        return fileUrl;
-    }
     
     /**
      * 批量上传任务附件
@@ -422,7 +473,7 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException("任务不存在");
         }
         
-        // 2. 批量上传文件并保存到任务附件表
+        // 2. 使用FileService批量上传文件，重复利用已有逻辑
         List<String> fileUrls = fileService.uploadTaskFiles(files, taskId, userId);
         
         // 3. 更新任务附件数量
@@ -432,6 +483,148 @@ public class TaskServiceImpl implements TaskService {
         return fileUrls;
     }
     
+    /**
+     * 上传任务附件 (无需用户ID的重载方法，自动获取当前用户)
+     * @param taskId 任务ID
+     * @param file 文件
+     * @return 附件信息
+     */
+    @Override
+    @Transactional
+    public Map<String, Object> uploadTaskAttachment(Long taskId, Object file) {
+        log.info("上传任务附件: taskId={}, file={}", taskId, file != null ? "已上传" : "为空");
+        
+        // 获取当前用户ID
+        Long userId = BaseContext.getCurrentId();
+        
+        // 转换为MultipartFile类型
+        if (!(file instanceof MultipartFile)) {
+            throw new BusinessException("文件格式不正确");
+        }
+        
+        MultipartFile multipartFile = (MultipartFile) file;
+        
+        // 使用FileService上传文件，重复利用已有逻辑
+        String fileUrl = fileService.uploadTaskFile(multipartFile, taskId, userId);
+        
+        // 查询刚上传的附件信息
+        LambdaQueryWrapper<TaskAttachment> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(TaskAttachment::getTaskId, taskId)
+                 .eq(TaskAttachment::getFilePath, fileUrl)
+                 .orderByDesc(TaskAttachment::getCreateTime)
+                 .last("LIMIT 1");
+        
+        TaskAttachment attachment = taskAttachmentMapper.selectOne(queryWrapper);
+        
+        // 构建返回结果
+        Map<String, Object> result = new HashMap<>();
+        if (attachment != null) {
+            result.put("id", attachment.getId());
+            result.put("fileName", attachment.getFileName());
+            result.put("filePath", attachment.getFilePath());
+            result.put("fileSize", attachment.getFileSize());
+            result.put("fileType", attachment.getFileType());
+            result.put("createTime", attachment.getCreateTime());
+            result.put("createUser", attachment.getCreateUser());
+            
+            // 获取上传者信息
+            User uploader = userMapper.selectById(userId);
+            if (uploader != null) {
+                result.put("uploader", uploader.getUsername());
+            }
+        } else {
+            result.put("url", fileUrl);
+            result.put("fileName", multipartFile.getOriginalFilename());
+            result.put("fileSize", multipartFile.getSize());
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 批量上传任务附件 (无需用户ID的重载方法，自动获取当前用户)
+     * @param taskId 任务ID
+     * @param files 文件列表
+     * @return 附件信息列表
+     */
+    @Override
+    @Transactional
+    public List<Map<String, Object>> batchUploadTaskAttachments(Long taskId, List<Object> files) {
+        log.info("批量上传任务附件: taskId={}, filesCount={}", taskId, files != null ? files.size() : 0);
+        
+        if (files == null || files.isEmpty()) {
+            throw new BusinessException("没有选择文件");
+        }
+        
+        // 获取当前用户ID
+        Long userId = BaseContext.getCurrentId();
+        
+        List<Map<String, Object>> results = new ArrayList<>();
+        
+        // 逐个处理文件
+        for (Object file : files) {
+            try {
+                // 调用单个文件上传方法
+                Map<String, Object> result = uploadTaskAttachment(taskId, file);
+                results.add(result);
+            } catch (Exception e) {
+                log.error("文件上传失败: {}", e.getMessage(), e);
+                // 继续处理下一个文件
+            }
+        }
+        
+        if (results.isEmpty()) {
+            throw new BusinessException("所有文件上传失败");
+        }
+        
+        return results;
+    }
+    
+    /**
+     * 删除任务附件
+     * @param taskId 任务ID
+     * @param attachmentId 附件ID
+     */
+    @Override
+    @Transactional
+    public void deleteTaskAttachment(Long taskId, Long attachmentId) {
+        log.info("删除任务附件: taskId={}, attachmentId={}", taskId, attachmentId);
+        
+        // 1. 检查任务是否存在
+        Task task = taskMapper.selectById(taskId);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        
+        // 2. 检查附件是否存在
+        TaskAttachment attachment = taskAttachmentMapper.selectById(attachmentId);
+        if (attachment == null) {
+            throw new BusinessException("附件不存在");
+        }
+        
+        // 3. 检查附件是否属于该任务
+        if (!attachment.getTaskId().equals(taskId)) {
+            throw new BusinessException("附件不属于该任务");
+        }
+        
+        // 4. 获取当前用户ID
+        Long currentUserId = BaseContext.getCurrentId();
+        
+        // 5. 检查是否有权限删除（任务创建者或附件上传者可删除）
+        if (!task.getCreateUser().equals(currentUserId) && !attachment.getCreateUser().equals(currentUserId)) {
+            throw new BusinessException("没有权限删除该附件");
+        }
+        
+        // 6. 删除附件记录
+        int result = taskAttachmentMapper.deleteById(attachmentId);
+        
+        // 7. 更新任务附件数量
+        if (result > 0 && task.getAttachmentCount() > 0) {
+            task.setAttachmentCount(task.getAttachmentCount() - 1);
+            taskMapper.updateById(task);
+        }
+    }
+
     /**
      * 获取任务附件列表
      * @param taskId 任务ID
@@ -466,5 +659,203 @@ public class TaskServiceImpl implements TaskService {
             map.put("createUser", attachment.getCreateUser());
             return map;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * 获取任务成员列表
+     * @param taskId 任务ID
+     * @return 成员用户名列表
+     */
+    @Override
+    public List<String> getTaskMembers(Long taskId) {
+        log.info("获取任务成员列表: taskId={}", taskId);
+        
+        // 查询任务成员关系
+        LambdaQueryWrapper<TaskMember> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(TaskMember::getTaskId, taskId);
+        List<TaskMember> taskMembers = taskMemberMapper.selectList(queryWrapper);
+        
+        // 提取成员用户ID
+        List<Long> userIds = taskMembers.stream()
+                .map(TaskMember::getUserId)
+                .collect(Collectors.toList());
+        
+        if (userIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 查询用户信息
+        LambdaQueryWrapper<User> userQueryWrapper = new LambdaQueryWrapper<>();
+        userQueryWrapper.in(User::getId, userIds);
+        List<User> users = userMapper.selectList(userQueryWrapper);
+        
+        // 提取用户名
+        return users.stream()
+                .map(User::getUsername)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 添加任务成员
+     * @param taskId 任务ID
+     * @param username 用户名
+     */
+    @Override
+    @Transactional
+    public void addTaskMember(Long taskId, String username) {
+        log.info("添加任务成员: taskId={}, username={}", taskId, username);
+        
+        // 查询用户信息
+        User user = getUserByUsername(username);
+        
+        // 添加任务成员
+        addTaskMember(taskId, user.getId());
+    }
+    
+    /**
+     * 批量添加任务成员
+     * @param taskId 任务ID
+     * @param usernames 用户名列表
+     * @return 添加成功的数量
+     */
+    @Override
+    @Transactional
+    public int batchAddTaskMembers(Long taskId, List<String> usernames) {
+        log.info("批量添加任务成员: taskId={}, usernames={}", taskId, usernames);
+        
+        int successCount = 0;
+        for (String username : usernames) {
+            try {
+                addTaskMember(taskId, username);
+                successCount++;
+            } catch (Exception e) {
+                log.error("添加任务成员失败: taskId={}, username={}", taskId, username, e);
+            }
+        }
+        
+        return successCount;
+    }
+    
+    /**
+     * 根据用户ID添加任务成员
+     * @param taskId 任务ID
+     * @param userId 用户ID
+     */
+    private void addTaskMember(Long taskId, Long userId) {
+        // 检查是否已经是成员
+        LambdaQueryWrapper<TaskMember> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(TaskMember::getTaskId, taskId)
+                .eq(TaskMember::getUserId, userId);
+        
+        if (taskMemberMapper.selectCount(queryWrapper) > 0) {
+            // 已经是成员，不需要添加
+            return;
+        }
+        
+        // 添加成员关系
+        TaskMember taskMember = new TaskMember();
+        taskMember.setTaskId(taskId);
+        taskMember.setUserId(userId);
+        taskMember.setCreateTime(LocalDateTime.now());
+        
+        taskMemberMapper.insert(taskMember);
+    }
+    
+    /**
+     * 移除任务成员
+     * @param taskId 任务ID
+     * @param username 用户名
+     */
+    @Override
+    @Transactional
+    public void removeTaskMember(Long taskId, String username) {
+        log.info("移除任务成员: taskId={}, username={}", taskId, username);
+        
+        // 查询用户信息
+        User user = getUserByUsername(username);
+        
+        // 查询任务成员关系
+        LambdaQueryWrapper<TaskMember> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(TaskMember::getTaskId, taskId)
+                .eq(TaskMember::getUserId, user.getId());
+        
+        // 删除成员关系
+        taskMemberMapper.delete(queryWrapper);
+    }
+    
+    /**
+     * 根据成员搜索任务
+     * @param memberUsername 成员用户名
+     * @param page 页码
+     * @param pageSize 每页大小
+     * @return 任务列表和总数
+     */
+    @Override
+    public Map<String, Object> getTasksByMember(String memberUsername, Integer page, Integer pageSize) {
+        log.info("根据成员搜索任务: memberUsername={}, page={}, pageSize={}", memberUsername, page, pageSize);
+        
+        // 查询用户信息
+        User user = getUserByUsername(memberUsername);
+        
+        // 查询用户参与的任务ID
+        List<Long> taskIds = taskMemberMapper.getTaskIdsByUserId(user.getId());
+        
+        if (taskIds.isEmpty()) {
+            // 如果用户没有参与任何任务，返回空结果
+            Map<String, Object> emptyResult = new HashMap<>();
+            emptyResult.put("total", 0);
+            emptyResult.put("items", new ArrayList<>());
+            return emptyResult;
+        }
+        
+        // 构建查询条件
+        LambdaQueryWrapper<Task> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(Task::getId, taskIds);
+        
+        // 排序（按优先级降序，更新时间降序）
+        queryWrapper.orderByDesc(Task::getPriority)
+                  .orderByDesc(Task::getUpdateTime);
+        
+        // 执行分页查询
+        Page<Task> pageInfo = new Page<>(page, pageSize);
+        Page<Task> taskPage = taskMapper.selectPage(pageInfo, queryWrapper);
+        
+        // 构建返回结果
+        List<TaskDTO> taskDTOs = new ArrayList<>();
+        for (Task task : taskPage.getRecords()) {
+            TaskDTO taskDTO = new TaskDTO();
+            BeanUtils.copyProperties(task, taskDTO);
+            
+            // 查询任务标签ID
+            List<Long> tagIds = taskTagService.getTagIdsByTaskId(task.getId());
+            taskDTO.setTagIds(tagIds);
+            
+            // 查询任务成员
+            List<String> members = getTaskMembers(task.getId());
+            taskDTO.setMembers(members);
+            
+            taskDTOs.add(taskDTO);
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", taskPage.getTotal());
+        result.put("items", taskDTOs);
+        
+        return result;
+    }
+    
+    /**
+     * 根据用户名查询用户
+     */
+    private User getUserByUsername(String username) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUsername, username);
+        
+        User user = userMapper.selectOne(queryWrapper);
+        if (user == null) {
+            throw new BusinessException("用户不存在: " + username);
+        }
+        
+        return user;
     }
 } 

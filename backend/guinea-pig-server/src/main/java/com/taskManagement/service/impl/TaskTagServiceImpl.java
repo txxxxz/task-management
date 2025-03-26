@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,18 +35,36 @@ public class TaskTagServiceImpl extends ServiceImpl<TaskTagRelMapper, TaskTag> i
     public boolean addTaskTag(Long taskId, Long tagId) {
         log.info("添加任务标签关联: taskId={}, tagId={}", taskId, tagId);
         
-        // 检查关联是否已存在
+        // 1. 检查参数
+        if (taskId == null || tagId == null) {
+            log.error("任务ID或标签ID不能为空");
+            return false;
+        }
+        
+        // 2. 检查是否已存在关联
         if (isTaskTagExist(taskId, tagId)) {
-            log.info("任务标签关联已存在，跳过添加: taskId={}, tagId={}", taskId, tagId);
+            log.info("任务标签关联已存在: taskId={}, tagId={}", taskId, tagId);
             return true;
         }
         
-        // 创建新的关联
-        TaskTag taskTag = new TaskTag();
-        taskTag.setTaskId(taskId);
-        taskTag.setTagId(tagId);
-        
-        return save(taskTag);
+        // 3. 创建并保存关联
+        try {
+            TaskTag taskTag = new TaskTag();
+            taskTag.setTaskId(taskId);
+            taskTag.setTagId(tagId);
+            taskTag.setCreateTime(LocalDateTime.now());
+            
+            boolean success = save(taskTag);
+            if (success) {
+                log.info("成功添加任务标签关联: taskId={}, tagId={}", taskId, tagId);
+            } else {
+                log.error("添加任务标签关联失败: taskId={}, tagId={}", taskId, tagId);
+            }
+            return success;
+        } catch (Exception e) {
+            log.error("添加任务标签关联异常: taskId={}, tagId={}, 错误: {}", taskId, tagId, e.getMessage(), e);
+            throw e; // 继续抛出异常，由事务管理
+        }
     }
 
     @Override

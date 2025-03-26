@@ -25,9 +25,9 @@ CREATE TABLE IF NOT EXISTS `tb_task` (
     FOREIGN KEY (`project_id`) REFERENCES `tb_project` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='任务表';
 
--- 任务成员表
+-- 任务成员关系表
 CREATE TABLE IF NOT EXISTS `tb_task_member` (
-    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
     `task_id` bigint(20) NOT NULL COMMENT '任务ID',
     `user_id` bigint(20) NOT NULL COMMENT '用户ID',
     `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `tb_task_member` (
     KEY `idx_task_id` (`task_id`),
     KEY `idx_user_id` (`user_id`),
     FOREIGN KEY (`task_id`) REFERENCES `tb_task` (`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`user_id`) REFERENCES `tb_user` (`id`)
+    FOREIGN KEY (`user_id`) REFERENCES `tb_user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='任务成员关系表';
 
 -- 任务标签表
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS `tb_task_attachment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='任务附件表';
 
 -- 任务评论表
-CREATE TABLE IF NOT EXISTS `tb_task_comment` (
+CREATE TABLE IF NOT EXISTS `tb_comment` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `task_id` bigint(20) NOT NULL COMMENT '任务ID',
     `content` text NOT NULL COMMENT '评论内容',
@@ -93,5 +93,8 @@ CREATE TABLE IF NOT EXISTS `tb_task_comment` (
     KEY `idx_task_id` (`task_id`),
     KEY `idx_parent_id` (`parent_id`),
     FOREIGN KEY (`task_id`) REFERENCES `tb_task` (`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`parent_id`) REFERENCES `tb_task_comment` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='任务评论表'; 
+    FOREIGN KEY (`parent_id`) REFERENCES `tb_comment` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='评论表';
+
+-- 删除旧的tb_task_comment表（如果存在）
+DROP TABLE IF EXISTS `tb_task_comment`; 

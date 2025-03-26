@@ -5,12 +5,17 @@
       <el-row :gutter="20">
         <el-col :span="8">
           <el-form-item label="Project Name">
-            <el-input v-model="searchForm.name" placeholder="Please enter the project name" clearable />
+            <el-input 
+              v-model="searchForm.name" 
+              placeholder="Support fuzzy search" 
+              clearable 
+              prefix-icon="Search"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="Status">
-            <el-select v-model="searchForm.status" placeholder="Please select the status" clearable style="width: 100%">
+            <el-select v-model="searchForm.status" placeholder="Please select status" clearable style="width: 100%">
               <el-option
                 v-for="item in statusOptions"
                 :key="item.value"
@@ -22,7 +27,12 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="Members">
-            <el-select v-model="searchForm.members" multiple placeholder="Please select the members" clearable style="width: 100%"
+            <el-select 
+              v-model="searchForm.members" 
+              multiple 
+              placeholder="Support fuzzy search for members" 
+              clearable 
+              style="width: 100%"
               filterable
               :loading="membersLoading"
               loading-text="Loading..."
@@ -54,7 +64,7 @@
       </el-row>
     </el-form>
 
-    <!-- 项目列表 -->
+    <!-- Project List -->
     <el-table
       v-loading="loading"
       :data="filteredProjects"
@@ -70,15 +80,10 @@
         padding: '12px 0'
       }"
     >
+      <el-table-column type="index" label="No." width="80" align="center" />
       <el-table-column prop="name" label="Project Name" min-width="180">
         <template #default="{ row }">
           <el-link type="primary" @click="handleViewDetail(row)">{{ row.name }}</el-link>
-        </template>
-      </el-table-column>
-      <el-table-column prop="description" label="Description" show-overflow-tooltip />
-      <el-table-column label="Leader" width="120">
-        <template #default="{ row }">
-          {{ row.creator ? row.creator.username : '' }}
         </template>
       </el-table-column>
       <el-table-column label="Status" width="100" align="center">
@@ -88,7 +93,12 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Members" width="200">
+      <el-table-column label="Leader" width="120" align="center">
+        <template #default="{ row }">
+          {{ row.creator ? row.creator.username : '' }}
+        </template>
+      </el-table-column>
+      <el-table-column label="Members" width="150">
         <template #default="{ row }">
           <el-tooltip
             :content="row.members.join(', ')"
@@ -102,6 +112,11 @@
         </template>
       </el-table-column>
       <el-table-column prop="createTime" label="Create Time" width="180" />
+      <el-table-column label="Due Time" width="180">
+        <template #default="{ row }">
+          {{ row.endTime || '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="Operations" width="200" fixed="right" align="center">
         <template #default="{ row }">
           <el-button-group class="operation-group">
@@ -115,7 +130,7 @@
                 <el-icon><User /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="Archive" placement="top" v-if="isLeader && row.status === 'ACTIVE'">
+            <el-tooltip content="Archive" placement="top" v-if="isLeader && row.status !== 3">
               <el-button type="warning" link @click="handleProjectAction('archive', row)">
                 <el-icon><Folder /></el-icon>
               </el-button>
@@ -130,7 +145,7 @@
       </el-table-column>
     </el-table>
 
-    <!-- 分页 -->
+    <!-- Pagination -->
     <div class="pagination-container">
       <el-pagination
         v-model:current-page="currentPage"
@@ -143,7 +158,7 @@
       />
     </div>
 
-    <!-- 成员管理对话框 -->
+    <!-- Member Management Dialog -->
     <el-dialog
       v-model="memberDialogVisible"
       title="Member Management"
@@ -248,10 +263,10 @@ const searchForm = reactive({
 
 // 选项数据
 const statusOptions = [
-  { label: '筹备中', value: 0 },
-  { label: '进行中', value: 1 },
-  { label: '已完成', value: 2 },
-  { label: '已归档', value: 3 }
+  { label: 'Preparation', value: 0 },
+  { label: 'In Progress', value: 1 },
+  { label: 'Completed', value: 2 },
+  { label: 'Archived', value: 3 }
 ]
 
 // 修复类型定义
@@ -273,9 +288,27 @@ const availableUsers = computed(() => {
 // 过滤后的项目列表
 const filteredProjects = computed(() => {
   return projectList.value.filter(project => {
-    if (searchForm.name && !project.name.toLowerCase().includes(searchForm.name.toLowerCase())) return false
-    if (searchForm.status && project.status !== Number(searchForm.status)) return false
-    if (searchForm.members.length && !searchForm.members.some(member => project.members.includes(member))) return false
+    // 名称模糊搜索：如果有搜索关键字，则检查项目名称是否包含该关键字（不区分大小写）
+    if (searchForm.name && !project.name.toLowerCase().includes(searchForm.name.toLowerCase())) {
+      return false
+    }
+    
+    // 状态筛选：如果选择了状态，则项目状态必须与选择的状态匹配
+    if (searchForm.status !== '' && project.status !== Number(searchForm.status)) {
+      return false
+    }
+    
+    // 成员模糊搜索：如果选择了成员，则项目成员必须包含至少一个选择的成员
+    if (searchForm.members.length > 0) {
+      // 检查项目成员中是否有任何一个成员的名称包含搜索关键字
+      const hasMatchingMember = searchForm.members.some(searchMember => 
+        project.members.some(projectMember => 
+          projectMember.toLowerCase().includes(searchMember.toLowerCase())
+        )
+      )
+      if (!hasMatchingMember) return false
+    }
+    
     return true
   })
 })
@@ -285,10 +318,11 @@ const fetchProjects = async () => {
   loading.value = true
   try {
     const params = {
-      keyword: searchForm.name,
+      keyword: searchForm.name, // 项目名称关键字，后端已支持模糊搜索
       status: searchForm.status ? Number(searchForm.status) : undefined,
       page: currentPage.value,
-      pageSize: pageSize.value
+      pageSize: pageSize.value,
+      members: searchForm.members.length > 0 ? searchForm.members.join(',') : undefined // 将成员列表转换为逗号分隔的字符串
     }
     const response = await getProjectList(params)
     if (response.data && (response.data.code === 1 || response.data.code === 200)) {
@@ -296,8 +330,8 @@ const fetchProjects = async () => {
       total.value = response.data.data.total
     }
   } catch (error) {
-    console.error('获取项目列表失败:', error)
-    ElMessage.error('获取项目列表失败')
+    console.error('Failed to get project list:', error)
+    ElMessage.error('Failed to get project list')
   } finally {
     loading.value = false
   }
@@ -308,7 +342,7 @@ const fetchUsers = async () => {
   membersLoading.value = true
   try {
     const response = await getAllUsers({
-      role: '0,1', // 只查询角色为0和1的用户
+      role: '0,1', // Only query users with roles 0 and 1
       page: 1,
       pageSize: 50
     })
@@ -318,7 +352,7 @@ const fetchUsers = async () => {
       if (Array.isArray(items)) {
         memberOptions.value = items.map(user => ({
           value: user.username,
-          label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+          label: `${user.username} (${user.role === 0 ? 'member' : 'leader'})`,
           avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
         }))
       } else {
@@ -329,7 +363,7 @@ const fetchUsers = async () => {
     }
   } catch (error) {
     memberOptions.value = []
-    ElMessage.error('获取用户列表失败')
+    ElMessage.error('Failed to get user list')
   } finally {
     membersLoading.value = false
   }
@@ -341,7 +375,7 @@ const searchUsers = async (query: string) => {
     membersLoading.value = true
     try {
       const response = await getAllUsers({
-        keyword: query,
+        keyword: query, // Support fuzzy search for usernames
         role: '0,1',
         page: 1,
         pageSize: 20
@@ -352,7 +386,7 @@ const searchUsers = async (query: string) => {
         if (Array.isArray(items)) {
           memberOptions.value = items.map(user => ({
             value: user.username,
-            label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+            label: `${user.username} (${user.role === 0 ? 'member' : 'leader'})`,
             avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
           }))
         } else {
@@ -363,7 +397,7 @@ const searchUsers = async (query: string) => {
       }
     } catch (error) {
       memberOptions.value = []
-      ElMessage.error('搜索用户失败')
+      ElMessage.error('Failed to search users')
     } finally {
       membersLoading.value = false
     }
@@ -399,7 +433,7 @@ const handleProjectAction = async (action: string, project: Project) => {
   currentProject.value = project;
   
   if (!isLeader.value) {
-    ElMessage.warning('只有项目负责人才能执行此操作')
+    ElMessage.warning('Only project leaders can perform this operation')
     return
   }
 
@@ -413,14 +447,14 @@ const handleProjectAction = async (action: string, project: Project) => {
           status: 3 as ProjectStatus 
         })
         if (archiveResponse.data.code === 1 || archiveResponse.data.code === 200) {
-          ElMessage.success('项目已归档')
+          ElMessage.success('Project has been archived')
           fetchProjects()
         }
         break
       case 'delete':
         const deleteResponse = await deleteProject(project.id)
         if (deleteResponse.data.code === 1 || deleteResponse.data.code === 200) {
-          ElMessage.success('项目已删除')
+          ElMessage.success('Project has been deleted')
           fetchProjects()
         }
         break
@@ -428,8 +462,8 @@ const handleProjectAction = async (action: string, project: Project) => {
         break
     }
   } catch (error: any) {
-    console.error('操作失败:', error)
-    ElMessage.error(error.message || '操作失败')
+    console.error('Operation failed:', error)
+    ElMessage.error(error.message || 'Operation failed')
   }
 }
 
@@ -446,7 +480,7 @@ const handleMemberManagement = async (project: Project) => {
   currentProject.value = project;
   
   if (!isLeader.value) {
-    ElMessage.warning('只有项目负责人才能管理成员')
+    ElMessage.warning('Only project leaders can manage members')
     return
   }
   currentProjectId.value = project.id.toString()
@@ -515,16 +549,16 @@ const handleCurrentChange = (val: number) => {
 // 获取状态标签
 const getStatusLabel = (status: number) => {
   const option = statusOptions.find(opt => opt.value === status)
-  return option ? option.label : '未知'
+  return option ? option.label : 'Unknown'
 }
 
 // 获取状态标签类型
 const getStatusType = (status: number) => {
   switch (status) {
-    case 0: return 'info'     // 筹备中
-    case 1: return 'success'  // 进行中
-    case 2: return 'warning'  // 已完成
-    case 3: return 'danger'   // 已归档
+    case 0: return 'info'     // Preparation
+    case 1: return 'success'  // In Progress
+    case 2: return 'warning'  // Completed
+    case 3: return 'danger'   // Archived
     default: return 'info'
   }
 }

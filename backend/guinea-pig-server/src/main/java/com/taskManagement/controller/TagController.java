@@ -117,7 +117,7 @@ public class TagController {
      * @return 标签DTO列表
      */
     @GetMapping("/project/{projectId}")
-    public Result<List<TagDTO>> getTagsByProjectId(@PathVariable Long projectId) {
+    public Result<PageResult<TagDTO>> getTagsByProjectId(@PathVariable Long projectId) {
         log.info("根据项目ID获取标签列表: {}", projectId);
         List<Tag> tags = tagService.getTagsByProjectId(projectId);
         
@@ -126,7 +126,9 @@ public class TagController {
                 .map(TagDTO::fromTag)
                 .collect(Collectors.toList());
         
-        return Result.success(tagDTOs);
+        // 返回统一的分页格式
+        PageResult<TagDTO> pageResult = new PageResult<>(tagDTOs, tagDTOs.size());
+        return Result.success(pageResult);
     }
 
     /**
@@ -137,7 +139,7 @@ public class TagController {
      * @return 标签DTO列表
      */
     @GetMapping("/search")
-    public Result<List<TagDTO>> searchTags(
+    public Result<PageResult<TagDTO>> searchTags(
             @RequestParam String keyword,
             @RequestParam(required = false) Long projectId) {
         log.info("根据关键词和项目ID搜索标签, 关键词: {}, 项目ID: {}", keyword, projectId);
@@ -148,7 +150,9 @@ public class TagController {
                 .map(TagDTO::fromTag)
                 .collect(Collectors.toList());
         
-        return Result.success(tagDTOs);
+        // 返回统一的分页格式
+        PageResult<TagDTO> pageResult = new PageResult<>(tagDTOs, tagDTOs.size());
+        return Result.success(pageResult);
     }
     
     /**
@@ -157,7 +161,7 @@ public class TagController {
      * @return 标签DTO列表
      */
     @GetMapping("/task/{taskId}")
-    public Result<List<TagDTO>> getTagsByTaskId(@PathVariable Long taskId) {
+    public Result<PageResult<TagDTO>> getTagsByTaskId(@PathVariable Long taskId) {
         log.info("根据任务ID获取标签列表: {}", taskId);
         List<Tag> tags = taskTagService.getTagsByTaskId(taskId);
         
@@ -166,7 +170,9 @@ public class TagController {
                 .map(TagDTO::fromTag)
                 .collect(Collectors.toList());
         
-        return Result.success(tagDTOs);
+        // 返回统一的分页格式
+        PageResult<TagDTO> pageResult = new PageResult<>(tagDTOs, tagDTOs.size());
+        return Result.success(pageResult);
     }
     
     /**
@@ -197,5 +203,24 @@ public class TagController {
         log.info("移除任务的标签, 任务ID: {}, 标签ID: {}", taskId, tagId);
         boolean result = taskTagService.removeTaskTag(taskId, tagId);
         return Result.success(result);
+    }
+    
+    /**
+     * 获取所有标签列表
+     * @return 所有标签DTO列表
+     */
+    @GetMapping("/all")
+    public Result<PageResult<TagDTO>> getAllTags() {
+        log.info("获取所有标签列表");
+        List<Tag> tags = tagService.getAllTags();
+        
+        // 转换为TagDTO列表
+        List<TagDTO> tagDTOs = tags.stream()
+                .map(TagDTO::fromTag)
+                .collect(Collectors.toList());
+        
+        // 返回统一的分页格式
+        PageResult<TagDTO> pageResult = new PageResult<>(tagDTOs, tagDTOs.size());
+        return Result.success(pageResult);
     }
 } 

@@ -2,6 +2,7 @@ package com.taskManagement.controller;
 
 import com.taskManagement.result.Result;
 import com.taskManagement.service.FileService;
+import com.taskManagement.context.BaseContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +33,14 @@ public class FileController {
         }
         
         try {
-            String fileUrl = fileService.uploadEncryptedFile(file);
+            // 获取当前用户ID
+            Long userId = BaseContext.getCurrentId();
+            if (userId == null) userId = 1L; // 默认用户ID
+            
+            // 使用项目文件上传代替通用上传
+            // 创建一个临时项目ID，表示通用文件
+            Long tempProjectId = 0L;
+            String fileUrl = fileService.uploadProjectFile(file, tempProjectId, userId);
             return Result.success(fileUrl);
         } catch (Exception e) {
             log.error("文件上传失败", e);
@@ -52,7 +60,14 @@ public class FileController {
         }
         
         try {
-            List<String> fileUrls = fileService.uploadEncryptedFiles(files);
+            // 获取当前用户ID
+            Long userId = BaseContext.getCurrentId();
+            if (userId == null) userId = 1L; // 默认用户ID
+            
+            // 使用项目文件批量上传代替通用批量上传
+            // 创建一个临时项目ID，表示通用文件
+            Long tempProjectId = 0L;
+            List<String> fileUrls = fileService.uploadProjectFiles(files, tempProjectId, userId);
             return Result.success(fileUrls);
         } catch (Exception e) {
             log.error("批量文件上传失败", e);
@@ -72,7 +87,13 @@ public class FileController {
         }
         
         try {
-            String fileUrl = fileService.uploadTaskFile(file);
+            // 获取当前用户ID
+            Long userId = BaseContext.getCurrentId();
+            if (userId == null) userId = 1L; // 默认用户ID
+            
+            // 使用完整参数版本，提供一个临时任务ID
+            Long tempTaskId = 0L;
+            String fileUrl = fileService.uploadTaskFile(file, tempTaskId, userId);
             return Result.success(fileUrl);
         } catch (Exception e) {
             log.error("任务文件上传失败", e);
@@ -92,7 +113,13 @@ public class FileController {
         }
         
         try {
-            List<String> fileUrls = fileService.uploadTaskFiles(files);
+            // 获取当前用户ID
+            Long userId = BaseContext.getCurrentId();
+            if (userId == null) userId = 1L; // 默认用户ID
+            
+            // 使用完整参数版本，提供一个临时任务ID
+            Long tempTaskId = 0L;
+            List<String> fileUrls = fileService.uploadTaskFiles(files, tempTaskId, userId);
             return Result.success(fileUrls);
         } catch (Exception e) {
             log.error("批量任务文件上传失败", e);

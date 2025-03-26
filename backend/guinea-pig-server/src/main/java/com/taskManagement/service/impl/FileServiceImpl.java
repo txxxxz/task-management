@@ -45,15 +45,20 @@ public class FileServiceImpl implements FileService {
     private static final String TASK_FOLDER = "task/";
     private static final String AVATAR_FOLDER = "avatar/";
     
-    @Override
-    public String uploadEncryptedFile(MultipartFile file) {
+    /**
+     * 内部私有方法，用于加密上传文件到OSS
+     * @param file 文件
+     * @param folderPath 文件夹路径
+     * @return OSS文件URL
+     */
+    private String uploadEncryptedFileToOSS(MultipartFile file, String folderPath) {
         String fileName = file.getOriginalFilename();
         String objectName = null;
         
         try {
             // 生成加密文件名
             String encryptedFileName = FileEncryptionUtil.generateEncryptedFileName(fileName);
-            objectName = PROJECT_FOLDER + encryptedFileName;
+            objectName = folderPath + encryptedFileName;
             
             // 加密文件内容
             InputStream encryptedStream = FileEncryptionUtil.encryptFile(file, ossConfig.getEncryptionKey());
@@ -74,23 +79,6 @@ public class FileServiceImpl implements FileService {
             throw new RuntimeException("文件上传失败: " + e.getMessage());
         }
     }
-
-    @Override
-    public List<String> uploadEncryptedFiles(List<MultipartFile> files) {
-        List<String> urls = new ArrayList<>();
-        
-        for (MultipartFile file : files) {
-            String url = uploadEncryptedFile(file);
-            urls.add(url);
-        }
-        
-        return urls;
-    }
-    
-    @Override
-    public String uploadTaskFile(MultipartFile file) {
-        return uploadTaskFile(file, null, null);
-    }
     
     /**
      * 上传任务文件并保存到任务附件表
@@ -102,31 +90,13 @@ public class FileServiceImpl implements FileService {
     @Override
     public String uploadTaskFile(MultipartFile file, Long taskId, Long userId) {
         String fileName = file.getOriginalFilename();
-        String objectName = null;
         
         try {
-            // 生成加密文件名
-            String encryptedFileName = FileEncryptionUtil.generateEncryptedFileName(fileName);
-            objectName = TASK_FOLDER + encryptedFileName;
-            
-            // 加密文件内容
-            InputStream encryptedStream = FileEncryptionUtil.encryptFile(file, ossConfig.getEncryptionKey());
-            
-            // 设置元数据
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentType(file.getContentType());
-            metadata.setContentLength(encryptedStream.available());
-            
-            // 上传到OSS
-            ossClient.putObject(ossConfig.getBucketName(), objectName, encryptedStream, metadata);
-            log.info("任务文件[{}]加密上传成功，OSS路径：{}，大小：{}，类型：{}", 
-                    fileName, objectName, file.getSize(), file.getContentType());
-            
-            // 获取文件URL
-            String fileUrl = ossConfig.getUrlPrefix() + "/" + objectName;
+            // 上传文件到OSS
+            String fileUrl = uploadEncryptedFileToOSS(file, TASK_FOLDER);
             
             // 如果提供了任务ID和用户ID，保存到任务附件表
-            if (taskId != null && userId != null) {
+            if (taskId != null && userId != null && taskId > 0) {
                 TaskAttachment taskAttachment = new TaskAttachment();
                 taskAttachment.setTaskId(taskId);
                 taskAttachment.setFileName(fileName);
@@ -149,18 +119,6 @@ public class FileServiceImpl implements FileService {
         }
     }
     
-    @Override
-    public List<String> uploadTaskFiles(List<MultipartFile> files) {
-        List<String> urls = new ArrayList<>();
-        
-        for (MultipartFile file : files) {
-            String url = uploadTaskFile(file);
-            urls.add(url);
-        }
-        
-        return urls;
-    }
-    
     /**
      * 批量上传任务文件到阿里云OSS的task/文件夹并保存到任务附件表
      * @param files 文件列表
@@ -180,45 +138,36 @@ public class FileServiceImpl implements FileService {
         return urls;
     }
     
+    /**
+     * 上传项目文件到阿里云OSS的project/文件夹并保存至项目附件表
+     * @param file 文件
+     * @param projectId 项目ID
+     * @param userId 用户ID
+     * @return 文件URL
+     */
     @Override
     public String uploadProjectFile(MultipartFile file, Long projectId, Long userId) {
         String fileName = file.getOriginalFilename();
-        String objectName = null;
         
         try {
-            // 生成加密文件名
-            String encryptedFileName = FileEncryptionUtil.generateEncryptedFileName(fileName);
-            objectName = PROJECT_FOLDER + encryptedFileName;
+            // 上传文件到OSS
+            String fileUrl = uploadEncryptedFileToOSS(file, PROJECT_FOLDER);
             
-            // 加密文件内容
-            InputStream encryptedStream = FileEncryptionUtil.encryptFile(file, ossConfig.getEncryptionKey());
-            
-            // 设置元数据
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentType(file.getContentType());
-            metadata.setContentLength(encryptedStream.available());
-            
-            // 上传到OSS
-            ossClient.putObject(ossConfig.getBucketName(), objectName, encryptedStream, metadata);
-            log.info("项目文件[{}]加密上传成功，OSS路径：{}，大小：{}，类型：{}", 
-                    fileName, objectName, file.getSize(), file.getContentType());
-            
-            // 获取文件URL
-            String fileUrl = ossConfig.getUrlPrefix() + "/" + objectName;
-            
-            // 保存到项目附件表
-            ProjectAttachment projectAttachment = new ProjectAttachment();
-            projectAttachment.setProjectId(projectId);
-            projectAttachment.setFileName(fileName);
-            projectAttachment.setFilePath(fileUrl);
-            projectAttachment.setFileSize(file.getSize());
-            projectAttachment.setFileType(file.getContentType());
-            projectAttachment.setCreateUser(userId);
-            projectAttachment.setUpdateUser(userId);
-            
-            projectAttachmentMapper.insert(projectAttachment);
-            log.info("项目文件[{}]记录已保存到数据库, 项目ID: {}, 文件大小: {}, 文件类型: {}", 
-                    fileName, projectId, file.getSize(), file.getContentType());
+            // 只有当项目ID > 0时才保存到项目附件表
+            if (projectId != null && projectId > 0 && userId != null) {
+                ProjectAttachment projectAttachment = new ProjectAttachment();
+                projectAttachment.setProjectId(projectId);
+                projectAttachment.setFileName(fileName);
+                projectAttachment.setFilePath(fileUrl);
+                projectAttachment.setFileSize(file.getSize());
+                projectAttachment.setFileType(file.getContentType());
+                projectAttachment.setCreateUser(userId);
+                projectAttachment.setUpdateUser(userId);
+                
+                projectAttachmentMapper.insert(projectAttachment);
+                log.info("项目文件[{}]记录已保存到数据库, 项目ID: {}, 文件大小: {}, 文件类型: {}", 
+                        fileName, projectId, file.getSize(), file.getContentType());
+            }
             
             return fileUrl;
         } catch (Exception e) {
@@ -227,6 +176,13 @@ public class FileServiceImpl implements FileService {
         }
     }
     
+    /**
+     * 批量上传项目文件到阿里云OSS的project/文件夹并保存至项目附件表
+     * @param files 文件列表
+     * @param projectId 项目ID
+     * @param userId 用户ID
+     * @return 文件URL列表
+     */
     @Override
     public List<String> uploadProjectFiles(List<MultipartFile> files, Long projectId, Long userId) {
         List<String> urls = new ArrayList<>();
@@ -240,7 +196,7 @@ public class FileServiceImpl implements FileService {
     }
     
     /**
-     * 上传用户头像
+     * 上传用户头像到阿里云OSS的avatar/文件夹并更新用户头像
      * @param file 头像文件
      * @param userId 用户ID
      * @return 头像URL

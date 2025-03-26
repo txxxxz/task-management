@@ -4,12 +4,17 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
+/**
+ * 任务成员关系实体类
+ */
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)
 @TableName("tb_task_member")
-public class TaskMember extends BaseEntity {
+public class TaskMember {
+    private Long id;
     private Long taskId;
     private Long userId;
-    private Integer role;    // 0-参与者，1-负责人
-    private Integer status;  // 0-待接受，1-已接受，2-已拒绝
+    private LocalDateTime createTime;
 } 

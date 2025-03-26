@@ -342,8 +342,9 @@ import { CircleCheckFilled, UploadFilled, Delete, Document, User, InfoFilled, Pr
 import { createTask, getTaskDetail, updateTask } from '../../api/task'
 import { getProjectList } from '../../api/project'
 import { getAllUsers } from '../../api/user'
-import { getTagList, createTag, searchTags } from '@/api/tag'
-import type { Tag } from '@/types/tag'
+import { getTagList, createTag, searchTags, getAllTags } from '@/api/tag'
+import type { Tag, TagListResponse } from '@/types/tag'
+import type { Project } from '@/types/task'
 import { batchUploadTaskFiles } from '../../api/file'
 import { useUserStore } from '../../stores/user'
 import StepForm from '../../components/StepForm.vue'
@@ -450,7 +451,7 @@ const fetchProjects = async (keyword = '') => {
     const response = await getProjectList(params)
     if (response.data && (response.data.code === 1 || response.data.code === 0 || response.data.code === 200)) {
       const projects = response.data.data.items
-      projectOptions.value = projects.map(project => ({
+      projectOptions.value = projects.map((project: Project) => ({
         value: project.id.toString(),
         label: project.name
       }))
@@ -694,7 +695,7 @@ const handleSubmit = async () => {
       status: taskForm.status,
       startTime: taskForm.startTime,
       deadline: taskForm.dueTime,
-      tags: processedTags,
+      tagIds: processedTags,
       members: taskForm.members,
       projectId: taskForm.projectId,
       attachments: Array.isArray(taskForm.attachments) 
@@ -901,56 +902,50 @@ const fetchTaskDetail = async (taskId: string) => {
 
 // 搜索标签
 const searchTagsLocal = async (query: string) => {
-  console.log('搜索标签，关键词:', query, '项目ID:', taskForm.projectId)
+  console.log('搜索标签，关键词:', query)
   if (query.trim() === '') {
-    return fetchTags(taskForm.projectId)
+    // 获取所有标签，不按项目ID过滤
+    return fetchTags();
   }
   
   tagsLoading.value = true
   try {
-    const response = await searchTags(query, taskForm.projectId ? Number(taskForm.projectId) : undefined)
-    console.log('搜索标签响应:', response)
+    // 使用 getAllTags 获取所有标签，不按项目过滤
+    const response = await getAllTags();
+    console.log('获取所有标签响应:', response)
     
-    if (response.data) {
-      if (response.data.code === 1) {
-        const tagsData = response.data.data;
-        if (tagsData && Array.isArray(tagsData)) {
-          // 处理标签数据，确保color字段存在
-          tagOptions.value = tagsData.map(tag => ({
-            id: tag.id,
-            name: tag.name,
-            color: tag.color || '#409EFF',
-            projectId: tag.projectId
-          }));
-          
-          // 如果没有找到匹配的标签，允许创建新标签
-          // 使用特殊标识的ID，在显示时会显示为"创建：xxx"，但value是一个ID格式
-          if (tagOptions.value.length === 0) {
-            // 创建一个临时ID，用于新建标签
-            const newTagId = `new-${Date.now()}`;
-            tagOptions.value = [{ 
-              id: newTagId,
-              name: `创建: ${query}`, 
-              color: '#409EFF', 
-              projectId: taskForm.projectId,
-              isNew: true // 添加标记，表示这是新建标签
-            }];
-          }
-          
-          console.log('搜索标签结果处理完成:', tagOptions.value);
-        } else {
-          console.warn('搜索标签数据格式异常:', tagsData);
+    if (response.data && response.data.code === 1) {
+      const tagsData = response.data.data;
+      if (tagsData && tagsData.items && Array.isArray(tagsData.items)) {
+        // 在本地过滤标签
+        const filteredTags = tagsData.items.filter((tag: { name: string }) => 
+          tag.name.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        // 处理标签数据，确保color字段存在
+        tagOptions.value = filteredTags.map((tag: { id: any, name: string, color?: string, projectId?: string }) => ({
+          id: String(tag.id), // 确保id总是字符串类型
+          name: tag.name,
+          color: tag.color || '#409EFF', // 如果后端未返回颜色，使用默认颜色
+          projectId: tag.projectId
+        }));
+        
+        // 如果没有找到匹配的标签，允许创建新标签
+        if (tagOptions.value.length === 0) {
+          // 创建一个临时ID，用于新建标签
           const newTagId = `new-${Date.now()}`;
           tagOptions.value = [{ 
             id: newTagId,
             name: `创建: ${query}`, 
             color: '#409EFF', 
             projectId: taskForm.projectId,
-            isNew: true
+            isNew: true // 添加标记，表示这是新建标签
           }];
         }
+        
+        console.log('搜索标签结果处理完成:', tagOptions.value);
       } else {
-        console.warn('搜索标签失败:', response.data.message || '未知错误');
+        console.warn('标签数据格式异常:', tagsData);
         const newTagId = `new-${Date.now()}`;
         tagOptions.value = [{ 
           id: newTagId,
@@ -961,7 +956,7 @@ const searchTagsLocal = async (query: string) => {
         }];
       }
     } else {
-      console.warn('搜索标签响应异常:', response);
+      console.warn('获取标签失败:', response.data?.message || '未知错误');
       const newTagId = `new-${Date.now()}`;
       tagOptions.value = [{ 
         id: newTagId,
@@ -991,32 +986,33 @@ const fetchTags = async (projectId?: string) => {
   console.log('获取标签列表，项目ID:', projectId)
   tagsLoading.value = true
   try {
-    const response = await getTagList({ projectId })
+    let response;
+    if (projectId) {
+      // 如果有项目 ID，获取特定项目的标签
+      response = await getTagList({ projectId })
+    } else {
+      // 如果没有项目 ID，获取所有标签
+      response = await getAllTags()
+    }
+    
     console.log('标签列表响应:', response)
     
     // 更完善的响应处理
-    if (response.data) {
+    if (response?.data) {
       if (response.data.code === 1) {
         // 直接接收后端返回的标签数据
         const tagsData = response.data.data;
+        
+        // 所有接口现在都统一返回 { total, items } 格式
         if (tagsData && tagsData.items && Array.isArray(tagsData.items)) {
           // 处理标签数据格式，确保color字段存在
-          tagOptions.value = tagsData.items.map(tag => ({
-            id: tag.id,
+          tagOptions.value = tagsData.items.map((tag) => ({
+            id: String(tag.id), // 确保id总是字符串类型
             name: tag.name,
             color: tag.color || '#409EFF', // 如果后端未返回颜色，使用默认颜色
             projectId: tag.projectId
           }));
           console.log('标签列表处理完成:', tagOptions.value);
-        } else if (tagsData && Array.isArray(tagsData)) {
-          // 处理可能的直接数组返回
-          tagOptions.value = tagsData.map(tag => ({
-            id: tag.id,
-            name: tag.name,
-            color: tag.color || '#409EFF',
-            projectId: tag.projectId
-          }));
-          console.log('标签列表处理完成(数组格式):', tagOptions.value);
         } else {
           console.warn('标签数据格式异常:', tagsData);
           tagOptions.value = [];
@@ -1054,19 +1050,17 @@ const getTagName = (tagId: string) => {
 const handleTagSelectVisibleChange = (visible: boolean) => {
   console.log('标签选择框显示状态变化:', visible);
   if (visible) {
-    // 当标签下拉框显示时，加载标签选项
-    console.log('标签选择框显示，正在加载标签选项...');
-    fetchTags(taskForm.projectId);
+    // 当标签下拉框显示时，加载所有标签选项，不依赖项目ID
+    console.log('标签选择框显示，正在加载所有标签选项...');
+    fetchTags(); // 不传入 projectId，获取所有标签
   }
 }
 
-// 监听项目ID变化，重新加载标签
+// 监听项目ID变化，不再根据项目ID重新加载标签
 watch(() => taskForm.projectId, (newVal) => {
-  if (newVal) {
-    fetchTags(newVal)
-  } else {
-    fetchTags()
-  }
+  console.log('项目ID变化:', newVal);
+  // 由于现在我们始终获取所有标签，这里不再需要基于项目ID重新获取标签
+  // 如果将来需要根据项目ID过滤标签，可以在此处添加本地过滤逻辑
 })
 
 // 处理标签关闭
@@ -1076,7 +1070,7 @@ const handleTagClose = (tag: any) => {
       ? item === tag 
       : typeof tag === 'string'
         ? item.name === tag
-        : item.id === tag.id
+        : String(item.id) === String(tag.id) // 确保ID比较时类型一致
   );
   if (index !== -1) {
     taskForm.tags.splice(index, 1);

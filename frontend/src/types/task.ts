@@ -65,7 +65,7 @@ export interface CreateTaskParams {
   startTime?: string // ISO格式：YYYY-MM-DDTHH:mm:ss
   priority: number // 1-低，2-中，3-高，4-紧急
   members: string[]
-  tags: string[]
+  tagIds: string[]
   projectId: string
   attachments?: string[]
 }
@@ -91,6 +91,7 @@ export interface TaskQueryParams {
   projectId?: string
   startTime?: string
   endTime?: string
+  member?: string // 成员用户名
   page?: number
   pageSize?: number
 } 

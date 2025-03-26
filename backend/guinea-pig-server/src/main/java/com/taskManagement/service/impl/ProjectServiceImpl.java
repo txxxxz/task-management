@@ -229,7 +229,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
         
         // 处理附件列表 - 通过ProjectAttachment表已经在FileService中处理好了，这里不需要额外处理
-        // 如果传入了附件URL列表，我们只需在FileService中记录即可
+        // 如果有附件列表，会在上传文件时直接保存到数据库
         
         // 返回项目VO
         return convertToVO(project);

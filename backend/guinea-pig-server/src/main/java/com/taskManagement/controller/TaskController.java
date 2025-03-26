@@ -2,14 +2,21 @@ package com.taskManagement.controller;
 
 import com.taskManagement.result.Result;
 import com.taskManagement.dto.TaskDTO;
+import com.taskManagement.dto.CommentDTO;
+import com.taskManagement.vo.CommentVO;
+import com.taskManagement.vo.UserVO;
+import com.taskManagement.service.CommentService;
 import com.taskManagement.service.TaskService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -20,6 +27,9 @@ public class TaskController {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private CommentService commentService;
 
     /**
      * 创建任务
@@ -42,6 +52,7 @@ public class TaskController {
      * @param status 状态
      * @param priority 优先级
      * @param projectId 项目ID
+     * @param member 成员
      * @param page 页码
      * @param pageSize 每页数量
      * @return 任务列表
@@ -53,14 +64,22 @@ public class TaskController {
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) Integer priority,
             @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) String member,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, page={}, pageSize={}",
-                keyword, status, priority, projectId, page, pageSize);
+        log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, member={}, page={}, pageSize={}",
+                keyword, status, priority, projectId, member, page, pageSize);
         
-        // 调用service
-        Map<String, Object> taskList = taskService.getTaskList(keyword, status, priority, projectId, page, pageSize);
-        return Result.success(taskList);
+        Map<String, Object> result;
+        
+        // 如果指定了成员查询，则使用特定的方法
+        if (StringUtils.isNotBlank(member)) {
+            result = taskService.getTasksByMember(member, page, pageSize);
+        } else {
+            result = taskService.getTaskList(keyword, status, priority, projectId, page, pageSize);
+        }
+
+        return Result.success(result);
     }
 
     /**
@@ -146,5 +165,169 @@ public class TaskController {
         // 调用service
         Map<String, Object> projectTasks = taskService.getProjectTasks(projectId, keyword, status, priority, page, pageSize);
         return Result.success(projectTasks);
+    }
+    
+    /**
+     * 获取任务评论列表
+     * @param taskId 任务ID
+     * @return 评论列表
+     */
+    @GetMapping("/{taskId}/comments")
+    @ApiOperation("获取任务评论列表")
+    public Result<List<CommentVO>> getTaskComments(@PathVariable Long taskId) {
+        log.info("获取任务评论列表: taskId={}", taskId);
+        
+        // 调用service获取评论列表
+        List<CommentDTO> commentDTOs = commentService.getCommentsByTaskId(taskId);
+        
+        // 将DTO转换为VO
+        List<CommentVO> commentVOs = convertToCommentVOList(commentDTOs);
+        
+        return Result.success(commentVOs);
+    }
+    
+    /**
+     * 将CommentDTO列表转换为CommentVO列表
+     * @param commentDTOs CommentDTO列表
+     * @return CommentVO列表
+     */
+    private List<CommentVO> convertToCommentVOList(List<CommentDTO> commentDTOs) {
+        if (commentDTOs == null) {
+            return null;
+        }
+        
+        List<CommentVO> commentVOs = new ArrayList<>();
+        for (CommentDTO commentDTO : commentDTOs) {
+            CommentVO commentVO = convertToCommentVO(commentDTO);
+            commentVOs.add(commentVO);
+        }
+        
+        return commentVOs;
+    }
+    
+    /**
+     * 将单个CommentDTO转换为CommentVO
+     * @param commentDTO CommentDTO对象
+     * @return CommentVO对象
+     */
+    private CommentVO convertToCommentVO(CommentDTO commentDTO) {
+        if (commentDTO == null) {
+            return null;
+        }
+        
+        CommentVO commentVO = new CommentVO();
+        commentVO.setId(commentDTO.getId());
+        commentVO.setContent(commentDTO.getContent());
+        commentVO.setTaskId(commentDTO.getTaskId());
+        commentVO.setParentId(commentDTO.getParentId());
+        commentVO.setCreateTime(commentDTO.getCreateTime());
+        
+        // 设置创建用户信息
+        UserVO creatorVO = new UserVO();
+        creatorVO.setId(commentDTO.getCreateUser());
+        creatorVO.setUsername(commentDTO.getCreateUserName());
+        creatorVO.setAvatar(commentDTO.getCreateUserAvatar());
+        commentVO.setCreator(creatorVO);
+        
+        // 递归转换子评论
+        if (commentDTO.getChildren() != null && !commentDTO.getChildren().isEmpty()) {
+            commentVO.setChildren(convertToCommentVOList(commentDTO.getChildren()));
+        }
+        
+        return commentVO;
+    }
+
+    /**
+     * 添加任务评论
+     * @param taskId 任务ID
+     * @param commentDTO 评论数据
+     * @return 创建后的评论
+     */
+    @PostMapping("/{taskId}/comments")
+    @ApiOperation("添加任务评论")
+    public Result<CommentVO> createComment(
+            @PathVariable Long taskId,
+            @RequestBody CommentDTO commentDTO) {
+        log.info("添加任务评论: taskId={}, comment={}", taskId, commentDTO);
+        
+        // 设置任务ID
+        commentDTO.setTaskId(taskId);
+        
+        // 调用service添加评论
+        CommentDTO createdComment = commentService.createComment(commentDTO);
+        
+        // 将DTO转换为VO
+        CommentVO commentVO = convertToCommentVO(createdComment);
+        
+        return Result.success(commentVO);
+    }
+    
+    /**
+     * 删除任务评论
+     * @param taskId 任务ID
+     * @param commentId 评论ID
+     * @return 删除结果
+     */
+    @DeleteMapping("/{taskId}/comments/{commentId}")
+    @ApiOperation("删除任务评论")
+    public Result<String> deleteComment(
+            @PathVariable Long taskId,
+            @PathVariable Long commentId) {
+        log.info("删除任务评论: taskId={}, commentId={}", taskId, commentId);
+        
+        // 调用service删除评论
+        commentService.deleteComment(taskId, commentId);
+        return Result.success("删除评论成功");
+    }
+    
+    /**
+     * 获取任务附件列表
+     * @param taskId 任务ID
+     * @return 附件列表
+     */
+    @GetMapping("/{taskId}/attachments")
+    @ApiOperation("获取任务附件列表")
+    public Result<List<Map<String, Object>>> getTaskAttachments(@PathVariable Long taskId) {
+        log.info("获取任务附件列表: taskId={}", taskId);
+        
+        // 调用service获取附件列表
+        List<Map<String, Object>> attachments = taskService.getTaskAttachments(taskId);
+        return Result.success(attachments);
+    }
+    
+    /**
+     * 上传任务附件
+     * @param taskId 任务ID
+     * @param file 文件
+     * @return 上传后的附件信息
+     */
+    @PostMapping("/{taskId}/attachments")
+    @ApiOperation("上传任务附件")
+    public Result<Map<String, Object>> uploadAttachment(
+            @PathVariable Long taskId,
+            @RequestParam("file") Object file) {
+        log.info("上传任务附件: taskId={}, file={}", taskId, file != null ? "文件已上传" : "文件为空");
+        
+        // 调用service上传附件
+        Map<String, Object> attachment = taskService.uploadTaskAttachment(taskId, file);
+        return Result.success(attachment);
+    }
+    
+    /**
+     * 删除任务附件
+     * @param taskId 任务ID
+     * @param attachmentId 附件ID
+     * @return 删除结果
+     */
+    @DeleteMapping("/{taskId}/attachments/{attachmentId}")
+    @ApiOperation("删除任务附件")
+    public Result<String> deleteAttachment(
+            @PathVariable Long taskId,
+            @PathVariable Long attachmentId) {
+        log.info("删除任务附件: taskId={}, attachmentId={}", taskId, attachmentId);
+        
+        // 调用service删除附件
+        taskService.deleteTaskAttachment(taskId, attachmentId);
+        return Result.success("删除附件成功");
     }
 } 

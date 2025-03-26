@@ -500,7 +500,9 @@ const fetchTaskList = async () => {
     
     // 成员筛选
     if (filterForm.members && filterForm.members.length > 0) {
-      cleanParams.members = filterForm.members.join(',')
+      cleanParams.member = filterForm.members[0] // 使用第一个成员作为搜索条件
+      // 打印搜索条件
+      console.log(`按成员[${filterForm.members[0]}]搜索任务`)
     }
     
     // 标签筛选
@@ -740,22 +742,28 @@ const fetchTagOptions = async () => {
     
     if (projectId) {
       const response = await getTagsByProjectId(projectId)
-      if (response?.data?.data) {
-        tagOptions.value = response.data.data.map(tag => ({
-          label: tag.name,
-          value: tag.id,
-          color: tag.color
-        }))
+      if (response?.data?.code === 1 && response.data.data) {
+        const tagsData = response.data.data;
+        if (tagsData.items && Array.isArray(tagsData.items)) {
+          tagOptions.value = tagsData.items.map(tag => ({
+            label: tag.name,
+            value: tag.id,
+            color: tag.color
+          }))
+        }
       }
     } else {
       // 否则获取所有标签
       const response = await getTagList()
-      if (response?.data?.data?.items) {
-        tagOptions.value = response.data.data.items.map(tag => ({
-          label: tag.name,
-          value: tag.id,
-          color: tag.color
-        }))
+      if (response?.data?.code === 1 && response.data.data) {
+        const tagsData = response.data.data;
+        if (tagsData.items && Array.isArray(tagsData.items)) {
+          tagOptions.value = tagsData.items.map(tag => ({
+            label: tag.name,
+            value: tag.id,
+            color: tag.color
+          }))
+        }
       }
     }
   } catch (error) {
@@ -843,12 +851,15 @@ const doSearchTags = async (query: string) => {
       const projectId = route.query.projectId ? Number(route.query.projectId) : undefined
       const response = await searchTags(query, projectId)
       
-      if (response?.data?.data) {
-        tagOptions.value = response.data.data.map(tag => ({
-          label: tag.name,
-          value: tag.id,
-          color: tag.color
-        }))
+      if (response?.data?.code === 1 && response.data.data) {
+        const tagsData = response.data.data;
+        if (tagsData.items && Array.isArray(tagsData.items)) {
+          tagOptions.value = tagsData.items.map(tag => ({
+            label: tag.name,
+            value: tag.id,
+            color: tag.color
+          }))
+        }
       }
     } catch (error) {
       console.error('搜索标签失败', error)

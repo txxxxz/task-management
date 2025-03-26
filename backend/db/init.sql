@@ -100,21 +100,7 @@ CREATE TABLE IF NOT EXISTS tb_task_tag (
     UNIQUE KEY uk_task_tag (task_id, tag_id)
 ) COMMENT '任务标签关联表';
 
--- 评论表
-CREATE TABLE IF NOT EXISTS tb_comment (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-    content TEXT NOT NULL COMMENT '评论内容',
-    task_id BIGINT NOT NULL COMMENT '任务ID',
-    parent_id BIGINT COMMENT '父评论ID（用于回复）',
-    type TINYINT NOT NULL DEFAULT 0 COMMENT '评论类型：0-普通评论，1-状态变更，2-任务更新',
-    has_attachment TINYINT NOT NULL DEFAULT 0 COMMENT '是否包含附件：0-否，1-是',
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_user BIGINT COMMENT '创建者ID',
-    update_user BIGINT COMMENT '更新者ID',
-    FOREIGN KEY (task_id) REFERENCES tb_task(id),
-    FOREIGN KEY (parent_id) REFERENCES tb_comment(id)
-) COMMENT '评论表';
+-- 评论表已经转移到task_tables.sql文件中
 
 -- 附件表
 CREATE TABLE IF NOT EXISTS tb_attachment (
