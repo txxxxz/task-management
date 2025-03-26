@@ -247,11 +247,9 @@
         <el-upload
           class="upload-demo"
           drag
-          :action="`/api/tasks/${route.params.id}/attachments`"
-          :headers="uploadHeaders"
-          :before-upload="beforeUpload"
-          :on-success="handleUploadSuccess"
-          :on-error="handleUploadError"
+          :auto-upload="false"
+          :on-change="handleFileChange"
+          :file-list="fileList"
           multiple
         >
           <el-icon class="el-icon--upload"><upload-filled /></el-icon>
@@ -264,6 +262,14 @@
             </div>
           </template>
         </el-upload>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="uploadDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleManualUpload" :loading="uploadLoading">
+              开始上传
+            </el-button>
+          </span>
+        </template>
       </el-dialog>
     </el-card>
 
@@ -337,6 +343,7 @@ import type { Comment } from '../../types/models'
 import { getTaskDetail, updateTask, deleteTask, getTaskComments, createComment, deleteComment, getTaskAttachments, deleteAttachment } from '../../api/task'
 import { getAllUsers } from '../../api/user'
 import { getTagList, getAllTags } from '@/api/tag'
+import axios from 'axios'
 
 // 定义CommentItem组件
 const CommentItem = {
@@ -347,7 +354,7 @@ const CommentItem = {
       required: true
     }
   },
-  setup(props, { emit }) {
+  setup(props: { comment: Comment }, { emit }: { emit: any }) {
     const userStore = useUserStore()
     
     // 判断是否为leader
@@ -431,9 +438,11 @@ const isLeader = computed(() => {
 })
 
 // 上传请求头
-const uploadHeaders = computed(() => ({
-  Authorization: 'Bearer ' + localStorage.getItem('token')
-}))
+const uploadHeaders = computed(() => {
+  return {
+    'X-Requested-With': 'XMLHttpRequest'
+  }
+})
 
 // 任务表单数据
 const taskForm = reactive({
@@ -790,62 +799,68 @@ const handleBatchUpload = () => {
   ElMessage.info('批量导入功能正在开发中')
 }
 
-const beforeUpload = (file: File) => {
-  const maxSize = 100 * 1024 * 1024 // 100MB
-  if (file.size > maxSize) {
-    ElMessage.error('文件大小不能超过100MB')
-    return false
-  }
+const uploadFiles = ref<File[]>([])
 
-  // 检查文件名是否合法
-  const invalidChars = /[\\\\/:*?"<>|]/g
-  if (invalidChars.test(file.name)) {
-    ElMessage.error('文件名不能包含特殊字符')
-    return false
+const handleFileChange = (file: any) => {
+  uploadFiles.value.push(file.raw)
+}
+
+const handleManualUpload = async () => {
+  if (uploadFiles.value.length === 0) {
+    ElMessage.warning('请选择要上传的文件')
+    return
   }
 
   uploadLoading.value = true
-  return true
-}
-
-const handleUploadSuccess = async (response: any) => {
-  uploadLoading.value = false
-  console.log('上传文件响应:', response)
-  
   try {
-    // 处理不同格式的后端响应
-    const isSuccess = response.code === 1 || 
-                    response.code === 0 || 
-                    response.status === 200 || 
-                    response.success === true;
-    
-    if (isSuccess) {
+    const formData = new FormData()
+    uploadFiles.value.forEach(file => {
+      formData.append('file', file)
+    })
+
+    const token = localStorage.getItem('token')
+    const response = await axios.post(`/api/tasks/${route.params.id}/attachments`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`,
+        'token': token
+      }
+    })
+
+    if (response.data.code === 1) {
       ElMessage.success('上传成功')
       uploadDialogVisible.value = false
-      
+      uploadFiles.value = []
       // 刷新文件列表
-      const taskId = parseInt(route.params.id as string)
-      if (!isNaN(taskId)) {
-        console.log('刷新文件列表, taskId:', taskId)
-        await fetchAttachments(taskId)
-      } else {
-        console.error('无效的任务ID:', route.params.id)
-      }
+      await fetchAttachments(parseInt(route.params.id as string))
     } else {
-      const errorMsg = response.msg || response.message || '上传失败'
-      console.error('上传失败:', errorMsg)
-      throw new Error(errorMsg)
+      ElMessage.error(response.data.message || '上传失败')
     }
-  } catch (err: any) {
-    console.error('处理上传响应时出错:', err)
-    ElMessage.error(err.message || '上传失败')
+  } catch (error: any) {
+    console.error('上传失败:', error)
+    if (error.response?.status === 401) {
+      ElMessage.error('认证失败，请重新登录')
+      userStore.logout()
+      router.push('/login')
+      return
+    }
+    
+    // 处理OSS相关错误
+    if (error.response?.data?.message?.includes('UserDisable')) {
+      ElMessage.error('文件存储服务暂时不可用，请联系管理员')
+      return
+    }
+    
+    // 处理其他服务器错误
+    if (error.response?.status === 500) {
+      ElMessage.error('服务器内部错误，请稍后重试')
+      return
+    }
+    
+    ElMessage.error(error.message || '上传失败，请稍后重试')
+  } finally {
+    uploadLoading.value = false
   }
-}
-
-const handleUploadError = (err: any) => {
-  uploadLoading.value = false
-  const errMsg = err.message || (typeof err === 'string' ? err : '上传失败')
-  ElMessage.error(errMsg)
 }
 
 // 文件操作方法
@@ -1077,45 +1092,32 @@ const fetchAttachments = async (taskId: number) => {
   try {
     console.log('获取任务附件列表, taskId:', taskId)
     const response = await getTaskAttachments(taskId)
-    console.log('附件列表原始响应:', JSON.stringify(response, null, 2))
+    console.log('附件列表原始响应:', response)
     
-    if (response?.data?.code === 1 && response.data.data) {
-      const responseData = response.data.data
-      const attachmentsData = Array.isArray(responseData) ? responseData : 
-                             (responseData.items || []) as TaskAttachment[]
-      
-      console.log('解析后的附件数据:', JSON.stringify(attachmentsData, null, 2))
-      
-      // 检查每个文件的字段
-      attachmentsData.forEach((file, index) => {
-        console.log(`文件 ${index + 1} 的字段:`, {
-          id: file.id,
-          fileName: file.fileName,
-          filePath: file.filePath,
-          fileSize: file.fileSize,
-          createUser: file.createUser,
-          createTime: file.createTime
-        })
-      })
-      
-      fileList.value = attachmentsData.map(file => {
-        const mappedFile = {
-          id: file.id?.toString() || '',
-          name: file.fileName || '', 
-          url: file.filePath || '',   
-          size: file.fileSize || 0,
-          uploader: file.createUser?.toString() || '未知', 
-          uploadTime: dayjs(file.createTime).format('YYYY-MM-DD HH:mm:ss') || ''
-        }
-        console.log('映射后的文件对象:', mappedFile)
-        return mappedFile
-      })
-      
-      console.log('最终的文件列表:', JSON.stringify(fileList.value, null, 2))
-    } else {
-      console.warn('附件数据格式异常或为空:', response)
-      fileList.value = []
+    let attachmentsData: TaskAttachment[] = []
+    
+    if (response && response.data) {
+      // 处理不同的响应格式
+      if (Array.isArray(response.data)) {
+        attachmentsData = response.data
+      } else if (response.data.code === 1 && response.data.data) {
+        attachmentsData = Array.isArray(response.data.data) ? response.data.data : 
+                         (response.data.data.items || [])
+      }
     }
+    
+    console.log('解析后的附件数据:', attachmentsData)
+    
+    fileList.value = attachmentsData.map(file => ({
+      id: file.id?.toString() || '',
+      name: file.fileName || '', 
+      url: file.filePath || '',   
+      size: file.fileSize || 0,
+      uploader: file.createUser?.toString() || '未知', 
+      uploadTime: dayjs(file.createTime).format('YYYY-MM-DD HH:mm:ss') || ''
+    }))
+    
+    console.log('最终的文件列表:', fileList.value)
   } catch (err) {
     console.error('获取文件列表失败:', err)
     fileList.value = []

@@ -53,7 +53,9 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
                     "/auth/register",
                     "/auth/check/**",
                     "/auth/logout",
-                    "/auth/user/avatar"  // 排除头像上传路径
+                    "/auth/user/avatar",  // 排除头像上传路径
+                    "/api/files/**",      // 排除文件上传路径
+                    "/api/tasks/*/attachments"  // 排除任务附件上传路径
                 );
     }
 
