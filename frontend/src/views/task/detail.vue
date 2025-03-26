@@ -618,18 +618,19 @@ const fetchTaskDetail = async () => {
   error.value = null
 
   try {
+    console.log('开始获取任务详情, taskId:', taskId)
     const response = await getTaskDetail(taskId)
-    console.log('获取任务详情返回:', response) // 调试日志
+    console.log('任务详情原始响应:', JSON.stringify(response, null, 2))
     
     // 将API返回的数据映射到表单
-    let data = response.data
+    let data = response.data?.data || response.data
     if (!data && (response as any).result) {
       data = (response as any).result // 兼容返回result的情况
     }
     
+    console.log('解析后的任务数据:', JSON.stringify(data, null, 2))
+    
     if (data) {
-      console.log('解析后的任务数据:', data) // 调试日志
-      
       // 优先级转换（API返回数字，转为字符串）
       const priorityMap: Record<number, string> = {
         4: 'CRITICAL',
@@ -650,6 +651,8 @@ const fetchTaskDetail = async () => {
       const priority = typeof data.priority === 'number' ? data.priority : parseInt(data.priority) || 2
       const status = typeof data.status === 'number' ? data.status : parseInt(data.status) || 1
       
+      console.log('转换前的优先级和状态:', { priority, status })
+      
       // 处理日期时间 - 支持多种可能的日期字段名
       const createTime = data.createTime ? dayjs(data.createTime).format('YYYY-MM-DD HH:mm:ss') : ''
       
@@ -664,100 +667,47 @@ const fetchTaskDetail = async () => {
         }
       }
       
+      console.log('处理后的日期:', { createTime, dueTime })
+      
       // 更新任务表单数据
-      taskForm.number = data.id || data.number || ''
-      taskForm.name = data.name || data.title || '' // 支持name或title字段
-      taskForm.description = data.description || ''
-      taskForm.createTime = createTime
-      taskForm.dueTime = dueTime
-      taskForm.priority = (priorityMap[priority] || 'MEDIUM') as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
-      taskForm.status = (statusMap[status] || 'PENDING') as 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'COMPLETED'
+      const formData = {
+        number: data.id?.toString() || data.number || '',
+        name: data.name || data.title || '',
+        description: data.description || '',
+        createTime,
+        dueTime,
+        priority: (priorityMap[priority] || 'MEDIUM') as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
+        status: (statusMap[status] || 'PENDING') as 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'COMPLETED',
+        members: [],
+        tags: []
+      }
       
       // 处理成员数据 - 确保members是字符串数组
       if (Array.isArray(data.members)) {
-        taskForm.members = data.members.map(member => {
-          return typeof member === 'string' ? member : (member as any)?.username || member
+        formData.members = data.members.map((member: any) => {
+          return typeof member === 'string' ? member : member?.username || member
         }).filter(Boolean)
-      } else {
-        taskForm.members = []
       }
       
       // 处理标签数据 - 确保tags是字符串数组
       if (Array.isArray(data.tags)) {
-        taskForm.tags = data.tags.map(tag => {
-          return typeof tag === 'string' ? tag : (tag as any)?.name || tag
+        formData.tags = data.tags.map((tag: any) => {
+          return typeof tag === 'string' ? tag : tag?.name || tag
         }).filter(Boolean)
-      } else {
-        taskForm.tags = []
       }
       
-      // 如果API返回了文件列表，更新文件列表
-      if (data.files && Array.isArray(data.files)) {
-        fileList.value = data.files.map((file: any) => ({
-          id: file.id || '',
-          name: file.name || '',
-          url: file.url || '',
-          size: typeof file.size === 'number' ? file.size : 0,
-          uploader: file.uploader || '未知',
-          uploadTime: file.uploadTime || ''
-        }))
-      } else if (data.attachments && Array.isArray(data.attachments)) {
-        // 支持attachments字段
-        fileList.value = data.attachments.map((attachment: any) => {
-          // 如果是字符串，可能只是文件URL
-          if (typeof attachment === 'string') {
-            return {
-              id: '', // 没有ID信息
-              name: attachment.split('/').pop() || '未知文件', // 从URL提取文件名
-              url: attachment,
-              size: 0, // 无法获取大小
-              uploader: '未知',
-              uploadTime: ''
-            }
-          } else {
-            // 如果是对象
-            return {
-              id: attachment.id || '',
-              name: attachment.name || attachment.fileName || '',
-              url: attachment.url || '',
-              size: typeof attachment.size === 'number' ? attachment.size : 0,
-              uploader: attachment.uploader || attachment.creator || '未知',
-              uploadTime: attachment.uploadTime || attachment.createTime || ''
-            }
-          }
-        })
-      } else {
-        fileList.value = []
-      }
+      console.log('更新表单数据:', formData)
       
-      // 如果API返回了评论列表，更新评论列表
-      if (data.comments && Array.isArray(data.comments)) {
-        comments.value = data.comments.map((comment: any) => ({
-          id: comment.id || 0,
-          username: comment.username || comment.author || '未知用户',
-          avatar: comment.avatar || '',
-          content: comment.content || comment.text || '',
-          createTime: comment.createTime || comment.time || ''
-        }))
-      } else {
-        // 尝试加载评论列表
-        try {
-          const commentsResponse = await getTaskComments(parseInt(taskId))
-          if (commentsResponse.data && Array.isArray(commentsResponse.data)) {
-            comments.value = commentsResponse.data
-          } else {
-            comments.value = []
-          }
-        } catch (err) {
-          console.error('获取评论列表失败:', err)
-          comments.value = []
-        }
-      }
+      // 使用Object.assign更新表单数据
+      Object.assign(taskForm, formData)
+      
+      console.log('更新后的表单数据:', taskForm)
       
       // 加载评论和文件列表
-      fetchComments()
-      fetchAttachments(parseInt(taskId))
+      await fetchComments()
+      await fetchAttachments(parseInt(taskId))
     } else {
+      console.warn('未获取到任务数据:', response)
       ElMessage.warning('未获取到任务数据')
     }
   } catch (err: any) {
@@ -860,18 +810,34 @@ const beforeUpload = (file: File) => {
 
 const handleUploadSuccess = async (response: any) => {
   uploadLoading.value = false
+  console.log('上传文件响应:', response)
+  
   try {
-    // 处理后端返回结果
-    if (response.code === 0 || response.status === 200 || response.success) {
+    // 处理不同格式的后端响应
+    const isSuccess = response.code === 1 || 
+                    response.code === 0 || 
+                    response.status === 200 || 
+                    response.success === true;
+    
+    if (isSuccess) {
       ElMessage.success('上传成功')
       uploadDialogVisible.value = false
       
       // 刷新文件列表
-      await fetchAttachments(parseInt(route.params.id as string))
+      const taskId = parseInt(route.params.id as string)
+      if (!isNaN(taskId)) {
+        console.log('刷新文件列表, taskId:', taskId)
+        await fetchAttachments(taskId)
+      } else {
+        console.error('无效的任务ID:', route.params.id)
+      }
     } else {
-      throw new Error(response.msg || response.message || '上传失败')
+      const errorMsg = response.msg || response.message || '上传失败'
+      console.error('上传失败:', errorMsg)
+      throw new Error(errorMsg)
     }
   } catch (err: any) {
+    console.error('处理上传响应时出错:', err)
     ElMessage.error(err.message || '上传失败')
   }
 }
@@ -923,14 +889,26 @@ const handleDeleteFile = async (file: TaskFile) => {
     })
 
     // 删除文件
-    await deleteAttachment(parseInt(route.params.id as string), parseInt(file.id))
+    const taskId = parseInt(route.params.id as string)
+    const fileId = parseInt(file.id)
+    
+    console.log('准备删除文件:', { taskId, fileId, fileName: file.name })
+    
+    if(isNaN(taskId) || isNaN(fileId)) {
+      throw new Error('任务ID或文件ID无效')
+    }
+    
+    const response = await deleteAttachment(taskId, fileId)
+    console.log('删除文件响应:', response)
     
     ElMessage.success('删除成功')
     
     // 刷新文件列表
-    await fetchAttachments(parseInt(route.params.id as string))
+    console.log('刷新文件列表, taskId:', taskId)
+    await fetchAttachments(taskId)
   } catch (err: any) {
     if (err !== 'cancel') {
+      console.error('删除文件失败:', err)
       ElMessage.error(err.message || '删除失败')
     }
   }
@@ -1085,24 +1063,62 @@ onMounted(async () => {
   await fetchComments()  // 单独获取评论列表
 })
 
+interface TaskAttachment {
+  id: number;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  createUser: string;
+  createTime: string;
+}
+
 // 获取文件列表
 const fetchAttachments = async (taskId: number) => {
   try {
+    console.log('获取任务附件列表, taskId:', taskId)
     const response = await getTaskAttachments(taskId)
-    if (response.data && Array.isArray(response.data)) {
-      fileList.value = response.data.map(file => ({
-        id: file.id?.toString() || '',
-        name: file.filename || '',
-        url: file.fileUrl || '',
-        size: 0, // Attachment接口中没有size字段
-        uploader: typeof file.uploader === 'string' ? 
-          file.uploader : 
-          (file.uploader?.username || '未知'),
-        uploadTime: file.createTime || ''
-      }))
+    console.log('附件列表原始响应:', JSON.stringify(response, null, 2))
+    
+    if (response?.data?.code === 1 && response.data.data) {
+      const responseData = response.data.data
+      const attachmentsData = Array.isArray(responseData) ? responseData : 
+                             (responseData.items || []) as TaskAttachment[]
+      
+      console.log('解析后的附件数据:', JSON.stringify(attachmentsData, null, 2))
+      
+      // 检查每个文件的字段
+      attachmentsData.forEach((file, index) => {
+        console.log(`文件 ${index + 1} 的字段:`, {
+          id: file.id,
+          fileName: file.fileName,
+          filePath: file.filePath,
+          fileSize: file.fileSize,
+          createUser: file.createUser,
+          createTime: file.createTime
+        })
+      })
+      
+      fileList.value = attachmentsData.map(file => {
+        const mappedFile = {
+          id: file.id?.toString() || '',
+          name: file.fileName || '', 
+          url: file.filePath || '',   
+          size: file.fileSize || 0,
+          uploader: file.createUser?.toString() || '未知', 
+          uploadTime: dayjs(file.createTime).format('YYYY-MM-DD HH:mm:ss') || ''
+        }
+        console.log('映射后的文件对象:', mappedFile)
+        return mappedFile
+      })
+      
+      console.log('最终的文件列表:', JSON.stringify(fileList.value, null, 2))
+    } else {
+      console.warn('附件数据格式异常或为空:', response)
+      fileList.value = []
     }
   } catch (err) {
     console.error('获取文件列表失败:', err)
+    fileList.value = []
   }
 }
 </script>

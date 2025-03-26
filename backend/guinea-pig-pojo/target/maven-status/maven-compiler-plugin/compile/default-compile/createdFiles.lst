@@ -17,8 +17,10 @@ com/taskManagement/dto/ProjectDTO.class
 com/taskManagement/entity/User.class
 com/taskManagement/vo/ProjectVO.class
 com/taskManagement/dto/TagDTO.class
+com/taskManagement/dto/TaskAttachmentDTO.class
 com/taskManagement/dto/UserUpdateDTO.class
 com/taskManagement/vo/AttachmentVO.class
+com/taskManagement/dto/ProjectAttachmentDTO.class
 com/taskManagement/vo/UserVO.class
 com/taskManagement/entity/Comment.class
 com/taskManagement/entity/TaskTag.class
