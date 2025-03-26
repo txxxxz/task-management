@@ -50,11 +50,14 @@ export interface TaskFile {
 // 任务评论接口
 export interface TaskComment {
   id: number
-  username: string
-  avatar: string
+  taskId: number
   content: string
+  parentId?: number
   createTime: string
-  replyTo?: string
+  createUser: number
+  createUserName: string
+  createUserAvatar: string
+  children?: TaskComment[]
 }
 
 // 创建任务参数

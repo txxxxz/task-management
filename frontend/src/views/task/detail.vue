@@ -36,6 +36,10 @@
               <el-icon><Check /></el-icon>
               保存修改
             </el-button>
+            <el-button type="info" plain @click="refreshTaskTags">
+              <el-icon><Refresh /></el-icon>
+              刷新修改
+            </el-button>
             <el-button type="danger" plain @click="handleDelete" v-if="isLeader">
               <el-icon><Delete /></el-icon>
               删除任务
@@ -148,6 +152,7 @@
             style="width: 100%"
             collapse-tags
             collapse-tags-tooltip
+            @change="(val: any[]) => console.log('标签选择改变:', val)"
           >
             <el-option
               v-for="tag in tagOptions"
@@ -282,18 +287,47 @@
       </template>
 
       <div class="comments-container">
-        <!-- 评论列表，使用递归组件渲染树状结构 -->
+        <!-- 评论列表 -->
         <div class="comments-list">
           <template v-if="comments.length === 0">
             <el-empty description="暂无评论" />
           </template>
           <template v-else>
-            <div v-for="comment in comments" :key="comment.id">
-              <comment-item 
-                :comment="comment" 
-                @reply="handleReply" 
-                @delete="handleDeleteComment"
-              />
+            <div v-for="comment in comments" :key="comment.id" class="comment-wrapper">
+              <div class="comment-item">
+                <div class="comment-header">
+                  <el-avatar :size="32" :src="comment.createUserAvatar || '/default-avatar.png'" />
+                  <span class="username">{{ comment.createUserName }}</span>
+                  <span class="time">{{ formatTime(comment.createTime) }}</span>
+                </div>
+                <div class="comment-content">{{ comment.content }}</div>
+                <div class="comment-actions">
+                  <el-button type="text" @click="handleReply(comment)">回复</el-button>
+                  <el-button 
+                    v-if="isLeader || comment.createUser === userStore.userInfo?.id" 
+                    type="text" 
+                    @click="handleDeleteComment(comment)"
+                  >删除</el-button>
+                </div>
+                <div v-if="comment.children && comment.children.length > 0" class="comment-replies">
+                  <div v-for="child in comment.children" :key="child.id" class="child-comment">
+                    <div class="comment-header">
+                      <el-avatar :size="24" :src="child.createUserAvatar || '/default-avatar.png'" />
+                      <span class="username">{{ child.createUserName }}</span>
+                      <span class="time">{{ formatTime(child.createTime) }}</span>
+                    </div>
+                    <div class="comment-content">{{ child.content }}</div>
+                    <div class="comment-actions">
+                      <el-button type="text" @click="handleReply(child)">回复</el-button>
+                      <el-button 
+                        v-if="isLeader || child.createUser === userStore.userInfo?.id" 
+                        type="text" 
+                        @click="handleDeleteComment(child)"
+                      >删除</el-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </template>
         </div>
@@ -301,7 +335,7 @@
         <!-- 评论输入框 -->
         <div class="comment-input">
           <div v-if="replyToComment" class="reply-info">
-            回复给：{{ replyToComment.creator.username }}
+            回复给：{{ replyToComment.createUserName }}
             <el-button type="text" @click="cancelReply">取消回复</el-button>
           </div>
           <el-input
@@ -334,84 +368,21 @@ import {
   Download,
   Delete,
   UploadFilled,
-  Back
+  Back,
+  Refresh
 } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import type { TaskDetail, TaskFile } from '../../types/task'
+import type { TaskDetail, TaskFile, TaskComment } from '../../types/task'
 import type { Comment } from '../../types/models'
 import { getTaskDetail, updateTask, deleteTask, getTaskComments, createComment, deleteComment, getTaskAttachments, deleteAttachment } from '../../api/task'
 import { getAllUsers } from '../../api/user'
 import { getTagList, getAllTags } from '@/api/tag'
 import axios from 'axios'
 
-// 定义CommentItem组件
-const CommentItem = {
-  name: 'CommentItem',
-  props: {
-    comment: {
-      type: Object as () => Comment,
-      required: true
-    }
-  },
-  setup(props: { comment: Comment }, { emit }: { emit: any }) {
-    const userStore = useUserStore()
-    
-    // 判断是否为leader
-    const isLeader = computed(() => {
-      return userStore.userInfo?.role === 1
-    })
-    
-    // 格式化时间
-    const formatTime = (time: string) => {
-      return dayjs(time).fromNow()
-    }
-    
-    return {
-      userStore,
-      isLeader,
-      formatTime
-    }
-  },
-  emits: ['reply', 'delete'],
-  template: `
-    <div class="comment-item">
-      <el-avatar :size="40" :src="comment.creator.avatar">
-        {{ comment.creator.username?.charAt(0).toUpperCase() }}
-      </el-avatar>
-      <div class="comment-content">
-        <div class="comment-header">
-          <span class="username">{{ comment.creator.username }}</span>
-          <span class="time">{{ formatTime(comment.createTime) }}</span>
-        </div>
-        <div class="comment-text">{{ comment.content }}</div>
-        <div class="comment-actions">
-          <el-button type="primary" link @click="$emit('reply', comment)">
-            回复
-          </el-button>
-          <el-button 
-            type="danger" 
-            link 
-            @click="$emit('delete', comment)"
-            v-if="isLeader || comment.creator.username === userStore.userInfo?.username"
-          >
-            删除
-          </el-button>
-        </div>
-        
-        <!-- 递归渲染子评论 -->
-        <div v-if="comment.children && comment.children.length > 0" class="children-comments">
-          <div v-for="childComment in comment.children" :key="childComment.id" class="child-comment">
-            <comment-item 
-              :comment="childComment" 
-              @reply="$emit('reply', childComment)" 
-              @delete="$emit('delete', childComment)"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  `
+// 定义评论类型
+interface CommentData extends TaskComment {
+  children?: CommentData[]
 }
 
 dayjs.extend(relativeTime)
@@ -431,6 +402,14 @@ const tagsLoading = ref(false)
 
 // 错误状态
 const error = ref<string | null>(null)
+
+// 评论相关的响应式变量
+const comments = ref<CommentData[]>([])
+const newComment = reactive({
+  content: '',
+  parentId: null as number | null
+})
+const replyToComment = ref<CommentData | null>(null)
 
 // 判断是否为leader
 const isLeader = computed(() => {
@@ -465,16 +444,6 @@ const tagOptions = ref<{ id: string, name: string, color?: string, projectId?: s
 
 // 文件列表 - 从后端获取
 const fileList = ref<TaskFile[]>([])
-
-// 评论列表 - 从后端获取，使用树状结构
-const comments = ref<any[]>([])
-
-// 新评论内容和回复信息
-const newComment = reactive({
-  content: '',
-  parentId: null as number | null
-})
-const replyToComment = ref<any>(null)
 
 // 优先级选项
 const priorityOptions = [
@@ -540,7 +509,7 @@ const fetchTags = async (projectId?: string) => {
       response = await getAllTags()
     }
     
-    console.log('标签列表响应:', response)
+    console.log('标签列表原始响应:', response)
     
     // 更完善的响应处理
     if (response?.data) {
@@ -558,6 +527,15 @@ const fetchTags = async (projectId?: string) => {
             projectId: tag.projectId
           }));
           console.log('标签列表处理完成:', tagOptions.value);
+        } else if (Array.isArray(tagsData)) {
+          // 处理直接返回数组的情况
+          tagOptions.value = tagsData.map((tag) => ({
+            id: String(tag.id), // 确保id总是字符串类型
+            name: tag.name,
+            color: tag.color || '#409EFF', // 如果后端未返回颜色，使用默认颜色
+            projectId: tag.projectId
+          }));
+          console.log('标签列表处理完成 (数组格式):', tagOptions.value);
         } else {
           console.warn('标签数据格式异常:', tagsData);
           tagOptions.value = [];
@@ -632,7 +610,7 @@ const fetchTaskDetail = async () => {
     console.log('任务详情原始响应:', JSON.stringify(response, null, 2))
     
     // 将API返回的数据映射到表单
-    let data = response.data?.data || response.data
+    let data = (response as any).data?.data || (response as any).data
     if (!data && (response as any).result) {
       data = (response as any).result // 兼容返回result的情况
     }
@@ -662,8 +640,10 @@ const fetchTaskDetail = async () => {
       
       console.log('转换前的优先级和状态:', { priority, status })
       
-      // 处理日期时间 - 支持多种可能的日期字段名
-      const createTime = data.createTime ? dayjs(data.createTime).format('YYYY-MM-DD HH:mm:ss') : ''
+      // 处理日期时间 - 优先使用startTime作为创建时间
+      const createTime = data.startTime ? dayjs(data.startTime).format('YYYY-MM-DD HH:mm:ss') 
+                       : data.createTime ? dayjs(data.createTime).format('YYYY-MM-DD HH:mm:ss') 
+                       : ''
       
       // 截止时间可能有多种字段名
       const dueTimeValue = data.dueTime || data.deadline
@@ -698,12 +678,31 @@ const fetchTaskDetail = async () => {
         }).filter(Boolean)
       }
       
-      // 处理标签数据 - 确保tags是字符串数组
-      if (Array.isArray(data.tags)) {
-        formData.tags = data.tags.map((tag: any) => {
-          return typeof tag === 'string' ? tag : tag?.name || tag
-        }).filter(Boolean)
+      // 处理标签数据 - 检查并打印tagIds和tags字段
+      console.log('任务数据中的标签相关字段:', {
+        tags: data.tags,
+        tagIds: data.tagIds
+      });
+      
+      // 首先检查tagIds字段
+      if (Array.isArray(data.tagIds)) {
+        console.log('使用tagIds字段:', data.tagIds);
+        formData.tags = data.tagIds.map((tagId: any) => {
+          return tagId?.toString() || '';
+        }).filter(Boolean);
       }
+      // 如果没有tagIds字段，再使用tags字段
+      else if (Array.isArray(data.tags)) {
+        console.log('使用tags字段:', data.tags);
+        formData.tags = data.tags.map((tag: any) => {
+          if (typeof tag === 'object' && tag !== null) {
+            return tag.id?.toString() || '';
+          }
+          return tag?.toString() || '';
+        }).filter(Boolean);
+      }
+      
+      console.log('任务加载时处理后的标签IDs:', formData.tags);
       
       console.log('更新表单数据:', formData)
       
@@ -724,6 +723,26 @@ const fetchTaskDetail = async () => {
     error.value = err.message || '获取任务详情失败'
   } finally {
     loading.value = false
+  }
+}
+
+// 添加一个函数，用于调试和刷新任务标签
+const refreshTaskTags = async () => {
+  try {
+    console.log('刷新任务标签');
+    // 先重新获取标签列表
+    await fetchTags(route.query.projectId as string)
+    
+    // 然后重新获取任务详情
+    await fetchTaskDetail()
+    
+    console.log('刷新后的标签选项:', tagOptions.value);
+    console.log('刷新后的任务标签:', taskForm.tags);
+    
+    ElMessage.success('标签已刷新')
+  } catch (err: any) {
+    console.error('刷新标签失败:', err)
+    ElMessage.error('刷新标签失败')
   }
 }
 
@@ -762,6 +781,24 @@ const handleSave = async () => {
       }
     }
     
+    // 标签处理逻辑 - 将标签ID转换为Long类型
+    console.log('保存前的原始标签数据:', taskForm.tags);
+    
+    // 将标签ID转换为数字类型，后端需要Long类型
+    const tagIds = taskForm.tags.map((tag: any) => {
+      // 如果是对象类型，尝试提取id
+      if (typeof tag === 'object' && tag !== null) {
+        const id = tag.id?.toString() || '';
+        return id ? Number(id) : null;
+      }
+      // 直接转换为数字
+      const id = tag?.toString() || '';
+      return id ? Number(id) : null;
+    }).filter((id): id is number => id !== null); // 过滤掉null值
+    
+    console.log('处理后的标签IDs:', tagIds);
+    
+    // 构建更新数据
     const updateData = {
       id: parseInt(taskForm.number) || undefined,
       name: taskForm.name,
@@ -770,21 +807,64 @@ const handleSave = async () => {
       priority: priorityMap[taskForm.priority] || 2, // 默认为中等优先级
       status: statusMap[taskForm.status] || 1, // 默认为待处理
       members: taskForm.members,
-      tags: taskForm.tags,
-      projectId: route.query.projectId as string || undefined // 使用URL中的项目ID
+      tagIds: tagIds, // 使用数字数组作为tagIds传递给后端
+      projectId: route.query.projectId ? Number(route.query.projectId) : undefined // 将projectId转换为数字
     }
     
     console.log('更新任务数据:', updateData) // 调试日志
+    
+    // 尝试直接使用axios发送请求，添加更多调试信息
+    try {
+      const taskId = route.params.id as string;
+      const token = localStorage.getItem('token');
+      console.log('开始发送直接API请求，任务ID:', taskId);
+      console.log('API请求体:', JSON.stringify(updateData));
+      
+      const directResponse = await axios({
+        method: 'put',
+        url: `/api/tasks/${taskId}`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'token': token
+        },
+        data: updateData,
+        timeout: 10000
+      });
+      
+      console.log('直接API请求响应:', directResponse);
+    } catch (directError: any) {
+      console.error('直接API请求失败:', directError);
+      console.error('直接API请求错误详情:', directError.response || '无响应数据');
+    }
+    
+    // 使用封装的updateTask函数
     const response = await updateTask(route.params.id as string, updateData)
     console.log('更新任务响应:', response) // 调试日志
     
     ElMessage.success('保存成功')
     
-    // 刷新任务数据
-    await fetchTaskDetail()
+    // 延迟一点时间后刷新数据，确保后端处理完成
+    setTimeout(async () => {
+      // 重新获取标签列表，确保新添加的标签也显示出来
+      await fetchTags(route.query.projectId as string)
+      
+      // 刷新任务数据
+      await fetchTaskDetail()
+    }, 500)
   } catch (err: any) {
     console.error('保存任务失败:', err)
-    ElMessage.error(err.message || '保存失败')
+    if (err.response) {
+      console.error('错误响应:', err.response.data)
+      console.error('错误状态:', err.response.status)
+      ElMessage.error(`保存失败: ${err.response.status} - ${err.response.data?.message || JSON.stringify(err.response.data)}`)
+    } else if (err.request) {
+      console.error('无响应:', err.request)
+      ElMessage.error('保存失败: 服务器没有响应')
+    } else {
+      console.error('请求设置错误:', err.message)
+      ElMessage.error(err.message || '保存失败')
+    }
   } finally {
     saveLoading.value = false
   }
@@ -879,14 +959,37 @@ const handleDownloadFile = (file: TaskFile) => {
   }
   
   try {
-    const link = document.createElement('a')
-    link.href = file.url
-    link.download = file.name
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    // 创建一个XMLHttpRequest对象来处理下载
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', file.url, true);
+    xhr.responseType = 'blob';
+    
+    xhr.onload = function() {
+      if (this.status === 200) {
+        // 创建一个新的Blob对象
+        const blob = new Blob([this.response], {type: 'application/octet-stream'});
+        
+        // 创建下载链接
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = file.name; // 使用文件原始名称
+        
+        // 添加到文档并触发点击
+        document.body.appendChild(a);
+        a.click();
+        
+        // 清理
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    };
+    
+    xhr.send();
   } catch (err) {
-    ElMessage.error('下载失败')
+    console.error('下载失败:', err);
+    ElMessage.error('下载失败');
   }
 }
 
@@ -932,12 +1035,81 @@ const handleDeleteFile = async (file: TaskFile) => {
 // 获取评论列表
 const fetchComments = async () => {
   try {
+    console.log('开始获取评论列表, taskId:', route.params.id)
     const response = await getTaskComments(parseInt(route.params.id as string))
-    if (response.data && Array.isArray(response.data)) {
-      comments.value = response.data
-    } else {
-      comments.value = []
+    console.log('评论列表原始响应:', JSON.stringify(response, null, 2))
+    
+    // 处理API响应
+    const apiResponse = response as any
+    
+    // 提取评论数据数组 - 处理不同的响应结构
+    let commentsData: any[] = []
+    
+    if (apiResponse?.data?.code === 1 && apiResponse?.data?.data) {
+      // 标准响应格式：{ code: 1, data: [...] }
+      commentsData = Array.isArray(apiResponse.data.data) ? apiResponse.data.data : []
+    } else if (Array.isArray(apiResponse?.data)) {
+      // 直接返回数组的格式
+      commentsData = apiResponse.data
+    } else if (apiResponse?.data) {
+      // 其他可能的格式
+      commentsData = Array.isArray(apiResponse.data) ? apiResponse.data : []
     }
+    
+    console.log('解析后的评论数据数组长度:', commentsData.length)
+    if (commentsData.length > 0) {
+      console.log('第一个评论样本:', JSON.stringify(commentsData[0], null, 2))
+    }
+    
+    // 构建评论树
+    const commentMap = new Map<number, CommentData>()
+    const rootComments: CommentData[] = []
+    
+    // 第一次遍历：创建评论映射
+    commentsData.forEach((comment: any) => {
+      // 标准化评论数据结构以适应两种可能的格式
+      const commentNode: CommentData = {
+        id: comment.id,
+        taskId: comment.taskId,
+        content: comment.content,
+        parentId: comment.parentId || comment.reply_to || undefined,
+        createTime: comment.createTime || comment.create_time || new Date().toISOString(),
+        createUser: comment.creator?.id || comment.createUser || comment.user_id,
+        createUserName: comment.creator?.username || comment.createUserName || comment.username || '未知用户',
+        createUserAvatar: comment.creator?.avatar || comment.createUserAvatar || comment.avatar || '',
+        children: []
+      }
+      
+      commentMap.set(comment.id, commentNode)
+    })
+    
+    // 第二次遍历：构建树状结构
+    commentsData.forEach((comment: any) => {
+      const commentNode = commentMap.get(comment.id)
+      if (!commentNode) return
+      
+      const parentId = comment.parentId || comment.reply_to
+      
+      if (parentId) {
+        // 如果有父评论，添加到父评论的children中
+        const parentComment = commentMap.get(parentId)
+        if (parentComment) {
+          if (!parentComment.children) {
+            parentComment.children = []
+          }
+          parentComment.children.push(commentNode)
+        } else {
+          // 如果找不到父评论，作为根评论
+          rootComments.push(commentNode)
+        }
+      } else {
+        // 如果没有父评论，作为根评论
+        rootComments.push(commentNode)
+      }
+    })
+    
+    comments.value = rootComments
+    console.log('最终处理后的评论树, 根评论数:', rootComments.length)
   } catch (err) {
     console.error('获取评论列表失败:', err)
     comments.value = []
@@ -956,7 +1128,8 @@ const handleAddComment = async () => {
     // 构建评论数据
     const commentData = {
       content: newComment.content,
-      parentId: newComment.parentId
+      parentId: newComment.parentId,
+      taskId: parseInt(route.params.id as string)
     }
     
     // 添加评论
@@ -978,7 +1151,7 @@ const handleAddComment = async () => {
   }
 }
 
-const handleReply = (comment: any) => {
+const handleReply = (comment: CommentData) => {
   replyToComment.value = comment
   newComment.parentId = comment.id
   newComment.content = ''
@@ -997,8 +1170,8 @@ const cancelReply = () => {
   newComment.parentId = null
 }
 
-const handleDeleteComment = async (comment: any) => {
-  if (!isLeader.value && comment.creator.username !== userStore.userInfo?.username) {
+const handleDeleteComment = async (comment: CommentData) => {
+  if (!isLeader.value && comment.createUser !== Number(userStore.userInfo?.id)) {
     ElMessage.warning('您没有权限删除此评论')
     return
   }
@@ -1096,13 +1269,35 @@ const fetchAttachments = async (taskId: number) => {
     
     let attachmentsData: TaskAttachment[] = []
     
-    if (response && response.data) {
+    // 使用类型断言
+    const apiResponse = response as any
+    
+    if (apiResponse && apiResponse.data) {
       // 处理不同的响应格式
-      if (Array.isArray(response.data)) {
-        attachmentsData = response.data
-      } else if (response.data.code === 1 && response.data.data) {
-        attachmentsData = Array.isArray(response.data.data) ? response.data.data : 
-                         (response.data.data.items || [])
+      if (Array.isArray(apiResponse.data)) {
+        attachmentsData = apiResponse.data.map((file: any) => ({
+          id: file.id,
+          fileName: file.filename || file.name || '未命名文件',
+          filePath: file.url || file.filePath || '',
+          fileSize: file.size || file.fileSize || 0,
+          // 确保上传者是名字而非ID
+          createUser: typeof file.uploader === 'object' ? file.uploader.username || '未知用户' : 
+                    file.uploaderName || file.createUserName || file.uploader?.toString() || '未知用户',
+          createTime: file.uploadTime || file.updateTime || file.createTime || new Date().toISOString()
+        }))
+      } else if (apiResponse.data.code === 1 && apiResponse.data.data) {
+        const data = Array.isArray(apiResponse.data.data) ? apiResponse.data.data : 
+                    (apiResponse.data.data.items || [])
+        attachmentsData = data.map((file: any) => ({
+          id: file.id,
+          fileName: file.fileName || file.filename || file.name || '未命名文件',
+          filePath: file.filePath || file.url || '',
+          fileSize: file.fileSize || file.size || 0,
+          // 确保上传者是名字而非ID
+          createUser: typeof file.createUser === 'object' ? file.createUser.username || '未知用户' : 
+                    file.createUserName || file.uploaderName || file.createUser?.toString() || '未知用户',
+          createTime: file.createTime || file.uploadTime || file.updateTime || new Date().toISOString()
+        }))
       }
     }
     
@@ -1113,7 +1308,7 @@ const fetchAttachments = async (taskId: number) => {
       name: file.fileName || '', 
       url: file.filePath || '',   
       size: file.fileSize || 0,
-      uploader: file.createUser?.toString() || '未知', 
+      uploader: file.createUser || '未知', 
       uploadTime: dayjs(file.createTime).format('YYYY-MM-DD HH:mm:ss') || ''
     }))
     
@@ -1121,6 +1316,16 @@ const fetchAttachments = async (taskId: number) => {
   } catch (err) {
     console.error('获取文件列表失败:', err)
     fileList.value = []
+  }
+}
+
+// 格式化时间
+const formatTime = (time: string) => {
+  try {
+    return dayjs(time).fromNow()
+  } catch (e) {
+    console.error('时间格式化错误:', e)
+    return time || '未知时间'
   }
 }
 </script>
@@ -1234,79 +1439,91 @@ const fetchAttachments = async (taskId: number) => {
 
 /* 评论区样式 */
 .comments-container {
-  padding: 0 20px;
+  padding: 10px 0;
+}
+
+.comment-wrapper {
+  margin-bottom: 20px;
 }
 
 .comments-list {
   margin-bottom: 20px;
 }
 
-:deep(.comment-item) {
+.comment-item {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  margin-bottom: 15px;
+}
+
+.comment-header {
   display: flex;
-  gap: 16px;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-:deep(.comment-content) {
-  flex: 1;
-}
-
-:deep(.comment-header) {
-  margin-bottom: 8px;
-}
-
-:deep(.username) {
+.username {
   font-weight: 500;
-  margin-right: 8px;
+  margin-left: 10px;
+  color: #333;
 }
 
-:deep(.time) {
-  color: var(--el-text-color-secondary);
+.time {
+  margin-left: auto;
+  color: #909399;
   font-size: 12px;
 }
 
-:deep(.comment-text) {
-  line-height: 1.6;
-  margin-bottom: 8px;
+.comment-content {
+  margin: 10px 0;
+  line-height: 1.5;
+  color: #303133;
+  word-break: break-all;
 }
 
-:deep(.comment-actions) {
+.comment-actions {
   display: flex;
-  gap: 16px;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .comment-input {
   margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.reply-info {
+  background-color: #f8f8f8;
+  padding: 8px 15px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .comment-buttons {
-  margin-top: 12px;
+  margin-top: 10px;
   text-align: right;
 }
 
 /* 子评论样式 */
-:deep(.children-comments) {
+.comment-replies {
   margin-left: 20px;
   margin-top: 15px;
-  border-left: 2px solid var(--el-border-color-lighter);
-  padding-left: 20px;
+  padding-left: 15px;
+  border-left: 2px solid #dcdfe6;
 }
 
-:deep(.child-comment) {
-  margin-bottom: 12px;
-}
-
-/* 回复信息提示 */
-.reply-info {
-  margin-bottom: 10px;
-  padding: 6px 10px;
-  background-color: var(--el-fill-color-light);
+.child-comment {
+  background-color: #f0f2f5;
   border-radius: 4px;
-  font-size: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  padding: 10px;
+  margin-bottom: 10px;
 }
 
 /* 上传对话框样式 */

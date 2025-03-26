@@ -51,19 +51,39 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             throw new BusinessException("任务不存在");
         }
         
-        // 获取所有顶级评论
-        List<Comment> topLevelComments = commentMapper.selectTopLevelByTaskId(taskId);
+        // 直接获取所有评论
+        List<Comment> comments = commentMapper.selectByTaskId(taskId);
         
         // 构建评论树
-        List<CommentDTO> result = new ArrayList<>();
-        for (Comment comment : topLevelComments) {
-            CommentDTO commentDTO = convertToDTO(comment);
-            // 递归获取子评论
-            commentDTO.setChildren(getChildComments(comment.getId()));
-            result.add(commentDTO);
+        Map<Long, CommentDTO> commentMap = new HashMap<>();
+        List<CommentDTO> rootComments = new ArrayList<>();
+        
+        // 第一次遍历：转换所有评论为DTO并创建映射
+        for (Comment comment : comments) {
+            CommentDTO dto = convertToDTO(comment);
+            dto.setChildren(new ArrayList<>());
+            commentMap.put(comment.getId(), dto);
         }
         
-        return result;
+        // 第二次遍历：构建树状结构
+        for (Comment comment : comments) {
+            CommentDTO dto = commentMap.get(comment.getId());
+            if (comment.getParentId() != null) {
+                // 如果有父评论，添加到父评论的children中
+                CommentDTO parentDto = commentMap.get(comment.getParentId());
+                if (parentDto != null) {
+                    parentDto.getChildren().add(dto);
+                } else {
+                    // 如果找不到父评论，作为根评论
+                    rootComments.add(dto);
+                }
+            } else {
+                // 如果没有父评论，作为根评论
+                rootComments.add(dto);
+            }
+        }
+        
+        return rootComments;
     }
     
     /**
