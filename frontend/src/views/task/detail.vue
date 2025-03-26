@@ -282,7 +282,13 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>评论</h2>
+          <h2>评论 ({{ comments.length > 0 ? getTotalCommentCount() : 0 }})</h2>
+          <div class="header-actions">
+            <el-button size="small" @click="fetchComments">
+              <el-icon><Refresh /></el-icon>
+              刷新评论
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -304,7 +310,7 @@
                 <div class="comment-actions">
                   <el-button type="text" @click="handleReply(comment)">回复</el-button>
                   <el-button 
-                    v-if="isLeader || comment.createUser === userStore.userInfo?.id" 
+                    v-if="isLeader || String(comment.createUser) === String(userStore.userInfo?.id)" 
                     type="text" 
                     @click="handleDeleteComment(comment)"
                   >删除</el-button>
@@ -316,11 +322,14 @@
                       <span class="username">{{ child.createUserName }}</span>
                       <span class="time">{{ formatTime(child.createTime) }}</span>
                     </div>
-                    <div class="comment-content">{{ child.content }}</div>
+                    <div class="comment-content">
+                      <span class="reply-target">@{{ comment.createUserName }}</span>
+                      {{ child.content }}
+                    </div>
                     <div class="comment-actions">
                       <el-button type="text" @click="handleReply(child)">回复</el-button>
                       <el-button 
-                        v-if="isLeader || child.createUser === userStore.userInfo?.id" 
+                        v-if="isLeader || String(child.createUser) === String(userStore.userInfo?.id)" 
                         type="text" 
                         @click="handleDeleteComment(child)"
                       >删除</el-button>
@@ -1059,57 +1068,67 @@ const fetchComments = async () => {
     console.log('解析后的评论数据数组长度:', commentsData.length)
     if (commentsData.length > 0) {
       console.log('第一个评论样本:', JSON.stringify(commentsData[0], null, 2))
+      console.log('第一个评论字段列表:', Object.keys(commentsData[0]))
     }
     
     // 构建评论树
     const commentMap = new Map<number, CommentData>()
     const rootComments: CommentData[] = []
     
-    // 第一次遍历：创建评论映射
+    // 第一步：创建所有评论节点并存入Map
     commentsData.forEach((comment: any) => {
-      // 标准化评论数据结构以适应两种可能的格式
+      // 兼容不同的API响应结构
+      const commentId = Number(comment.id)
+      const parentId = comment.parentId || comment.parent_id || comment.reply_to || null
+      
       const commentNode: CommentData = {
-        id: comment.id,
-        taskId: comment.taskId,
+        id: commentId,
+        taskId: comment.taskId || comment.task_id,
         content: comment.content,
-        parentId: comment.parentId || comment.reply_to || undefined,
+        parentId: parentId,
         createTime: comment.createTime || comment.create_time || new Date().toISOString(),
-        createUser: comment.creator?.id || comment.createUser || comment.user_id,
+        createUser: comment.creator?.id || comment.createUser || comment.create_user || comment.user_id,
         createUserName: comment.creator?.username || comment.createUserName || comment.username || '未知用户',
         createUserAvatar: comment.creator?.avatar || comment.createUserAvatar || comment.avatar || '',
         children: []
       }
       
-      commentMap.set(comment.id, commentNode)
+      commentMap.set(commentId, commentNode)
     })
     
-    // 第二次遍历：构建树状结构
-    commentsData.forEach((comment: any) => {
-      const commentNode = commentMap.get(comment.id)
-      if (!commentNode) return
-      
-      const parentId = comment.parentId || comment.reply_to
-      
-      if (parentId) {
-        // 如果有父评论，添加到父评论的children中
-        const parentComment = commentMap.get(parentId)
+    // 第二步：构建树结构 - 将子评论添加到父评论的children数组中
+    commentMap.forEach(comment => {
+      if (comment.parentId) {
+        // 这是一个子评论，尝试找到其父评论
+        const parentComment = commentMap.get(Number(comment.parentId))
         if (parentComment) {
+          // 确保父评论有children数组
           if (!parentComment.children) {
             parentComment.children = []
           }
-          parentComment.children.push(commentNode)
+          parentComment.children.push(comment)
         } else {
-          // 如果找不到父评论，作为根评论
-          rootComments.push(commentNode)
+          // 如果找不到父评论，作为根评论处理
+          rootComments.push(comment)
         }
       } else {
-        // 如果没有父评论，作为根评论
-        rootComments.push(commentNode)
+        // 这是一个根评论
+        rootComments.push(comment)
+      }
+    })
+    
+    // 对根评论和子评论进行排序 - 按创建时间降序
+    rootComments.sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
+    
+    // 同样对所有子评论排序
+    rootComments.forEach(comment => {
+      if (comment.children && comment.children.length > 0) {
+        comment.children.sort((a, b) => new Date(a.createTime).getTime() - new Date(b.createTime).getTime())
       }
     })
     
     comments.value = rootComments
-    console.log('最终处理后的评论树, 根评论数:', rootComments.length)
+    console.log('最终处理后的评论树, 根评论数:', rootComments.length, rootComments)
   } catch (err) {
     console.error('获取评论列表失败:', err)
     comments.value = []
@@ -1132,6 +1151,8 @@ const handleAddComment = async () => {
       taskId: parseInt(route.params.id as string)
     }
     
+    console.log('准备提交的评论数据:', commentData)
+    
     // 添加评论
     await createComment(parseInt(route.params.id as string), commentData)
     
@@ -1145,6 +1166,7 @@ const handleAddComment = async () => {
     // 刷新评论列表
     await fetchComments()
   } catch (err: any) {
+    console.error('评论失败:', err)
     ElMessage.error(err.message || '评论失败')
   } finally {
     commentLoading.value = false
@@ -1171,7 +1193,7 @@ const cancelReply = () => {
 }
 
 const handleDeleteComment = async (comment: CommentData) => {
-  if (!isLeader.value && comment.createUser !== Number(userStore.userInfo?.id)) {
+  if (!isLeader.value && String(comment.createUser) !== String(userStore.userInfo?.id)) {
     ElMessage.warning('您没有权限删除此评论')
     return
   }
@@ -1184,14 +1206,37 @@ const handleDeleteComment = async (comment: CommentData) => {
     })
 
     // 删除评论
-    await deleteComment(parseInt(route.params.id as string), comment.id)
+    const taskId = parseInt(route.params.id as string)
+    const commentId = comment.id
     
-    ElMessage.success('删除成功')
+    console.log('准备删除评论:', { taskId, commentId })
+    
+    try {
+      // 直接使用axios发送删除请求，规避可能的接口问题
+      const token = localStorage.getItem('token')
+      const response = await axios({
+        method: 'delete',
+        url: `/api/tasks/${taskId}/comments/${commentId}`,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'token': token
+        },
+        timeout: 10000
+      })
+      console.log('直接删除评论响应:', response)
+      ElMessage.success('删除成功')
+    } catch (directErr: any) {
+      console.error('直接删除评论失败:', directErr)
+      // 尝试使用封装的API函数
+      await deleteComment(taskId, commentId)
+      ElMessage.success('删除成功')
+    }
     
     // 刷新评论列表
     await fetchComments()
   } catch (err: any) {
     if (err !== 'cancel') {
+      console.error('删除评论失败:', err)
       ElMessage.error(err.message || '删除失败')
     }
   }
@@ -1327,6 +1372,18 @@ const formatTime = (time: string) => {
     console.error('时间格式化错误:', e)
     return time || '未知时间'
   }
+}
+
+// 获取评论总数（包括子评论）
+const getTotalCommentCount = () => {
+  let total = 0;
+  comments.value.forEach(comment => {
+    total++; // 计算根评论
+    if (comment.children && comment.children.length > 0) {
+      total += comment.children.length; // 计算子评论
+    }
+  });
+  return total;
 }
 </script>
 
@@ -1524,6 +1581,12 @@ const formatTime = (time: string) => {
   border-radius: 4px;
   padding: 10px;
   margin-bottom: 10px;
+}
+
+.reply-target {
+  color: #409EFF;
+  font-weight: 500;
+  margin-right: 5px;
 }
 
 /* 上传对话框样式 */

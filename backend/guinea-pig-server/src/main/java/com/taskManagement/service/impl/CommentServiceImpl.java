@@ -150,7 +150,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         
         // 如果有父评论ID，检查父评论是否存在且属于同一任务
         if (commentDTO.getParentId() != null) {
-            Comment parentComment = commentMapper.selectById(commentDTO.getParentId());
+            log.info("检测到父评论ID: {}", commentDTO.getParentId());
+            Comment parentComment = commentMapper.selectCommentWithoutUpdateFields(commentDTO.getParentId());
             if (parentComment == null) {
                 throw new BusinessException("父评论不存在");
             }
@@ -158,6 +159,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             if (!parentComment.getTaskId().equals(commentDTO.getTaskId())) {
                 throw new BusinessException("不能跨任务评论");
             }
+            
+            log.info("已验证父评论存在并属于同一任务");
         }
         
         // 创建评论实体并设置属性
@@ -168,15 +171,20 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         comment.setCreateUser(userId);
         comment.setCreateTime(LocalDateTime.now());
         
+        log.info("准备保存评论实体: {}", comment);
+        
         // 保存评论
         commentMapper.insert(comment);
+        log.info("评论已保存到数据库，ID: {}", comment.getId());
         
         // 更新任务评论数量
         task.setCommentCount(task.getCommentCount() + 1);
         taskMapper.updateById(task);
         
         // 转换为DTO并返回
-        return convertToDTO(comment);
+        CommentDTO resultDTO = convertToDTO(comment);
+        log.info("返回评论DTO: {}", resultDTO);
+        return resultDTO;
     }
 
     /**
@@ -207,11 +215,14 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             throw new BusinessException("评论不存在或不属于该任务");
         }
         
-        // 获取评论
-        Comment comment = commentMapper.selectById(commentId);
+        // 获取评论 - 使用自定义查询方法避免使用update_time和update_user
+        Comment comment = commentMapper.selectCommentWithoutUpdateFields(commentId);
+        if (comment == null) {
+            throw new BusinessException("评论不存在");
+        }
         
-        // 检查用户是否有权限删除（只有评论创建者可以删除）
-        if (!comment.getCreateUser().equals(userId)) {
+        // 检查用户是否有权限删除（只有评论创建者或任务拥有者可以删除）
+        if (!comment.getCreateUser().equals(userId) && !task.getCreateUser().equals(userId)) {
             throw new BusinessException("无权删除该评论");
         }
         

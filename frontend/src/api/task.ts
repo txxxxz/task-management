@@ -89,9 +89,15 @@ export function getTaskComments(taskId: number) {
   })
 }
 
-export function createComment(taskId: number, commentData: { content: string, parentId?: number | null }) {
-  return request<Comment>({
-    url: '/api/tasks/' + taskId + '/comments',
+/**
+ * 添加评论
+ * @param taskId 任务ID
+ * @param commentData 评论数据
+ * @returns 评论
+ */
+export function createComment(taskId: number, commentData: any) {
+  return request({
+    url: `/api/tasks/${taskId}/comments`,
     method: 'post',
     data: commentData
   })

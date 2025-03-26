@@ -16,11 +16,11 @@ import java.util.List;
 public interface CommentMapper extends BaseMapper<Comment> {
 
     /**
-     * 根据任务ID查询所有评论
+     * 根据任务ID查询评论
      * @param taskId 任务ID
      * @return 评论列表
      */
-    @Select("SELECT * FROM tb_comment WHERE task_id = #{taskId} ORDER BY create_time DESC")
+    @Select("SELECT id, task_id, content, parent_id, create_time, create_user FROM tb_comment WHERE task_id = #{taskId}")
     List<Comment> selectByTaskId(@Param("taskId") Long taskId);
     
     /**
@@ -36,23 +36,30 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * @param parentId 父评论ID
      * @return 子评论列表
      */
-    @Select("SELECT * FROM tb_comment WHERE parent_id = #{parentId} ORDER BY create_time ASC")
+    @Select("SELECT id, task_id, content, parent_id, create_time, create_user FROM tb_comment WHERE parent_id = #{parentId}")
     List<Comment> selectChildrenByParentId(@Param("parentId") Long parentId);
     
     /**
-     * 删除评论及其所有子评论
+     * 删除评论及其子评论
      * @param commentId 评论ID
-     * @return 删除数量
      */
     @Delete("DELETE FROM tb_comment WHERE id = #{commentId} OR parent_id = #{commentId}")
-    int deleteWithChildren(@Param("commentId") Long commentId);
+    void deleteWithChildren(@Param("commentId") Long commentId);
     
     /**
-     * 检查评论是否属于指定任务
+     * 检查评论是否属于任务
      * @param commentId 评论ID
      * @param taskId 任务ID
-     * @return 评论数量
+     * @return 计数结果
      */
     @Select("SELECT COUNT(*) FROM tb_comment WHERE id = #{commentId} AND task_id = #{taskId}")
     int checkCommentBelongsToTask(@Param("commentId") Long commentId, @Param("taskId") Long taskId);
+
+    /**
+     * 查询评论详情不包含update_time和update_user字段
+     * @param commentId 评论ID
+     * @return 评论对象
+     */
+    @Select("SELECT id, task_id, content, parent_id, create_time, create_user FROM tb_comment WHERE id = #{commentId}")
+    Comment selectCommentWithoutUpdateFields(@Param("commentId") Long commentId);
 } 
