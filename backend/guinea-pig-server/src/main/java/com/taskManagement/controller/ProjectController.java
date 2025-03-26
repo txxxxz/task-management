@@ -1,5 +1,6 @@
 package com.taskManagement.controller;
 
+import com.taskManagement.dto.ProjectAttachmentDTO;
 import com.taskManagement.dto.ProjectDTO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.result.Result;
@@ -162,5 +163,19 @@ public class ProjectController {
         
         projectService.removeProjectMember(id, username);
         return Result.success();
+    }
+
+    /**
+     * 获取项目附件列表
+     * @param projectId 项目ID
+     * @return 附件列表
+     */
+    @GetMapping("/{projectId}/attachments")
+    public Result<List<ProjectAttachmentDTO>> getProjectAttachments(@PathVariable Long projectId) {
+        log.info("获取项目附件列表: projectId={}", projectId);
+        
+        // 调用service获取附件列表
+        List<ProjectAttachmentDTO> attachments = projectService.getProjectAttachments(projectId);
+        return Result.success(attachments);
     }
 } 

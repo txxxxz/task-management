@@ -2,6 +2,7 @@ com/taskManagement/dto/UserRegisterDTO.class
 com/taskManagement/dto/UserLoginDTO.class
 com/taskManagement/dto/PasswordChangeDTO.class
 com/taskManagement/vo/PageResult.class
+com/taskManagement/dto/CommentDTO.class
 com/taskManagement/vo/TagVO.class
 com/taskManagement/vo/LoginVO.class
 com/taskManagement/entity/Project.class

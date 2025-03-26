@@ -17,5 +17,4 @@ public class Project extends BaseEntity {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer priority;    // 1-低，2-中，3-高，4-紧急
-    private Integer attachmentCount;
 } 

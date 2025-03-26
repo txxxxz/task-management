@@ -67,8 +67,13 @@ export interface Tag extends BaseModel {
 export interface Comment extends BaseModel {
   content: string;
   taskId: number;
-  userId: number;
-  user?: User;
+  parentId?: number | null;
+  creator: {
+    id: number;
+    username: string;
+    avatar?: string;
+  };
+  children?: Comment[];
 }
 
 export interface Attachment extends BaseModel {

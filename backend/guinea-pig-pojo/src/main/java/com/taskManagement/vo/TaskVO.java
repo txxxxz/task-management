@@ -19,7 +19,6 @@ public class TaskVO {
     private Double estimatedHours;
     private Double actualHours;
     private Integer commentCount;
-    private Integer attachmentCount;
     
     private UserVO creator;
     private List<UserVO> members;
@@ -29,4 +28,12 @@ public class TaskVO {
     
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    
+    /**
+     * 获取附件数量
+     * @return 附件数量
+     */
+    public Integer getAttachmentCount() {
+        return attachments != null ? attachments.size() : 0;
+    }
 } 

@@ -7,6 +7,7 @@ import com.taskManagement.vo.CommentVO;
 import com.taskManagement.vo.UserVO;
 import com.taskManagement.service.CommentService;
 import com.taskManagement.service.TaskService;
+import com.taskManagement.dto.TaskAttachmentDTO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -287,11 +288,11 @@ public class TaskController {
      */
     @GetMapping("/{taskId}/attachments")
     @ApiOperation("获取任务附件列表")
-    public Result<List<Map<String, Object>>> getTaskAttachments(@PathVariable Long taskId) {
+    public Result<List<TaskAttachmentDTO>> getTaskAttachments(@PathVariable Long taskId) {
         log.info("获取任务附件列表: taskId={}", taskId);
         
         // 调用service获取附件列表
-        List<Map<String, Object>> attachments = taskService.getTaskAttachments(taskId);
+        List<TaskAttachmentDTO> attachments = taskService.getTaskAttachments(taskId);
         return Result.success(attachments);
     }
     
@@ -303,13 +304,13 @@ public class TaskController {
      */
     @PostMapping("/{taskId}/attachments")
     @ApiOperation("上传任务附件")
-    public Result<Map<String, Object>> uploadAttachment(
+    public Result<TaskAttachmentDTO> uploadAttachment(
             @PathVariable Long taskId,
             @RequestParam("file") Object file) {
         log.info("上传任务附件: taskId={}, file={}", taskId, file != null ? "文件已上传" : "文件为空");
         
         // 调用service上传附件
-        Map<String, Object> attachment = taskService.uploadTaskAttachment(taskId, file);
+        TaskAttachmentDTO attachment = taskService.uploadTaskAttachment(taskId, file);
         return Result.success(attachment);
     }
     

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.taskManagement.context.BaseContext;
 import com.taskManagement.dto.ProjectDTO;
+import com.taskManagement.dto.ProjectAttachmentDTO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.entity.ProjectMember;
 import com.taskManagement.entity.User;
@@ -152,15 +153,18 @@ public class ProjectServiceImpl implements ProjectService {
         attachmentWrapper.eq(ProjectAttachment::getProjectId, project.getId());
         List<ProjectAttachment> projectAttachments = projectAttachmentMapper.selectList(attachmentWrapper);
 
-        List<String> attachments = new ArrayList<>();
-        if (projectAttachments != null && !projectAttachments.isEmpty()) {
-            for (ProjectAttachment attachment : projectAttachments) {
-                attachments.add(attachment.getFilePath());
-            }
-        }
+        // 构建附件路径列表
+        List<String> attachments = projectAttachments.stream()
+            .map(ProjectAttachment::getFilePath)
+            .collect(Collectors.toList());
         
-        // 转换为VO并返回
-        return convertToVO(project);
+        // 转换为VO
+        ProjectVO projectVO = convertToVO(project);
+        
+        // 设置附件列表
+        projectVO.setAttachments(attachments);
+        
+        return projectVO;
     }
 
     /**
@@ -550,26 +554,38 @@ public class ProjectServiceImpl implements ProjectService {
         // 设置成员数量
         projectVO.setMemberCount(projectMembers.size());
         
-        if (projectMembers != null && !projectMembers.isEmpty()) {
-            List<Long> memberIds = projectMembers.stream()
-                    .map(ProjectMember::getUserId)
-                    .collect(Collectors.toList());
+        // 获取并设置项目成员用户名列表
+        if (!projectMembers.isEmpty()) {
+            List<Long> userIds = projectMembers.stream()
+                .map(ProjectMember::getUserId)
+                .collect(Collectors.toList());
             
-            // 查询用户信息
-            LambdaQueryWrapper<User> userWrapper = new LambdaQueryWrapper<>();
-            userWrapper.in(User::getId, memberIds);
-            List<User> users = userMapper.selectList(userWrapper);
-            
-            // 提取用户名列表
-            List<String> memberUsernames = users.stream()
+            if (!userIds.isEmpty()) {
+                LambdaQueryWrapper<User> userWrapper = new LambdaQueryWrapper<>();
+                userWrapper.in(User::getId, userIds);
+                List<User> users = userMapper.selectList(userWrapper);
+                
+                List<String> usernames = users.stream()
                     .map(User::getUsername)
                     .collect(Collectors.toList());
-            
-            projectVO.setMembers(memberUsernames);
-        } else {
-            // 没有成员时设置空列表和0
-            projectVO.setMembers(new ArrayList<>());
-            projectVO.setMemberCount(0);
+                
+                projectVO.setMembers(usernames);
+            }
+        }
+        
+        // 动态查询项目附件数量和列表
+        LambdaQueryWrapper<ProjectAttachment> attachmentWrapper = new LambdaQueryWrapper<>();
+        attachmentWrapper.eq(ProjectAttachment::getProjectId, project.getId());
+        
+        // 查询附件列表，用于统计数量
+        List<ProjectAttachment> attachments = projectAttachmentMapper.selectList(attachmentWrapper);
+        
+        // 提取附件URL列表
+        if (attachments != null && !attachments.isEmpty()) {
+            List<String> attachmentPaths = attachments.stream()
+                .map(ProjectAttachment::getFilePath)
+                .collect(Collectors.toList());
+            projectVO.setAttachments(attachmentPaths);
         }
         
         return projectVO;
@@ -629,7 +645,7 @@ public class ProjectServiceImpl implements ProjectService {
      * @return 附件列表
      */
     @Override
-    public List<Map<String, Object>> getProjectAttachments(Long projectId) {
+    public List<ProjectAttachmentDTO> getProjectAttachments(Long projectId) {
         log.info("获取项目附件列表: projectId={}", projectId);
         
         // 检查项目是否存在
@@ -645,17 +661,20 @@ public class ProjectServiceImpl implements ProjectService {
         
         List<ProjectAttachment> attachments = projectAttachmentMapper.selectList(queryWrapper);
         
-        // 转换为前端需要的格式
+        // 转换为DTO对象
         return attachments.stream().map(attachment -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", attachment.getId());
-            map.put("fileName", attachment.getFileName());
-            map.put("filePath", attachment.getFilePath());
-            map.put("fileSize", attachment.getFileSize());
-            map.put("fileType", attachment.getFileType());
-            map.put("createTime", attachment.getCreateTime());
-            map.put("createUser", attachment.getCreateUser());
-            return map;
+            ProjectAttachmentDTO dto = new ProjectAttachmentDTO();
+            dto.setId(attachment.getId());
+            dto.setProjectId(attachment.getProjectId());
+            dto.setFileName(attachment.getFileName());
+            dto.setFilePath(attachment.getFilePath());
+            dto.setFileSize(attachment.getFileSize());
+            dto.setFileType(attachment.getFileType());
+            dto.setCreateTime(attachment.getCreateTime());
+            dto.setCreateUser(attachment.getCreateUser());
+            dto.setUpdateTime(attachment.getUpdateTime());
+            dto.setUpdateUser(attachment.getUpdateUser());
+            return dto;
         }).collect(Collectors.toList());
     }
 } 

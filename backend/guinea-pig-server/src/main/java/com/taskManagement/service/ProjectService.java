@@ -1,5 +1,6 @@
 package com.taskManagement.service;
 
+import com.taskManagement.dto.ProjectAttachmentDTO;
 import com.taskManagement.dto.ProjectDTO;
 import com.taskManagement.vo.PageResult;
 import com.taskManagement.vo.ProjectVO;
@@ -105,5 +106,5 @@ public interface ProjectService {
      * @param projectId 项目ID
      * @return 附件列表
      */
-    List<Map<String, Object>> getProjectAttachments(Long projectId);
+    List<ProjectAttachmentDTO> getProjectAttachments(Long projectId);
 } 

@@ -13,5 +13,4 @@ public class ProjectAttachment extends BaseEntity {
     private String fileType;
     private Long fileSize;
     private String filePath;
-    private String md5;
 } 

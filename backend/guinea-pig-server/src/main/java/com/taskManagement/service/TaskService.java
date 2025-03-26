@@ -1,5 +1,6 @@
 package com.taskManagement.service;
 
+import com.taskManagement.dto.TaskAttachmentDTO;
 import com.taskManagement.dto.TaskDTO;
 import com.taskManagement.entity.Task;
 import com.taskManagement.vo.UserVO;
@@ -81,15 +82,15 @@ public interface TaskService {
      * @param file 文件
      * @return 附件信息
      */
-    public Map<String, Object> uploadTaskAttachment(Long taskId, Object file);
+    public TaskAttachmentDTO uploadTaskAttachment(Long taskId, Object file);
     
     /**
      * 批量上传任务附件
      * @param taskId 任务ID
-     * @param file 文件
-     * @return 附件信息
+     * @param files 文件列表
+     * @return 附件信息列表
      */
-    public List<Map<String, Object>> batchUploadTaskAttachments(Long taskId, List<Object> files);
+    public List<TaskAttachmentDTO> batchUploadTaskAttachments(Long taskId, List<Object> files);
     
     /**
      * 批量上传任务附件
@@ -105,7 +106,7 @@ public interface TaskService {
      * @param taskId 任务ID
      * @return 附件列表
      */
-    List<Map<String, Object>> getTaskAttachments(Long taskId);
+    List<TaskAttachmentDTO> getTaskAttachments(Long taskId);
     
     /**
      * 删除任务附件

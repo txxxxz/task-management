@@ -16,7 +16,6 @@
         <result column="estimated_hours" property="estimatedHours"/>
         <result column="actual_hours" property="actualHours"/>
         <result column="comment_count" property="commentCount"/>
-        <result column="attachment_count" property="attachmentCount"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
         <result column="create_user" property="createUser"/>

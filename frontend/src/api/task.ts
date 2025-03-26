@@ -89,11 +89,11 @@ export function getTaskComments(taskId: number) {
   })
 }
 
-export function createComment(taskId: number, content: string) {
+export function createComment(taskId: number, commentData: { content: string, parentId?: number | null }) {
   return request<Comment>({
     url: '/api/tasks/' + taskId + '/comments',
     method: 'post',
-    data: { content }
+    data: commentData
   })
 }
 

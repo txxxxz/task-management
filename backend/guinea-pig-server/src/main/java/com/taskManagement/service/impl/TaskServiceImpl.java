@@ -6,6 +6,7 @@ import com.taskManagement.dto.TaskDTO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.entity.Task;
 import com.taskManagement.entity.TaskAttachment;
+import com.taskManagement.dto.TaskAttachmentDTO;
 import com.taskManagement.entity.TaskMember;
 import com.taskManagement.entity.User;
 import com.taskManagement.mapper.ProjectMapper;
@@ -89,7 +90,6 @@ public class TaskServiceImpl implements TaskService {
         task.setCreateUser(userId);
         task.setUpdateUser(userId);
         task.setCommentCount(0);
-        task.setAttachmentCount(0);
         
         // 4. 持久化任务
         try {
@@ -476,9 +476,7 @@ public class TaskServiceImpl implements TaskService {
         // 2. 使用FileService批量上传文件，重复利用已有逻辑
         List<String> fileUrls = fileService.uploadTaskFiles(files, taskId, userId);
         
-        // 3. 更新任务附件数量
-        task.setAttachmentCount(task.getAttachmentCount() + files.size());
-        taskMapper.updateById(task);
+        // 不再更新Task的attachmentCount，改为使用动态计算
         
         return fileUrls;
     }
@@ -491,7 +489,7 @@ public class TaskServiceImpl implements TaskService {
      */
     @Override
     @Transactional
-    public Map<String, Object> uploadTaskAttachment(Long taskId, Object file) {
+    public TaskAttachmentDTO uploadTaskAttachment(Long taskId, Object file) {
         log.info("上传任务附件: taskId={}, file={}", taskId, file != null ? "已上传" : "为空");
         
         // 获取当前用户ID
@@ -517,28 +515,29 @@ public class TaskServiceImpl implements TaskService {
         TaskAttachment attachment = taskAttachmentMapper.selectOne(queryWrapper);
         
         // 构建返回结果
-        Map<String, Object> result = new HashMap<>();
+        TaskAttachmentDTO dto = new TaskAttachmentDTO();
         if (attachment != null) {
-            result.put("id", attachment.getId());
-            result.put("fileName", attachment.getFileName());
-            result.put("filePath", attachment.getFilePath());
-            result.put("fileSize", attachment.getFileSize());
-            result.put("fileType", attachment.getFileType());
-            result.put("createTime", attachment.getCreateTime());
-            result.put("createUser", attachment.getCreateUser());
+            dto.setId(attachment.getId());
+            dto.setTaskId(attachment.getTaskId());
+            dto.setFileName(attachment.getFileName());
+            dto.setFilePath(attachment.getFilePath());
+            dto.setFileSize(attachment.getFileSize());
+            dto.setFileType(attachment.getFileType());
+            dto.setCreateTime(attachment.getCreateTime());
+            dto.setCreateUser(attachment.getCreateUser());
             
             // 获取上传者信息
             User uploader = userMapper.selectById(userId);
             if (uploader != null) {
-                result.put("uploader", uploader.getUsername());
+                // 将上传者信息放入其他字段可以考虑扩展DTO
             }
         } else {
-            result.put("url", fileUrl);
-            result.put("fileName", multipartFile.getOriginalFilename());
-            result.put("fileSize", multipartFile.getSize());
+            dto.setFilePath(fileUrl);
+            dto.setFileName(multipartFile.getOriginalFilename());
+            dto.setFileSize(multipartFile.getSize());
         }
         
-        return result;
+        return dto;
     }
     
     /**
@@ -549,7 +548,7 @@ public class TaskServiceImpl implements TaskService {
      */
     @Override
     @Transactional
-    public List<Map<String, Object>> batchUploadTaskAttachments(Long taskId, List<Object> files) {
+    public List<TaskAttachmentDTO> batchUploadTaskAttachments(Long taskId, List<Object> files) {
         log.info("批量上传任务附件: taskId={}, filesCount={}", taskId, files != null ? files.size() : 0);
         
         if (files == null || files.isEmpty()) {
@@ -559,14 +558,14 @@ public class TaskServiceImpl implements TaskService {
         // 获取当前用户ID
         Long userId = BaseContext.getCurrentId();
         
-        List<Map<String, Object>> results = new ArrayList<>();
+        List<TaskAttachmentDTO> results = new ArrayList<>();
         
         // 逐个处理文件
         for (Object file : files) {
             try {
                 // 调用单个文件上传方法
-                Map<String, Object> result = uploadTaskAttachment(taskId, file);
-                results.add(result);
+                TaskAttachmentDTO dto = uploadTaskAttachment(taskId, file);
+                results.add(dto);
             } catch (Exception e) {
                 log.error("文件上传失败: {}", e.getMessage(), e);
                 // 继续处理下一个文件
@@ -616,13 +615,9 @@ public class TaskServiceImpl implements TaskService {
         }
         
         // 6. 删除附件记录
-        int result = taskAttachmentMapper.deleteById(attachmentId);
+        taskAttachmentMapper.deleteById(attachmentId);
         
-        // 7. 更新任务附件数量
-        if (result > 0 && task.getAttachmentCount() > 0) {
-            task.setAttachmentCount(task.getAttachmentCount() - 1);
-            taskMapper.updateById(task);
-        }
+        // 不再更新任务附件数量，改为动态计算
     }
 
     /**
@@ -631,7 +626,7 @@ public class TaskServiceImpl implements TaskService {
      * @return 附件列表
      */
     @Override
-    public List<Map<String, Object>> getTaskAttachments(Long taskId) {
+    public List<TaskAttachmentDTO> getTaskAttachments(Long taskId) {
         log.info("获取任务附件列表: taskId={}", taskId);
         
         // 检查任务是否存在
@@ -647,17 +642,18 @@ public class TaskServiceImpl implements TaskService {
         
         List<TaskAttachment> attachments = taskAttachmentMapper.selectList(queryWrapper);
         
-        // 转换为前端需要的格式
+        // 转换为DTO对象
         return attachments.stream().map(attachment -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", attachment.getId());
-            map.put("fileName", attachment.getFileName());
-            map.put("filePath", attachment.getFilePath());
-            map.put("fileSize", attachment.getFileSize());
-            map.put("fileType", attachment.getFileType());
-            map.put("createTime", attachment.getCreateTime());
-            map.put("createUser", attachment.getCreateUser());
-            return map;
+            TaskAttachmentDTO dto = new TaskAttachmentDTO();
+            dto.setId(attachment.getId());
+            dto.setTaskId(attachment.getTaskId());
+            dto.setFileName(attachment.getFileName());
+            dto.setFilePath(attachment.getFilePath());
+            dto.setFileSize(attachment.getFileSize());
+            dto.setFileType(attachment.getFileType());
+            dto.setCreateTime(attachment.getCreateTime());
+            dto.setCreateUser(attachment.getCreateUser());
+            return dto;
         }).collect(Collectors.toList());
     }
 
