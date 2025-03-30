@@ -1,5 +1,6 @@
 package com.taskManagement.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -11,8 +12,13 @@ public class ProjectVO {
     private String name;
     private String description;
     private Integer status;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
+    
     private Integer priority;
     
     private UserVO creator;
@@ -31,6 +37,9 @@ public class ProjectVO {
     // 当前用户是否为创建者
     private Boolean isCreator;
     
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
 } 

@@ -18,7 +18,7 @@ export function getProjectList(params?: {
 }
 
 // 获取项目详情
-export function getProjectDetail(id: number) {
+export function getProjectDetail(id: number | string) {
   return request({
     url: `/api/projects/${id}`,
     method: 'get'
@@ -35,7 +35,7 @@ export function createProject(data: ProjectForm) {
 }
 
 // 更新项目
-export function updateProject(id: number, data: Partial<ProjectForm>) {
+export function updateProject(id: number | string, data: Partial<ProjectForm>) {
   return request({
     url: `/api/projects/${id}`,
     method: 'put',
@@ -44,7 +44,7 @@ export function updateProject(id: number, data: Partial<ProjectForm>) {
 }
 
 // 删除项目
-export function deleteProject(id: number) {
+export function deleteProject(id: number | string) {
   return request({
     url: `/api/projects/${id}`,
     method: 'delete'
@@ -146,5 +146,21 @@ export function batchUploadProjectFiles(files: File[]) {
       'Content-Type': 'multipart/form-data'
     },
     data: formData
+  })
+}
+
+// 获取项目附件列表
+export function getProjectAttachments(id: number | string) {
+  return request({
+    url: `/api/projects/${id}/attachments`,
+    method: 'get'
+  })
+}
+
+// 删除项目附件
+export function deleteAttachment(projectId: number | string, fileId: number | string) {
+  return request({
+    url: `/api/projects/${projectId}/attachments/${fileId}`,
+    method: 'delete'
   })
 } 

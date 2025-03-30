@@ -74,7 +74,7 @@
                 </el-option>
                 <template #empty>
                   <div class="empty-members">
-                    <p>未找到成员，请尝试其他关键词</p>
+                    <p>Did not find members, please try other keywords</p>
                   </div>
                 </template>
               </el-select>

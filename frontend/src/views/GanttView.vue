@@ -285,8 +285,8 @@ const customPopupHtml = (task: any) => {
   }
   const priorityText = priorityMap[task.priority] || 'Unknown'
   const progressText = `${task.progress || 0}%`
-  const startDate = dayjs(task.start).format('YYYY-MM-DD')
-  const endDate = dayjs(task.end).format('YYYY-MM-DD')
+  const startDate = dayjs(task.start).format('YYYY-MM-DD HH:mm:ss')
+  const endDate = dayjs(task.end).format('YYYY-MM-DD HH:mm:ss')
 
   return `
     <div class="popup-container">
@@ -329,7 +329,7 @@ const initGantt = () => {
     arrow_curve: 5,
     padding: 18,
     view_mode: 'Day',
-    date_format: 'YYYY-MM-DD',
+    date_format: 'YYYY-MM-DD HH:mm:ss',
     custom_popup_html: customPopupHtml,
     language: 'zh',
     start_date: weekStart.value.toDate(),

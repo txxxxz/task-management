@@ -151,11 +151,20 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
+        path: 'project/detail/:id',
+        name: 'ProjectDetail',
+        component: () => import('@/views/project/detail.vue'),
+        meta: {
+          title: 'Project Detail',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'employee',
         name: 'EmployeeList',
         component: () => import('@/views/employee/index.vue'),
         meta: {
-          title: '员工管理',
+          title: 'Employee Management',
           requiresAuth: true,
           requiresAdmin: true
         }
@@ -165,7 +174,7 @@ const routes: RouteRecordRaw[] = [
         name: 'TagList',
         component: () => import('@/views/tag/list.vue'),
         meta: {
-          title: '标签列表',
+          title: 'Tag List',
           requiresAuth: true
         }
       },
@@ -174,7 +183,7 @@ const routes: RouteRecordRaw[] = [
         name: 'TagCreate',
         component: () => import('@/views/tag/form.vue'),
         meta: {
-          title: '创建标签',
+          title: 'Create Tag',
           requiresAuth: true,
           requiresLeader: true
         }
@@ -184,7 +193,7 @@ const routes: RouteRecordRaw[] = [
         name: 'TagEdit',
         component: () => import('@/views/tag/form.vue'),
         meta: {
-          title: '编辑标签',
+          title: 'Edit Tag',
           requiresAuth: true,
           requiresLeader: true
         }

@@ -314,7 +314,7 @@ const initDateList = () => {
   const today = dayjs()
   const dates: string[] = []
   for (let i = -3; i < 4; i++) {
-    dates.push(today.add(i, 'day').format('YYYY-MM-DD'))
+    dates.push(today.add(i, 'day').format('YYYY-MM-DD HH:mm:ss'))
   }
   dateList.value = dates
 }
@@ -412,14 +412,14 @@ const handleReset = () => {
 // 处理上一周
 const handlePrevWeek = () => {
   dateList.value = dateList.value.map(date => 
-    dayjs(date).subtract(7, 'day').format('YYYY-MM-DD')
+    dayjs(date).subtract(7, 'day').format('YYYY-MM-DD HH:mm:ss')
   )
 }
 
 // 处理下一周
 const handleNextWeek = () => {
   dateList.value = dateList.value.map(date => 
-    dayjs(date).add(7, 'day').format('YYYY-MM-DD')
+    dayjs(date).add(7, 'day').format('YYYY-MM-DD HH:mm:ss')
   )
 }
 

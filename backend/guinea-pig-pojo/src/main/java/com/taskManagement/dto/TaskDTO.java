@@ -1,5 +1,6 @@
 package com.taskManagement.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -25,8 +26,12 @@ public class TaskDTO {
     @NotNull(message = "Task priority cannot be empty")
     private Integer priority;
     
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime deadline;
+    
     private Double estimatedHours;
     
     private List<Long> memberIds;  // 任务成员ID列表

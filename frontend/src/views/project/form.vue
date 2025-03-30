@@ -77,10 +77,10 @@
                 <el-form-item label="Start Time" prop="startTime" required>
                   <el-date-picker
                     v-model="projectForm.startTime"
-                    type="date"
+                    type="datetime"
                     placeholder="Please select the start date"
                     style="width: 100%"
-                    value-format="YYYY-MM-DD"
+                    value-format="YYYY-MM-DD HH:mm:ss"
                   />
                 </el-form-item>
               </el-col>
@@ -88,10 +88,10 @@
                 <el-form-item label="End Time" prop="endTime" required>
                   <el-date-picker
                     v-model="projectForm.endTime"
-                    type="date"
+                    type="datetime"
                     placeholder="Please select the end date"
                     style="width: 100%"
-                    value-format="YYYY-MM-DD"
+                    value-format="YYYY-MM-DD HH:mm:ss"
                     :disabled-date="disabledEndDate"
                   />
                 </el-form-item>
@@ -268,7 +268,7 @@ import {
   type ProjectPriority
 } from '../../utils/status'
 import 'animate.css'
-import { getAllUsers } from '@/api/user'
+import { getAllUsers } from '../../api/user'
 import axios from 'axios'
 
 const router = useRouter()

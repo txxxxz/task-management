@@ -29,7 +29,6 @@ import com.taskManagement.entity.Project;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -178,18 +177,6 @@ public class ProjectServiceImpl implements ProjectService {
         BeanUtils.copyProperties(projectDTO, project);
         Long userId = BaseContext.getCurrentId();
         
-        // 处理日期转换
-        if (projectDTO.getStartTime() != null) {
-            // 将LocalDate转换为LocalDateTime
-            LocalDate startDate = projectDTO.getStartTime();
-            project.setStartTime(startDate.atStartOfDay());
-        }
-        if (projectDTO.getEndTime() != null) {
-            // 将LocalDate转换为LocalDateTime
-            LocalDate endDate = projectDTO.getEndTime();
-            project.setEndTime(endDate.atStartOfDay());
-        }
-        
         // 如果无法获取当前用户ID，则使用默认值1
         if (userId == null) {
             log.warn("无法获取当前用户ID，使用默认值1");
@@ -256,18 +243,6 @@ public class ProjectServiceImpl implements ProjectService {
         // 更新项目信息
         Project project = new Project();
         BeanUtils.copyProperties(projectDTO, project);
-        
-        // 处理日期转换
-        if (projectDTO.getStartTime() != null) {
-            // 将LocalDate转换为LocalDateTime
-            LocalDate startDate = projectDTO.getStartTime();
-            project.setStartTime(startDate.atStartOfDay());
-        }
-        if (projectDTO.getEndTime() != null) {
-            // 将LocalDate转换为LocalDateTime
-            LocalDate endDate = projectDTO.getEndTime();
-            project.setEndTime(endDate.atStartOfDay());
-        }
         
         project.setUpdateUser(userId);
         project.setUpdateTime(LocalDateTime.now());

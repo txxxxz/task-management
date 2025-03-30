@@ -106,4 +106,114 @@ public class MemberController {
         // 返回分页结果
         return Result.success(new PageResult<>(userVOList, userPage.getTotal()));
     }
+    
+    /**
+     * 获取所有项目负责人列表
+     * @param page 页码
+     * @param pageSize 每页大小
+     * @return 项目负责人列表
+     */
+    @GetMapping("/leaders")
+    public Result<PageResult<UserVO>> getLeaderList(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "50") Integer pageSize) {
+        log.info("获取所有项目负责人列表，page={}, pageSize={}", page, pageSize);
+        
+        // 构建查询条件
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 只查询角色为1(项目负责人)的用户
+        queryWrapper.eq(User::getRole, 1);
+        
+        // 只查询启用状态的用户
+        queryWrapper.eq(User::getStatus, 1);
+        
+        // 按创建时间排序
+        queryWrapper.orderByDesc(User::getCreateTime);
+        
+        // 分页参数处理
+        int pageIndex = Math.max(0, page - 1);
+        Page<User> pageParam = new Page<>(pageIndex, pageSize);
+        
+        // 执行分页查询
+        Page<User> userPage = userMapper.selectPage(pageParam, queryWrapper);
+        
+        // 转换为VO列表
+        List<UserVO> userVOList = userPage.getRecords().stream()
+                .map(user -> {
+                    UserVO vo = new UserVO();
+                    vo.setId(user.getId());
+                    vo.setUsername(user.getUsername());
+                    vo.setEmail(user.getEmail());
+                    vo.setAvatar(user.getAvatar());
+                    vo.setStatus(user.getStatus());
+                    vo.setRole(user.getRole());
+                    vo.setCreateTime(user.getCreateTime() != null ? user.getCreateTime().toString() : null);
+                    return vo;
+                })
+                .collect(Collectors.toList());
+        
+        // 返回分页结果
+        return Result.success(new PageResult<>(userVOList, userPage.getTotal()));
+    }
+    
+    /**
+     * 搜索项目负责人
+     * @param keyword 关键字（用户名、邮箱）
+     * @param page 页码
+     * @param pageSize 每页大小
+     * @return 匹配的项目负责人列表
+     */
+    @GetMapping("/leaders/search")
+    public Result<PageResult<UserVO>> searchLeaders(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("搜索项目负责人，keyword={}, page={}, pageSize={}", keyword, page, pageSize);
+        
+        // 构建查询条件
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 关键字搜索
+        if (StringUtils.isNotBlank(keyword)) {
+            queryWrapper.and(wrapper -> wrapper
+                    .like(User::getUsername, keyword)
+                    .or()
+                    .like(User::getEmail, keyword));
+        }
+        
+        // 只查询角色为1(项目负责人)的用户
+        queryWrapper.eq(User::getRole, 1);
+        
+        // 只查询启用状态的用户
+        queryWrapper.eq(User::getStatus, 1);
+        
+        // 按创建时间排序
+        queryWrapper.orderByDesc(User::getCreateTime);
+        
+        // 分页参数处理
+        int pageIndex = Math.max(0, page - 1);
+        Page<User> pageParam = new Page<>(pageIndex, pageSize);
+        
+        // 执行分页查询
+        Page<User> userPage = userMapper.selectPage(pageParam, queryWrapper);
+        
+        // 转换为VO列表
+        List<UserVO> userVOList = userPage.getRecords().stream()
+                .map(user -> {
+                    UserVO vo = new UserVO();
+                    vo.setId(user.getId());
+                    vo.setUsername(user.getUsername());
+                    vo.setEmail(user.getEmail());
+                    vo.setAvatar(user.getAvatar());
+                    vo.setStatus(user.getStatus());
+                    vo.setRole(user.getRole());
+                    vo.setCreateTime(user.getCreateTime() != null ? user.getCreateTime().toString() : null);
+                    return vo;
+                })
+                .collect(Collectors.toList());
+        
+        // 返回分页结果
+        return Result.success(new PageResult<>(userVOList, userPage.getTotal()));
+    }
 } 

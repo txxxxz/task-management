@@ -1,68 +1,171 @@
 <template>
   <div class="project-list-container">
     <!-- 搜索表单 -->
-    <el-form :model="searchForm" class="search-form" label-width="100px">
-      <el-row :gutter="20">
-        <el-col :span="8">
-          <el-form-item label="Project Name">
-            <el-input 
-              v-model="searchForm.name" 
-              placeholder="Support fuzzy search" 
-              clearable 
-              prefix-icon="Search"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="Status">
-            <el-select v-model="searchForm.status" placeholder="Please select status" clearable style="width: 100%">
-              <el-option
-                v-for="item in statusOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+    <div class="filter-section">
+      <el-form :model="searchForm" class="filter-form">
+        <!-- 第一行：项目名称、优先级、状态 -->
+        <div class="filter-row">
+          <div class="filter-item-half">
+            <el-form-item label="名称">
+              <el-input 
+                v-model="searchForm.name" 
+                placeholder="支持模糊搜索" 
+                clearable 
+                prefix-icon="Search"
               />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="Members">
-            <el-select 
-              v-model="searchForm.members" 
-              multiple 
-              placeholder="Support fuzzy search for members" 
-              clearable 
-              style="width: 100%"
-              filterable
-              :loading="membersLoading"
-              loading-text="Loading..."
-              remote
-              :remote-method="searchUsers">
-              <el-option
-                v-for="item in memberOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+            </el-form-item>
+          </div>
+          <div class="filter-item-half">
+            <el-form-item label="状态">
+              <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 100%">
+                <el-option
+                  v-for="item in statusOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="优先级">
+              <el-select v-model="searchForm.priority" placeholder="请选择优先级" clearable style="width: 100%">
+                <el-option
+                  v-for="item in priorityOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </div>
+        </div>
+        
+        <!-- 第二行：负责人、成员 -->
+        <div class="filter-row">
+          <div class="filter-item-half">
+            <el-form-item label="负责人">
+              <el-select 
+                v-model="searchForm.leader" 
+                placeholder="项目负责人" 
+                clearable
+                filterable
+                remote
+                :remote-method="searchProjectLeaders"
+                :loading="leadersLoading"
+                loading-text="加载中..."
+                @visible-change="onLeaderSelectOpen"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in leaderOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                >
+                  <div class="member-option">
+                    <el-avatar 
+                      :size="24" 
+                      :src="item.avatar" 
+                      class="member-avatar"
+                    >
+                      {{ item.label.charAt(0).toUpperCase() }}
+                    </el-avatar>
+                    <span class="member-name">{{ item.label }}</span>
+                  </div>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </div>
+          <div class="filter-item-half">
+            <el-form-item label="成员">
+              <el-select 
+                v-model="searchForm.members" 
+                multiple 
+                placeholder="支持模糊搜索成员" 
+                clearable 
+                style="width: 100%"
+                filterable
+                :loading="membersLoading"
+                loading-text="加载中..."
+                remote
+                :remote-method="searchUsers"
+                collapse-tags
+                collapse-tags-tooltip>
+                <template #prefix>
+                  <el-icon v-if="membersLoading"><Loading /></el-icon>
+                </template>
+                <el-option
+                  v-for="item in memberOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                >
+                  <div class="member-option">
+                    <el-avatar 
+                      :size="24" 
+                      :src="item.avatar" 
+                      class="member-avatar"
+                    >
+                      {{ item.label.charAt(0).toUpperCase() }}
+                    </el-avatar>
+                    <span class="member-name">{{ item.label }}</span>
+                  </div>
+                </el-option>
+                <template #empty>
+                  <div class="empty-members">
+                    <p>Did not find any matching members, please try other keywords</p>
+                  </div>
+                </template>
+              </el-select>
+            </el-form-item>
+          </div>
+        </div>
+        
+        <!-- 第三行：开始时间、截止时间 -->
+        <div class="filter-row">
+          <div class="filter-item-half">
+            <el-form-item label="开始日期">
+              <el-date-picker
+                v-model="searchForm.startTimeRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                style="width: 100%"
               />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
+            </el-form-item>
+          </div>
+          <div class="filter-item-half">
+            <el-form-item label="截止日期">
+              <el-date-picker
+                v-model="searchForm.endTimeRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </div>
+        </div>
 
-      <el-row>
-        <el-col :span="24" style="text-align: right">
-          <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon> Search
-          </el-button>
-          <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon> Reset
-          </el-button>
-          <el-button type="primary" @click="handleCreate" v-if="isLeader">
-            <el-icon><Plus /></el-icon> New Project
-          </el-button>
-        </el-col>
-      </el-row>
-    </el-form>
+        <!-- 搜索按钮行 -->
+        <div class="filter-buttons-row">
+          <div class="filter-buttons">
+            <el-button type="primary" @click="handleSearch">
+              <el-icon><Search /></el-icon> 搜索
+            </el-button>
+            <el-button @click="handleReset">
+              <el-icon><Refresh /></el-icon> 重置
+            </el-button>
+            <el-button type="primary" @click="handleCreate" v-if="isLeader">
+              <el-icon><Plus /></el-icon> 新建项目
+            </el-button>
+          </div>
+        </div>
+      </el-form>
+    </div>
 
     <!-- Project List -->
     <el-table
@@ -77,70 +180,61 @@
         fontWeight: 600
       }"
       :cell-style="{
-        padding: '12px 0'
+        padding: '8px 0'
+      }"
+      :row-style="{
+        height: '46px'
       }"
     >
-      <el-table-column type="index" label="No." width="80" align="center" />
-      <el-table-column prop="name" label="Project Name" min-width="180">
+      <el-table-column type="index" label="序号" width="60" align="center" />
+      <el-table-column prop="name" label="项目名称" min-width="200">
         <template #default="{ row }">
           <el-link type="primary" @click="handleViewDetail(row)">{{ row.name }}</el-link>
         </template>
       </el-table-column>
-      <el-table-column label="Status" width="100" align="center">
+      <el-table-column label="状态" width="120" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)">
             {{ getStatusLabel(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Leader" width="120" align="center">
+      <el-table-column label="优先级" width="120" align="center">
         <template #default="{ row }">
-          {{ row.creator ? row.creator.username : '' }}
+          <el-tag :type="getPriorityType(row.priority)" effect="light">
+            {{ getPriorityLabel(row.priority) }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Members" width="150">
+      <el-table-column label="开始日期" width="180">
         <template #default="{ row }">
-          <el-tooltip
-            :content="row.members.join(', ')"
-            placement="top"
-            :show-after="200"
-          >
-            <div class="member-list">
-              {{ row.members.join(', ') }}
-            </div>
-          </el-tooltip>
+          {{ formatDate(row.startTime) || '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="Create Time" width="180" />
-      <el-table-column label="Due Time" width="180">
+      <el-table-column label="截止日期" width="180">
         <template #default="{ row }">
-          {{ row.endTime || '-' }}
+          {{ formatDate(row.endTime) || '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="Operations" width="200" fixed="right" align="center">
+      <el-table-column label="操作" width="120" fixed="right" align="center">
         <template #default="{ row }">
-          <el-button-group class="operation-group">
-            <el-tooltip content="Edit" placement="top" v-if="isLeader">
+          <div class="action-buttons">
+            <el-tooltip content="查看" placement="top">
+              <el-button type="primary" link @click="handleViewDetail(row)">
+                <el-icon><View /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="编辑" placement="top" v-if="isLeader">
               <el-button type="primary" link @click="handleProjectAction('edit', row)">
                 <el-icon><Edit /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="Member Management" placement="top" v-if="isLeader">
-              <el-button type="primary" link @click="handleMemberManagement(row)">
-                <el-icon><User /></el-icon>
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="Archive" placement="top" v-if="isLeader && row.status !== 3">
-              <el-button type="warning" link @click="handleProjectAction('archive', row)">
-                <el-icon><Folder /></el-icon>
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="Delete" placement="top" v-if="isLeader">
+            <el-tooltip content="删除" placement="top" v-if="isLeader">
               <el-button type="danger" link @click="handleProjectAction('delete', row)">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </el-tooltip>
-          </el-button-group>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -211,7 +305,9 @@ import {
   Edit,
   Delete,
   User,
-  Folder
+  Folder,
+  Loading,
+  View
 } from '@element-plus/icons-vue'
 import type { Project } from '../../types/task'
 import {
@@ -222,7 +318,8 @@ import {
   removeProjectMember,
   getProjectMembers
 } from '../../api/project'
-import { getAllUsers } from '../../api/user'
+import { getAllUsers, getAllLeaders, searchLeaders } from '../../api/user'
+import dayjs from 'dayjs'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -234,6 +331,8 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 // 成员加载状态
 const membersLoading = ref(false)
+// 负责人加载状态
+const leadersLoading = ref(false)
 
 // 项目列表数据
 const projectList = ref<Project[]>([])
@@ -258,7 +357,11 @@ const isLeader = computed(() => {
 const searchForm = reactive({
   name: '',
   status: '',
-  members: [] as string[]
+  priority: '',
+  leader: '',
+  members: [] as string[],
+  startTimeRange: [] as string[],
+  endTimeRange: [] as string[]
 })
 
 // 选项数据
@@ -269,8 +372,18 @@ const statusOptions = [
   { label: 'Archived', value: 3 }
 ]
 
+// 优先级选项
+const priorityOptions = [
+  { label: '紧急', value: 4 },
+  { label: '高', value: 3 },
+  { label: '中', value: 2 },
+  { label: '低', value: 1 }
+]
+
 // 修复类型定义
 const memberOptions = ref<{ value: string, label: string, avatar?: string }[]>([])
+// 负责人选项
+const leaderOptions = ref<{ value: string, label: string, avatar?: string }[]>([])
 
 // 成员管理相关
 const memberDialogVisible = ref(false)
@@ -317,13 +430,44 @@ const filteredProjects = computed(() => {
 const fetchProjects = async () => {
   loading.value = true
   try {
-    const params = {
+    const params: Record<string, any> = {
       keyword: searchForm.name, // 项目名称关键字，后端已支持模糊搜索
-      status: searchForm.status ? Number(searchForm.status) : undefined,
       page: currentPage.value,
-      pageSize: pageSize.value,
-      members: searchForm.members.length > 0 ? searchForm.members.join(',') : undefined // 将成员列表转换为逗号分隔的字符串
+      pageSize: pageSize.value
     }
+    
+    // 添加状态过滤
+    if (searchForm.status !== '') {
+      params.status = Number(searchForm.status)
+    }
+    
+    // 添加优先级过滤
+    if (searchForm.priority !== '') {
+      params.priority = Number(searchForm.priority)
+    }
+    
+    // 添加负责人过滤
+    if (searchForm.leader) {
+      params.leader = searchForm.leader
+    }
+    
+    // 添加成员过滤
+    if (searchForm.members.length > 0) {
+      params.members = searchForm.members.join(',')
+    }
+    
+    // 添加开始时间范围
+    if (searchForm.startTimeRange && searchForm.startTimeRange.length === 2) {
+      params.startTimeBegin = searchForm.startTimeRange[0]
+      params.startTimeEnd = searchForm.startTimeRange[1]
+    }
+    
+    // 添加截止时间范围
+    if (searchForm.endTimeRange && searchForm.endTimeRange.length === 2) {
+      params.endTimeBegin = searchForm.endTimeRange[0]
+      params.endTimeEnd = searchForm.endTimeRange[1]
+    }
+    
     const response = await getProjectList(params)
     if (response.data && (response.data.code === 1 || response.data.code === 200)) {
       projectList.value = response.data.data.items
@@ -331,7 +475,7 @@ const fetchProjects = async () => {
     }
   } catch (error) {
     console.error('Failed to get project list:', error)
-    ElMessage.error('Failed to get project list')
+    ElMessage.error('获取项目列表失败')
   } finally {
     loading.value = false
   }
@@ -366,6 +510,37 @@ const fetchUsers = async () => {
     ElMessage.error('Failed to get user list')
   } finally {
     membersLoading.value = false
+  }
+}
+
+// 获取项目负责人列表
+const fetchLeaders = async () => {
+  leadersLoading.value = true
+  try {
+    const response = await getAllLeaders({
+      page: 1,
+      pageSize: 50
+    })
+    
+    if (response && response.data && response.data.code === 1 && response.data.data) {
+      const { items } = response.data.data
+      if (Array.isArray(items)) {
+        leaderOptions.value = items.map(user => ({
+          value: user.username,
+          label: user.username,
+          avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
+        }))
+      } else {
+        leaderOptions.value = []
+      }
+    } else {
+      leaderOptions.value = []
+    }
+  } catch (error) {
+    leaderOptions.value = []
+    ElMessage.error('获取项目负责人列表失败')
+  } finally {
+    leadersLoading.value = false
   }
 }
 
@@ -406,6 +581,41 @@ const searchUsers = async (query: string) => {
   }
 }
 
+// 搜索项目负责人
+const searchProjectLeaders = async (query: string) => {
+  if (query) {
+    leadersLoading.value = true
+    try {
+      const response = await searchLeaders(query, {
+        page: 1,
+        pageSize: 20
+      })
+      
+      if (response && response.data && response.data.code === 1 && response.data.data) {
+        const { items } = response.data.data
+        if (Array.isArray(items)) {
+          leaderOptions.value = items.map(user => ({
+            value: user.username,
+            label: user.username,
+            avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
+          }))
+        } else {
+          leaderOptions.value = []
+        }
+      } else {
+        leaderOptions.value = []
+      }
+    } catch (error) {
+      leaderOptions.value = []
+      ElMessage.error('搜索项目负责人失败')
+    } finally {
+      leadersLoading.value = false
+    }
+  } else {
+    fetchLeaders()
+  }
+}
+
 // 处理搜索
 const handleSearch = () => {
   currentPage.value = 1
@@ -417,7 +627,11 @@ const handleReset = () => {
   Object.assign(searchForm, {
     name: '',
     status: '',
-    members: []
+    priority: '',
+    leader: '',
+    members: [],
+    startTimeRange: [],
+    endTimeRange: []
   })
   handleSearch()
 }
@@ -440,16 +654,13 @@ const handleProjectAction = async (action: string, project: Project) => {
   try {
     switch (action) {
       case 'edit':
-        router.push(`/project/edit/${project.id}`)
-        break
-      case 'archive':
-        const archiveResponse = await updateProject(project.id, { 
-          status: 3 as ProjectStatus 
-        })
-        if (archiveResponse.data.code === 1 || archiveResponse.data.code === 200) {
-          ElMessage.success('Project has been archived')
-          fetchProjects()
-        }
+        // 确保id是数字
+        const projectId = typeof project.id === 'string' ? parseInt(project.id) : project.id;
+        
+        // 使用正确的路由路径
+        const path = `/project/detail/${projectId}`;
+        console.log('使用正确的项目详情路径:', path);
+        router.push(path);
         break
       case 'delete':
         const deleteResponse = await deleteProject(project.id)
@@ -471,7 +682,13 @@ const handleProjectAction = async (action: string, project: Project) => {
 const handleViewDetail = (row: Project) => {
   // 设置当前项目
   currentProject.value = row;
-  router.push(`/project/edit/${row.id}`)
+  // 确保id是数字
+  const projectId = typeof row.id === 'string' ? parseInt(row.id) : row.id;
+  
+  // 使用正确的路由路径
+  const path = `/project/detail/${projectId}`;
+  console.log('使用正确的项目详情路径:', path);
+  router.push(path);
 }
 
 // 处理成员管理
@@ -563,24 +780,130 @@ const getStatusType = (status: number) => {
   }
 }
 
+// 获取优先级标签
+const getPriorityLabel = (priority: number) => {
+  const option = priorityOptions.find(opt => opt.value === priority)
+  return option ? option.label : 'Unknown'
+}
+
+// 获取优先级标签类型
+const getPriorityType = (priority: number) => {
+  switch (priority) {
+    case 4: return 'danger'  // 紧急
+    case 3: return 'warning' // 高
+    case 2: return 'info'    // 中
+    case 1: return 'success' // 低
+    default: return 'info'
+  }
+}
+
+// 处理负责人选择框打开事件
+const onLeaderSelectOpen = (opened: boolean) => {
+  if (opened) {
+    // 如果列表为空或者选项很少，则加载数据
+    if (leaderOptions.value.length <= 3) {
+      fetchLeaders()
+    }
+  }
+}
+
+// 日期格式化函数 - 将任何日期格式转为YYYY-MM-DD HH:mm:ss
+const formatDate = (date: string | null | undefined): string => {
+  if (!date) return '';
+  try {
+    // 使用LocalDateTime格式(YYYY-MM-DD HH:mm:ss)
+    return dayjs(date).format('YYYY-MM-DD HH:mm:ss');
+  } catch (e) {
+    return '';
+  }
+};
+
 // 初始化
 onMounted(() => {
   fetchProjects()
   fetchUsers()
+  fetchLeaders()
 })
 </script>
 
 <style scoped>
 .project-list-container {
   padding: 20px;
+  background-color: #f5f7fa;
 }
 
-.search-form {
-  background: #fff;
-  padding: 20px;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
+.filter-section {
+  background-color: #fff;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.filter-row {
+  display: flex;
+  width: 100%;
+  position: relative;
+  margin-bottom: 0;
+}
+
+.filter-row::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: transparent;
+}
+
+.filter-item-half {
+  width: 50%;
+  display: flex;
+  box-sizing: border-box;
+}
+
+.filter-item-half:first-child {
+  padding-right: 40px;
+  justify-content: flex-start;
+}
+
+.filter-item-half:last-child {
+  padding-left: 0;
+  justify-content: flex-start;
+}
+
+.filter-item-half:last-child :deep(.el-form-item) {
+  margin-left: 10px;
+  position: relative;
+  left: -20px;
+}
+
+.filter-buttons-row {
+  margin-top: 20px;
+}
+
+.filter-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.filter-buttons .el-button {
+  padding: 6px 16px;
+  font-weight: 500;
+  min-width: 70px;
+  height: 32px;
 }
 
 .pagination-container {
@@ -622,6 +945,24 @@ onMounted(() => {
 
 :deep(.el-form-item) {
   margin-bottom: 18px;
+  width: 100%;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #606266;
+  padding-right: 12px;
+  width: 75px !important;
+  min-width: 75px;
+  text-align: right;
+  line-height: 32px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+:deep(.el-form-item__content) {
+  flex: 1;
+  width: calc(100% - 75px);
 }
 
 :deep(.el-button-group) {
@@ -636,8 +977,141 @@ onMounted(() => {
   gap: 4px;
 }
 
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.action-buttons :deep(.el-button--link) {
+  font-size: 16px;
+  padding: 4px;
+  margin: 0 2px;
+  height: 24px;
+  width: 24px;
+}
+
+.action-buttons :deep(.el-button--link:hover) {
+  color: var(--el-color-primary-light-3);
+  transform: scale(1.1);
+  transition: all 0.2s ease;
+}
+
+.action-buttons :deep(.el-button--link.is-link.is-danger:hover) {
+  color: var(--el-color-danger-light-3);
+}
+
 :deep(.el-table) {
   border-radius: 4px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 控件样式 */
+:deep(.el-input__wrapper),
+:deep(.el-select .el-input__wrapper),
+:deep(.el-date-editor.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+  --el-input-height: 32px;
+}
+
+:deep(.el-input__wrapper:hover),
+:deep(.el-select .el-input__wrapper:hover),
+:deep(.el-date-editor.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+}
+
+:deep(.el-select .el-input__wrapper) {
+  height: 32px;
+}
+
+:deep(.el-select__tags) {
+  height: 30px;
+  overflow: hidden;
+  padding-top: 3px;
+}
+
+:deep(.el-date-editor--daterange) {
+  width: 100% !important;
+}
+
+:deep(.el-date-editor) {
+  width: 100% !important;
+}
+
+:deep(.el-select) {
+  width: 100% !important;
+}
+
+/* 响应式布局调整 */
+@media screen and (max-width: 768px) {
+  .filter-item-half {
+    flex: 0 0 100%;
+    min-width: 100%;
+  }
+  
+  .filter-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .filter-buttons {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+.member-option {
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+  width: 100%;
+}
+
+.member-avatar {
+  margin-right: 8px;
+  background-color: #f0f2f5;
+  flex-shrink: 0;
+}
+
+.member-name {
+  font-weight: 500;
+  color: #606266;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty-members {
+  text-align: center;
+  padding: 20px 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+/* 已选择的成员标签内的用户名显示优化 */
+:deep(.el-select__tags .el-tag) {
+  max-width: calc(100% - 10px);
+  display: inline-flex;
+  align-items: center;
+  margin: 2px 4px;
+  border-radius: 4px;
+  padding: 0 8px;
+  height: 24px;
+  line-height: 24px;
+  transition: all 0.3s;
+}
+
+:deep(.el-select__tags .el-tag:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-select .el-tag__content) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  color: #606266;
 }
 </style> 

@@ -96,6 +96,63 @@ export const getAllUsers = (params?: {
   })
 }
 
+// 获取所有项目负责人列表
+export const getAllLeaders = (params?: {
+  page?: number
+  pageSize?: number
+}) => {
+  return request<{
+    code: 1
+    data: {
+      total: number
+      items: {
+        id: number
+        username: string
+        email: string
+        avatar?: string
+        status: number
+        role: number
+        createTime: string
+      }[]
+    }
+    msg: string | null
+  }>({
+    url: '/api/members/leaders',
+    method: 'get',
+    params
+  })
+}
+
+// 搜索项目负责人
+export const searchLeaders = (keyword: string, params?: {
+  page?: number
+  pageSize?: number
+}) => {
+  return request<{
+    code: 1
+    data: {
+      total: number
+      items: {
+        id: number
+        username: string
+        email: string
+        avatar?: string
+        status: number
+        role: number
+        createTime: string
+      }[]
+    }
+    msg: string | null
+  }>({
+    url: '/api/members/leaders/search',
+    method: 'get',
+    params: {
+      keyword,
+      ...params
+    }
+  })
+}
+
 // 批量注册用户
 export const batchRegisterUsers = (data: BatchRegisterData) => {
   return request({

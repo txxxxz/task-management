@@ -1,10 +1,11 @@
 package com.taskManagement.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -19,8 +20,11 @@ public class ProjectDTO {
     @NotNull(message = "Project status cannot be empty")
     private Integer status;
     
-    private LocalDate startTime;
-    private LocalDate endTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime startTime;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime endTime;
     
     @NotNull(message = "Project priority cannot be empty")
     private Integer priority;
