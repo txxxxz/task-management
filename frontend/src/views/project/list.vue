@@ -159,12 +159,17 @@
             <el-button @click="handleReset">
               <el-icon><Refresh /></el-icon> 重置
             </el-button>
-            <el-button type="primary" @click="handleCreate" v-if="isLeader">
-              <el-icon><Plus /></el-icon> 新建项目
-            </el-button>
           </div>
         </div>
       </el-form>
+    </div>
+
+    <div class="operation-section">
+      <div class="left-buttons">
+        <el-button type="primary" @click="handleCreate">
+          <el-icon><Plus /></el-icon> New Project
+        </el-button>
+      </div>
     </div>
 
     <!-- Project List -->

@@ -8,7 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
+import java.net.URLEncoder;
 import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 文件上传控制器
@@ -175,20 +179,25 @@ public class FileController {
      * 上传用户头像
      */
     @PostMapping("/avatar/upload")
-    public Result<String> uploadAvatar(@RequestParam("file") MultipartFile file,
-                                   @RequestParam("userId") Long userId) {
-        log.info("上传用户头像: {}, 大小: {}, 用户ID: {}", file.getOriginalFilename(), file.getSize(), userId);
+    public Result<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        log.info("上传用户头像: {}", file.getOriginalFilename());
         
         if (file.isEmpty()) {
             return Result.error("上传文件不能为空");
         }
         
         try {
+            // 获取当前用户ID
+            Long userId = BaseContext.getCurrentId();
+            if (userId == null) {
+                return Result.error("用户未登录");
+            }
+            
             String fileUrl = fileService.uploadAvatar(file, userId);
             return Result.success(fileUrl);
         } catch (Exception e) {
-            log.error("用户头像上传失败", e);
-            return Result.error("用户头像上传失败: " + e.getMessage());
+            log.error("头像上传失败", e);
+            return Result.error("头像上传失败: " + e.getMessage());
         }
     }
 
@@ -234,5 +243,129 @@ public class FileController {
             log.error("批量任务附件上传失败", e);
             return Result.error("批量任务附件上传失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 下载解密后的文件
+     * 支持通过URL或路径获取文件
+     * @param fileUrl 文件URL，完整的OSS URL
+     * @param filePath 文件路径，OSS对象键
+     * @return 解密后的文件内容
+     */
+    @GetMapping("/download")
+    public void downloadDecryptedFile(
+            @RequestParam(required = false) String fileUrl,
+            @RequestParam(required = false) String filePath,
+            HttpServletResponse response) {
+        // 参数验证
+        if ((fileUrl == null || fileUrl.isEmpty()) && (filePath == null || filePath.isEmpty())) {
+            throw new RuntimeException("fileUrl和filePath不能同时为空");
+        }
+        
+        String objectKey = null;
+        if (fileUrl != null && !fileUrl.isEmpty()) {
+            objectKey = fileService.getObjectKeyFromUrl(fileUrl);
+        } else {
+            objectKey = filePath;
+        }
+        
+        try {
+            // 获取文件元数据
+            com.aliyun.oss.model.ObjectMetadata metadata = fileService.getFileMetadata(objectKey);
+            
+            // 获取解密后的文件内容
+            InputStream decryptedStream = fileService.getDecryptedFile(objectKey);
+            
+            // 设置响应头
+            response.setContentType(metadata.getContentType());
+            response.setHeader("Content-Disposition", "attachment; filename=" + 
+                    URLEncoder.encode(getOriginalFileName(objectKey), "UTF-8"));
+            
+            // 将文件内容写入响应
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = decryptedStream.read(buffer)) != -1) {
+                response.getOutputStream().write(buffer, 0, bytesRead);
+            }
+            
+            // 关闭流
+            decryptedStream.close();
+            response.getOutputStream().flush();
+        } catch (Exception e) {
+            log.error("文件下载失败: {}", e.getMessage(), e);
+            throw new RuntimeException("文件下载失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 预览解密后的文件（用于在线查看）
+     * @param fileUrl 文件URL，完整的OSS URL
+     * @param filePath 文件路径，OSS对象键
+     * @return 解密后的文件内容
+     */
+    @GetMapping("/preview")
+    public void previewDecryptedFile(
+            @RequestParam(required = false) String fileUrl,
+            @RequestParam(required = false) String filePath,
+            HttpServletResponse response) {
+        // 参数验证
+        if ((fileUrl == null || fileUrl.isEmpty()) && (filePath == null || filePath.isEmpty())) {
+            throw new RuntimeException("fileUrl和filePath不能同时为空");
+        }
+        
+        String objectKey = null;
+        if (fileUrl != null && !fileUrl.isEmpty()) {
+            objectKey = fileService.getObjectKeyFromUrl(fileUrl);
+        } else {
+            objectKey = filePath;
+        }
+        
+        try {
+            // 获取文件元数据
+            com.aliyun.oss.model.ObjectMetadata metadata = fileService.getFileMetadata(objectKey);
+            
+            // 获取解密后的文件内容
+            InputStream decryptedStream = fileService.getDecryptedFile(objectKey);
+            
+            // 设置响应头，inline表示在浏览器中直接显示
+            response.setContentType(metadata.getContentType());
+            response.setHeader("Content-Disposition", "inline; filename=" + 
+                    URLEncoder.encode(getOriginalFileName(objectKey), "UTF-8"));
+            
+            // 将文件内容写入响应
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = decryptedStream.read(buffer)) != -1) {
+                response.getOutputStream().write(buffer, 0, bytesRead);
+            }
+            
+            // 关闭流
+            decryptedStream.close();
+            response.getOutputStream().flush();
+        } catch (Exception e) {
+            log.error("文件预览失败: {}", e.getMessage(), e);
+            throw new RuntimeException("文件预览失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 从对象键获取原始文件名（去除encrypted_前缀）
+     * @param objectKey 对象键
+     * @return 原始文件名
+     */
+    private String getOriginalFileName(String objectKey) {
+        // 提取文件名部分
+        String fileName = objectKey;
+        int lastSlashIndex = objectKey.lastIndexOf('/');
+        if (lastSlashIndex >= 0 && lastSlashIndex < objectKey.length() - 1) {
+            fileName = objectKey.substring(lastSlashIndex + 1);
+        }
+        
+        // 去除encrypted_前缀
+        if (fileName.startsWith("encrypted_")) {
+            fileName = fileName.substring("encrypted_".length());
+        }
+        
+        return fileName;
     }
 } 

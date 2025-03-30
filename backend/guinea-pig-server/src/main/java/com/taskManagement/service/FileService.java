@@ -3,6 +3,7 @@ package com.taskManagement.service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
+import java.io.InputStream;
 
 public interface FileService {
     
@@ -48,4 +49,25 @@ public interface FileService {
      * @return 头像URL
      */
     String uploadAvatar(MultipartFile file, Long userId);
+    
+    /**
+     * 从OSS获取文件并解密
+     * @param objectKey OSS对象键（文件路径）
+     * @return 解密后的文件流
+     */
+    InputStream getDecryptedFile(String objectKey);
+    
+    /**
+     * 获取文件元数据（MIME类型、文件大小等）
+     * @param objectKey OSS对象键（文件路径）
+     * @return 文件元数据
+     */
+    com.aliyun.oss.model.ObjectMetadata getFileMetadata(String objectKey);
+    
+    /**
+     * 从URL中提取OSS对象键
+     * @param url 完整的OSS URL
+     * @return OSS对象键
+     */
+    String getObjectKeyFromUrl(String url);
 } 

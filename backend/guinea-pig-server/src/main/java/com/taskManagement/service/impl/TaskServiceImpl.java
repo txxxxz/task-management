@@ -3,6 +3,8 @@ package com.taskManagement.service.impl;
 import com.taskManagement.context.BaseContext;
 import com.taskManagement.exception.BusinessException;
 import com.taskManagement.dto.TaskDTO;
+import com.taskManagement.vo.TaskVO;
+import com.taskManagement.vo.UserVO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.entity.Task;
 import com.taskManagement.entity.TaskAttachment;
@@ -850,5 +852,104 @@ public class TaskServiceImpl implements TaskService {
         }
         
         return user;
+    }
+
+    /**
+     * 根据项目ID获取任务VO列表
+     * @param projectId 项目ID
+     * @return 任务VO列表
+     */
+    @Override
+    public List<TaskVO> getTaskVOListByProjectId(Long projectId) {
+        log.info("根据项目ID获取任务VO列表: projectId={}", projectId);
+        
+        // 检查项目是否存在
+        Project project = projectMapper.selectById(projectId);
+        if (project == null) {
+            throw new BusinessException("项目不存在");
+        }
+        
+        // 获取项目任务列表（不分页，获取所有任务）
+        Map<String, Object> result = getProjectTasks(projectId, null, null, null, 1, 1000);
+        
+        List<TaskVO> taskVOList = new ArrayList<>();
+        if (result.containsKey("items")) {
+            @SuppressWarnings("unchecked")
+            List<TaskDTO> items = (List<TaskDTO>) result.get("items");
+            
+            for (TaskDTO taskDTO : items) {
+                TaskVO taskVO = convertTaskDTOToVO(taskDTO);
+                if (taskVO != null) {
+                    taskVOList.add(taskVO);
+                }
+            }
+        }
+        
+        return taskVOList;
+    }
+    
+    /**
+     * 将TaskDTO转换为TaskVO对象
+     * @param taskDTO 任务DTO
+     * @return TaskVO对象
+     */
+    private TaskVO convertTaskDTOToVO(TaskDTO taskDTO) {
+        if (taskDTO == null) {
+            return null;
+        }
+        
+        TaskVO taskVO = new TaskVO();
+        
+        // 复制基本属性
+        taskVO.setId(taskDTO.getId());
+        taskVO.setName(taskDTO.getName());
+        taskVO.setDescription(taskDTO.getDescription());
+        taskVO.setProjectId(taskDTO.getProjectId());
+        taskVO.setStatus(taskDTO.getStatus());
+        taskVO.setPriority(taskDTO.getPriority());
+        taskVO.setStartTime(taskDTO.getStartTime());
+        taskVO.setDeadline(taskDTO.getDeadline());
+        
+        // 设置时间相关字段
+        taskVO.setCreateTime(taskDTO.getCreateTime());
+        taskVO.setUpdateTime(taskDTO.getUpdateTime());
+        
+        // 设置完成时间，注意TaskDTO中是completeTime，而TaskVO中是completedTime
+        taskVO.setCompleteTime(taskDTO.getCompleteTime());
+        
+        // 设置评论数
+        if (taskDTO.getCommentCount() != null) {
+            taskVO.setCommentCount(taskDTO.getCommentCount());
+        } else {
+            taskVO.setCommentCount(0); // 设置默认值
+        }
+        
+        // 其他复杂字段（creator, members, tags, comments, attachments）初始化为空或默认值
+        taskVO.setCreator(null);  // 不设置创建者信息
+        taskVO.setMembers(new ArrayList<>());
+        taskVO.setTags(new ArrayList<>());
+        taskVO.setComments(new ArrayList<>());
+        taskVO.setAttachments(new ArrayList<>());
+        
+        // 如果有成员信息，添加到VO中
+        if (taskDTO.getMembers() != null && !taskDTO.getMembers().isEmpty()) {
+            List<UserVO> memberVOs = new ArrayList<>();
+            for (String username : taskDTO.getMembers()) {
+                try {
+                    User member = getUserByUsername(username);
+                    if (member != null) {
+                        UserVO memberVO = new UserVO();
+                        memberVO.setId(member.getId());
+                        memberVO.setUsername(member.getUsername());
+                        memberVOs.add(memberVO);
+                    }
+                } catch (Exception e) {
+                    log.warn("无法找到用户: {}", username);
+                }
+            }
+            taskVO.setMembers(memberVOs);
+        }
+        
+        return taskVO;
     }
 } 

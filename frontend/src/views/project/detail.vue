@@ -117,7 +117,7 @@
           <el-col :xs="24" :sm="12" :md="8" :lg="8">
             <el-form-item label="截止日期">
               <el-date-picker
-                v-model="projectForm.dueTime"
+                v-model="projectForm.endTime"
                 type="datetime"
                 :disabled="!isLeader"
                 value-format="YYYY-MM-DD HH:mm:ss"
@@ -128,23 +128,11 @@
         </el-row>
 
         <el-form-item label="项目负责人">
-          <el-select
-            v-model="projectForm.leader"
-            :disabled="!isLeader"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="member in memberOptions.filter(m => m.role === 1)"
-              :key="member.value"
-              :label="member.label"
-              :value="member.value"
-            >
-              <div class="member-option">
-                <el-avatar :size="24" :src="member.avatar">{{ member.label.charAt(0) }}</el-avatar>
-                <span>{{ member.label }}</span>
-              </div>
-            </el-option>
-          </el-select>
+          <el-input 
+            v-model="projectForm.creatorName" 
+            disabled
+            placeholder="项目负责人"
+          />
         </el-form-item>
         
         <el-form-item label="项目成员">
@@ -277,6 +265,72 @@
         </template>
       </el-dialog>
     </el-card>
+
+    <!-- 任务列表卡片 -->
+    <el-card class="detail-card">
+      <template #header>
+        <div class="card-header">
+          <h2>任务列表</h2>
+          <div class="header-actions">
+            <el-button type="primary" @click="handleAddTask">
+              <el-icon><Plus /></el-icon>
+              新增任务
+            </el-button>
+          </div>
+        </div>
+      </template>
+
+      <el-table :data="taskList" style="width: 100%">
+        <el-table-column type="index" label="序号" width="70" align="center" />
+        <el-table-column prop="name" label="任务名称" min-width="180" />
+        <el-table-column label="任务状态" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getTaskStatusType(row.status)">
+              {{ getTaskStatusLabel(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="优先级" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getTaskPriorityType(row.priority)">
+              {{ getTaskPriorityLabel(row.priority) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="startTime" label="开始时间" width="160" />
+        <el-table-column prop="deadline" label="截止时间" width="160" />
+        <el-table-column label="操作" width="160" align="center">
+          <template #default="{ row }">
+            <el-button-group>
+              <el-tooltip content="查看任务" placement="top">
+                <el-button type="primary" link @click="handleViewTask(row)">
+                  <el-icon><View /></el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="删除任务" placement="top">
+                <el-button 
+                  type="danger" 
+                  link 
+                  @click="handleDeleteTask(row)"
+                  v-if="isLeader || row.creator?.username === userStore.userInfo?.username"
+                >
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </el-button-group>
+          </template>
+        </el-table-column>
+      </el-table>
+      
+      <!-- 任务为空时显示 -->
+      <el-empty 
+        v-if="taskList.length === 0" 
+        description="暂无任务" 
+        :image-size="100"
+      >
+        <el-button type="primary" @click="handleAddTask">添加任务</el-button>
+      </el-empty>
+    </el-card>
   </div>
 </template>
 
@@ -286,7 +340,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../../stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Check, Upload, View, Download, Delete, UploadFilled, Back
+  Check, Upload, View, Download, Delete, UploadFilled, Back,
+  Plus
 } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import axios from 'axios'
@@ -299,8 +354,26 @@ interface ProjectFile {
   uploader: string;
   uploadTime: string;
 }
+
+// 定义任务接口
+interface Task {
+  id: number;
+  name: string;
+  description: string;
+  status: number;
+  priority: number;
+  startTime: string;
+  deadline: string;
+  projectId: number;
+  creator?: {
+    id: number;
+    username: string;
+  };
+}
+
 import { getProjectDetail, updateProject, deleteProject, getProjectAttachments, deleteAttachment } from '../../api/project'
 import { getAllUsers } from '../../api/user'
+import { getProjectTasks, deleteTask } from '../../api/task'
 
 // 常量和映射
 const PRIORITY_MAP = {
@@ -408,11 +481,11 @@ const projectForm = reactive({
   id: '',
   name: '',
   startTime: null as string | null,
-  dueTime: null as string | null,
+  endTime: null as string | null,
   createTime: '' as string,
   priority: 'MEDIUM' as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
   status: 'PENDING' as 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'COMPLETED',
-  leader: '',
+  creatorName: '',
   members: [] as string[],
   description: ''
 })
@@ -432,6 +505,9 @@ const priorityOptions = [
   { label: '低', value: 'LOW' }
 ]
 
+// 任务列表 - 从后端获取
+const taskList = ref<Task[]>([])
+const taskLoading = ref(false)
 
 // 获取优先级标签类型
 const getPriorityType = (priority: string): string => {
@@ -510,7 +586,7 @@ const fetchProjectDetail = async () => {
     
     // 处理日期
     const startTime = data.startTime || null;
-    const dueTime = data.dueTime || data.deadline || null;
+    const endTime = data.endTime || null;
     const createTime = data.createTime || '';
     
     // 确保数据类型正确
@@ -523,11 +599,11 @@ const fetchProjectDetail = async () => {
       name: data.name || '',
       description: data.description || '',
       startTime,
-      dueTime,
+      endTime,
       createTime: formatDate(createTime),
       priority: PRIORITY_MAP_REVERSE[priority as keyof typeof PRIORITY_MAP_REVERSE] || 'MEDIUM',
       status: STATUS_MAP_REVERSE[status as keyof typeof STATUS_MAP_REVERSE] || 'PENDING',
-      leader: data.leader || '',
+      creatorName: data.creator?.username || '',
       members: Array.isArray(data.members) ? data.members.map((m: any) => 
         typeof m === 'string' ? m : m?.username || ''
       ).filter(Boolean) : []
@@ -535,6 +611,9 @@ const fetchProjectDetail = async () => {
     
     // 加载文件列表
     await fetchAttachments(parseInt(projectId));
+    
+    // 加载任务列表
+    await fetchTasks(projectId);
   } catch (err: any) {
     error.value = err.message || '获取项目详情失败';
     ElMessage.error(error.value || '获取项目详情失败');
@@ -558,10 +637,9 @@ const handleSave = async () => {
       name: projectForm.name,
       description: projectForm.description,
       startTime: projectForm.startTime || undefined, // 字符串类型，YYYY-MM-DD HH:mm:ss格式
-      endTime: projectForm.dueTime || undefined,     // 使用endTime字段而非dueTime
+      endTime: projectForm.endTime || undefined,     // 使用endTime字段
       priority: PRIORITY_MAP[projectForm.priority] || 2,
       status: STATUS_MAP[projectForm.status] || 1,
-      leader: projectForm.leader,
       members: projectForm.members
     };
     
@@ -644,7 +722,8 @@ const handleViewFile = (file: ProjectFile) => {
     ElMessage.warning('文件链接不可用');
     return;
   }
-  window.open(file.url);
+  // 使用预览API打开文件
+  window.open(`/api/files/preview?fileUrl=${encodeURIComponent(file.url)}`);
 };
 
 const handleDownloadFile = (file: ProjectFile) => {
@@ -654,28 +733,8 @@ const handleDownloadFile = (file: ProjectFile) => {
   }
   
   try {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', file.url, true);
-    xhr.responseType = 'blob';
-    
-    xhr.onload = function() {
-      if (this.status === 200) {
-        const blob = new Blob([this.response], {type: 'application/octet-stream'});
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = file.name;
-        
-        document.body.appendChild(a);
-        a.click();
-        
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
-    };
-    
-    xhr.send();
+    // 使用下载API获取解密后的文件
+    window.location.href = `/api/files/download?fileUrl=${encodeURIComponent(file.url)}`;
   } catch (err) {
     ElMessage.error('下载失败');
   }
@@ -795,6 +854,133 @@ onMounted(async () => {
   // 获取项目详情
   await fetchProjectDetail()
 })
+
+// 任务状态和优先级映射
+const TASK_STATUS_LABELS = {
+  0: '待处理',
+  1: '进行中',
+  2: '已完成',
+  3: '已取消'
+}
+
+const TASK_STATUS_TYPES = {
+  0: 'info',
+  1: 'warning',
+  2: 'success',
+  3: 'danger'
+}
+
+const TASK_PRIORITY_LABELS = {
+  1: '低',
+  2: '中',
+  3: '高',
+  4: '紧急'
+}
+
+const TASK_PRIORITY_TYPES = {
+  1: 'success',
+  2: 'info',
+  3: 'warning',
+  4: 'danger'
+}
+
+// 获取任务状态标签
+const getTaskStatusLabel = (status: number): string => {
+  return TASK_STATUS_LABELS[status as keyof typeof TASK_STATUS_LABELS] || '未知状态';
+}
+
+// 获取任务状态类型
+const getTaskStatusType = (status: number): string => {
+  return TASK_STATUS_TYPES[status as keyof typeof TASK_STATUS_TYPES] || 'info';
+}
+
+// 获取任务优先级标签
+const getTaskPriorityLabel = (priority: number): string => {
+  return TASK_PRIORITY_LABELS[priority as keyof typeof TASK_PRIORITY_LABELS] || '未知优先级';
+}
+
+// 获取任务优先级类型
+const getTaskPriorityType = (priority: number): string => {
+  return TASK_PRIORITY_TYPES[priority as keyof typeof TASK_PRIORITY_TYPES] || 'info';
+}
+
+// 获取项目的任务列表
+const fetchTasks = async (projectId: string) => {
+  taskLoading.value = true;
+  try {
+    const response = await getProjectTasks(projectId);
+    const data = extractDataFromResponse(response);
+    
+    if (data?.items && Array.isArray(data.items)) {
+      taskList.value = data.items.map((task: any) => ({
+        id: task.id,
+        name: task.name,
+        description: task.description || '',
+        status: task.status,
+        priority: task.priority,
+        startTime: formatDate(task.startTime),
+        deadline: formatDate(task.deadline),
+        projectId: task.projectId,
+        creator: task.creator
+      }));
+    } else if (data && Array.isArray(data)) {
+      taskList.value = data.map((task: any) => ({
+        id: task.id,
+        name: task.name,
+        description: task.description || '',
+        status: task.status,
+        priority: task.priority,
+        startTime: formatDate(task.startTime),
+        deadline: formatDate(task.deadline),
+        projectId: task.projectId,
+        creator: task.creator
+      }));
+    } else {
+      taskList.value = [];
+    }
+  } catch (err) {
+    ElMessage.error('获取任务列表失败');
+    taskList.value = [];
+  } finally {
+    taskLoading.value = false;
+  }
+};
+
+// 查看任务详情
+const handleViewTask = (task: Task) => {
+  router.push(`/task/detail/${task.id}`);
+};
+
+// 删除任务
+const handleDeleteTask = async (task: Task) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除此任务吗？此操作不可撤销！',
+      '警告',
+      {
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    );
+    
+    await deleteTask(task.id.toString());
+    ElMessage.success('删除成功');
+    
+    // 刷新任务列表
+    await fetchTasks(route.params.id as string);
+  } catch (err: any) {
+    if (err !== 'cancel') {
+      ElMessage.error(err.message || '删除失败');
+    }
+  }
+};
+
+// 新增任务
+const handleAddTask = () => {
+  router.push(`/task/create?projectId=${route.params.id}`);
+};
 </script>
 
 <style scoped>
@@ -937,5 +1123,16 @@ onMounted(async () => {
 
 .error-alert {
   margin-bottom: 16px;
+}
+
+/* 任务列表空状态样式 */
+:deep(.el-empty) {
+  padding: 30px 0;
+}
+
+/* 任务状态标签样式 */
+:deep(.el-tag) {
+  padding: 2px 8px;
+  font-weight: 500;
 }
 </style>

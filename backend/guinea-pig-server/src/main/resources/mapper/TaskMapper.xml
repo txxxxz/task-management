@@ -13,8 +13,6 @@
         <result column="start_time" property="startTime"/>
         <result column="deadline" property="deadline"/>
         <result column="completed_time" property="completedTime"/>
-        <result column="estimated_hours" property="estimatedHours"/>
-        <result column="actual_hours" property="actualHours"/>
         <result column="comment_count" property="commentCount"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>

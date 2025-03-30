@@ -5,12 +5,16 @@ import com.taskManagement.dto.ProjectDTO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.result.Result;
 import com.taskManagement.service.ProjectService;
+import com.taskManagement.service.TaskService;
 import com.taskManagement.vo.PageResult;
 import com.taskManagement.vo.ProjectVO;
+import com.taskManagement.vo.TaskVO;
 import com.taskManagement.vo.UserVO;
+import com.taskManagement.context.BaseContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -26,6 +30,7 @@ import java.util.Map;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final TaskService taskService;
 
     /**
      * 获取项目列表
@@ -177,5 +182,98 @@ public class ProjectController {
         // 调用service获取附件列表
         List<ProjectAttachmentDTO> attachments = projectService.getProjectAttachments(projectId);
         return Result.success(attachments);
+    }
+
+    /**
+     * 获取项目下的任务列表
+     * @param projectId 项目ID
+     * @return 任务列表
+     */
+    @GetMapping("/{projectId}/tasks")
+    public Result<List<TaskVO>> getProjectTasks(@PathVariable Long projectId) {
+        log.info("获取项目任务列表，projectId={}", projectId);
+        
+        List<TaskVO> taskVOList = taskService.getTaskVOListByProjectId(projectId);
+        return Result.success(taskVOList);
+    }
+    
+    /**
+     * 上传项目附件
+     * @param projectId 项目ID
+     * @param file 文件
+     * @return 文件URL
+     */
+    @PostMapping("/{projectId}/attachments")
+    public Result<String> uploadProjectAttachment(
+            @PathVariable Long projectId, 
+            @RequestParam("file") MultipartFile file) {
+        log.info("上传项目附件，projectId={}, fileName={}", projectId, file.getOriginalFilename());
+        
+        if (file.isEmpty()) {
+            return Result.error("上传文件不能为空");
+        }
+        
+        try {
+            // 获取当前用户ID
+            Long userId = BaseContext.getCurrentId();
+            if (userId == null) {
+                userId = 1L; // 默认用户ID
+            }
+            
+            // 调用service上传文件
+            String fileUrl = projectService.uploadProjectAttachment(projectId, file, userId);
+            return Result.success(fileUrl);
+        } catch (Exception e) {
+            log.error("项目附件上传失败", e);
+            return Result.error("上传失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 批量上传项目附件
+     * @param projectId 项目ID
+     * @param files 文件列表
+     * @return 文件URL列表
+     */
+    @PostMapping("/{projectId}/attachments/batch")
+    public Result<List<String>> batchUploadProjectAttachments(
+            @PathVariable Long projectId, 
+            @RequestParam("files") List<MultipartFile> files) {
+        log.info("批量上传项目附件，projectId={}, fileCount={}", projectId, files.size());
+        
+        if (files.isEmpty()) {
+            return Result.error("上传文件不能为空");
+        }
+        
+        try {
+            // 获取当前用户ID
+            Long userId = BaseContext.getCurrentId();
+            if (userId == null) {
+                userId = 1L; // 默认用户ID
+            }
+            
+            // 调用service批量上传文件
+            List<String> fileUrls = projectService.batchUploadProjectAttachments(projectId, files, userId);
+            return Result.success(fileUrls);
+        } catch (Exception e) {
+            log.error("批量上传项目附件失败", e);
+            return Result.error("批量上传失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 删除项目附件
+     * @param projectId 项目ID
+     * @param attachmentId 附件ID
+     * @return 操作结果
+     */
+    @DeleteMapping("/{projectId}/attachments/{attachmentId}")
+    public Result<Void> deleteProjectAttachment(
+            @PathVariable Long projectId, 
+            @PathVariable Long attachmentId) {
+        log.info("删除项目附件，projectId={}, attachmentId={}", projectId, attachmentId);
+        
+        // Todo: 实现附件删除逻辑
+        return Result.success();
     }
 } 

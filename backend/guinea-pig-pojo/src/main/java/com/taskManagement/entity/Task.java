@@ -18,7 +18,5 @@ public class Task extends BaseEntity {
     private LocalDateTime startTime;
     private LocalDateTime deadline;
     private LocalDateTime completedTime;
-    private Double estimatedHours;
-    private Double actualHours;
     private Integer commentCount;    // 评论数量仍需保留，其他功能可能依赖此字段
 } 

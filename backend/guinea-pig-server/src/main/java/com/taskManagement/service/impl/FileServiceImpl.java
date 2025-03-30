@@ -15,11 +15,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @Slf4j
@@ -237,5 +247,123 @@ public class FileServiceImpl implements FileService {
             log.error("用户头像[{}]上传失败", fileName, e);
             throw new RuntimeException("头像上传失败: " + e.getMessage());
         }
+    }
+    
+    /**
+     * 从OSS获取文件并解密
+     * @param objectKey OSS对象键（文件路径）
+     * @return 解密后的文件流
+     */
+    @Override
+    public InputStream getDecryptedFile(String objectKey) {
+        try {
+            // 检查文件是否存在
+            boolean exists = ossClient.doesObjectExist(ossConfig.getBucketName(), objectKey);
+            if (!exists) {
+                log.error("文件不存在，路径: {}", objectKey);
+                throw new RuntimeException("文件不存在");
+            }
+            
+            // 获取文件对象
+            com.aliyun.oss.model.OSSObject ossObject = ossClient.getObject(ossConfig.getBucketName(), objectKey);
+            
+            // 读取加密数据
+            InputStream encryptedStream = ossObject.getObjectContent();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = encryptedStream.read(buffer)) != -1) {
+                baos.write(buffer, 0, bytesRead);
+            }
+            byte[] encryptedBytes = baos.toByteArray();
+            encryptedStream.close();
+            
+            // 关闭OSS对象流
+            ossObject.close();
+            
+            // 直接解密二进制数据
+            ByteArrayInputStream bais = new ByteArrayInputStream(encryptedBytes);
+            
+            // 创建解密密钥
+            SecretKeySpec secretKey = generateSecretKey(ossConfig.getEncryptionKey());
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey);
+            
+            // 使用解密Cipher处理输入流
+            CipherInputStream cipherInputStream = new CipherInputStream(bais, cipher);
+            
+            // 读取解密后的数据到输出流
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            buffer = new byte[4096];
+            while ((bytesRead = cipherInputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            cipherInputStream.close();
+            
+            // 返回解密后的数据流
+            return new ByteArrayInputStream(outputStream.toByteArray());
+        } catch (Exception e) {
+            log.error("获取并解密文件失败，路径: {}", objectKey, e);
+            throw new RuntimeException("获取文件失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 生成AES密钥
+     */
+    private SecretKeySpec generateSecretKey(String key) throws NoSuchAlgorithmException {
+        MessageDigest sha = MessageDigest.getInstance("SHA-256");
+        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+        keyBytes = sha.digest(keyBytes);
+        byte[] truncatedBytes = new byte[16]; // AES需要16字节密钥
+        System.arraycopy(keyBytes, 0, truncatedBytes, 0, truncatedBytes.length);
+        return new SecretKeySpec(truncatedBytes, "AES");
+    }
+    
+    /**
+     * 获取文件元数据（MIME类型、文件大小等）
+     * @param objectKey OSS对象键（文件路径）
+     * @return 文件元数据
+     */
+    @Override
+    public ObjectMetadata getFileMetadata(String objectKey) {
+        try {
+            return ossClient.getObjectMetadata(ossConfig.getBucketName(), objectKey);
+        } catch (Exception e) {
+            log.error("获取文件元数据失败，路径: {}", objectKey, e);
+            throw new RuntimeException("获取文件元数据失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 从对象键中提取文件名
+     * @param objectKey OSS对象键
+     * @return 文件名
+     */
+    private String getFileNameFromObjectKey(String objectKey) {
+        int lastSlashIndex = objectKey.lastIndexOf('/');
+        if (lastSlashIndex >= 0 && lastSlashIndex < objectKey.length() - 1) {
+            return objectKey.substring(lastSlashIndex + 1);
+        }
+        return objectKey;
+    }
+    
+    /**
+     * 从URL中提取OSS对象键
+     * @param url 完整的OSS URL
+     * @return OSS对象键
+     */
+    @Override
+    public String getObjectKeyFromUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return null;
+        }
+        
+        String prefix = ossConfig.getUrlPrefix() + "/";
+        if (url.startsWith(prefix)) {
+            return url.substring(prefix.length());
+        }
+        
+        return url;
     }
 } 

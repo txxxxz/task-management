@@ -32,9 +32,26 @@ public class TaskDTO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime deadline;
     
-    private Double estimatedHours;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime completeTime;
+
+    private Integer commentCount;
+
+    private Long createUser;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createTime;
+
+    private Long updateUser;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updateTime;
+
+
     
     private List<Long> memberIds;  // 任务成员ID列表
     private List<Long> tagIds;     // 标签ID列表
     private List<String> members; // 添加任务成员列表字段
+
+
 } 

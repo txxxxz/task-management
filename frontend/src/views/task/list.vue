@@ -262,16 +262,6 @@
       <el-table-column label="操作" width="120" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
-            <el-tooltip content="查看详情" placement="top">
-              <el-button
-                type="primary"
-                link
-                @click="handleViewDetail(row)"
-                class="action-button"
-              >
-                <el-icon><View /></el-icon>
-              </el-button>
-            </el-tooltip>
             
             <el-tooltip content="编辑任务" placement="top" v-if="isLeader">
               <el-button

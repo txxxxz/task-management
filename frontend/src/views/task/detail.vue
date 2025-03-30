@@ -223,11 +223,6 @@
                   <el-icon><View /></el-icon>
                 </el-button>
               </el-tooltip>
-              <el-tooltip content="下载文件" placement="top">
-                <el-button type="primary" link @click="handleDownloadFile(row)">
-                  <el-icon><Download /></el-icon>
-                </el-button>
-              </el-tooltip>
               <el-tooltip content="删除文件" placement="top">
                 <el-button 
                   type="danger" 
@@ -855,7 +850,8 @@ const handleViewFile = (file: TaskFile) => {
     ElMessage.warning('文件链接不可用');
     return;
   }
-  window.open(file.url);
+  // 使用预览API打开文件
+  window.open(`/api/files/preview?fileUrl=${encodeURIComponent(file.url)}`);
 };
 
 const handleDownloadFile = (file: TaskFile) => {
@@ -865,28 +861,8 @@ const handleDownloadFile = (file: TaskFile) => {
   }
   
   try {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', file.url, true);
-    xhr.responseType = 'blob';
-    
-    xhr.onload = function() {
-      if (this.status === 200) {
-        const blob = new Blob([this.response], {type: 'application/octet-stream'});
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = file.name;
-        
-        document.body.appendChild(a);
-        a.click();
-        
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
-    };
-    
-    xhr.send();
+    // 使用下载API获取解密后的文件
+    window.location.href = `/api/files/download?fileUrl=${encodeURIComponent(file.url)}`;
   } catch (err) {
     ElMessage.error('下载失败');
   }

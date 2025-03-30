@@ -4,6 +4,7 @@ import com.taskManagement.dto.TaskAttachmentDTO;
 import com.taskManagement.dto.TaskDTO;
 import com.taskManagement.entity.Task;
 import com.taskManagement.vo.UserVO;
+import com.taskManagement.vo.TaskVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -75,6 +76,12 @@ public interface TaskService {
     Map<String, Object> getProjectTasks(Long projectId, String keyword, Integer status, 
                                        Integer priority, Integer page, Integer pageSize);
 
+    /**
+     * 根据项目ID获取任务VO列表
+     * @param projectId 项目ID
+     * @return 任务VO列表
+     */
+    List<TaskVO> getTaskVOListByProjectId(Long projectId);
 
     /**
      * 上传任务附件

@@ -10,10 +10,14 @@ import com.taskManagement.service.TaskService;
 import com.taskManagement.dto.TaskAttachmentDTO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import com.taskManagement.context.BaseContext;
+import com.taskManagement.service.FileService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +35,9 @@ public class TaskController {
 
     @Autowired
     private CommentService commentService;
+
+    @Autowired
+    private FileService fileService;
 
     /**
      * 创建任务
@@ -306,12 +313,37 @@ public class TaskController {
     @ApiOperation("上传任务附件")
     public Result<TaskAttachmentDTO> uploadAttachment(
             @PathVariable Long taskId,
-            @RequestParam("file") Object file) {
-        log.info("上传任务附件: taskId={}, file={}", taskId, file != null ? "文件已上传" : "文件为空");
+            @RequestParam("file") MultipartFile file) {
+        log.info("上传任务附件: taskId={}, fileName={}", taskId, file != null ? file.getOriginalFilename() : "文件为空");
         
-        // 调用service上传附件
-        TaskAttachmentDTO attachment = taskService.uploadTaskAttachment(taskId, file);
-        return Result.success(attachment);
+        if (file.isEmpty()) {
+            return Result.error("上传文件不能为空");
+        }
+        
+        try {
+            // 获取当前用户ID
+            Long userId = BaseContext.getCurrentId();
+            if (userId == null) {
+                userId = 1L; // 默认用户ID
+            }
+            
+            // 使用FileService来处理文件上传
+            String fileUrl = fileService.uploadTaskFile(file, taskId, userId);
+            
+            // 构建返回结果
+            TaskAttachmentDTO dto = new TaskAttachmentDTO();
+            dto.setTaskId(taskId);
+            dto.setFileName(file.getOriginalFilename());
+            dto.setFileSize(file.getSize());
+            dto.setFileType(file.getContentType());
+            dto.setFilePath(fileUrl);
+            dto.setCreateUser(userId);
+            
+            return Result.success(dto);
+        } catch (Exception e) {
+            log.error("任务附件上传失败", e);
+            return Result.error("上传失败: " + e.getMessage());
+        }
     }
     
     /**

@@ -22,10 +22,8 @@ public class TaskVO {
     private LocalDateTime deadline;
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime completedTime;
+    private LocalDateTime completeTime;
     
-    private Double estimatedHours;
-    private Double actualHours;
     private Integer commentCount;
     
     private UserVO creator;
