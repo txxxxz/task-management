@@ -299,45 +299,15 @@
             <el-empty description="暂无评论" />
           </template>
           <template v-else>
-            <div v-for="comment in comments" :key="comment.id" class="comment-wrapper">
-              <div class="comment-item">
-                <div class="comment-header">
-                  <el-avatar :size="32" :src="comment.createUserAvatar || '/default-avatar.png'" />
-                  <span class="username">{{ comment.createUserName }}</span>
-                  <span class="time">{{ formatTime(comment.createTime) }}</span>
-                </div>
-                <div class="comment-content">{{ comment.content }}</div>
-                <div class="comment-actions">
-                  <el-button type="text" @click="handleReply(comment)">回复</el-button>
-                  <el-button 
-                    v-if="isLeader || String(comment.createUser) === String(userStore.userInfo?.id)" 
-                    type="text" 
-                    @click="handleDeleteComment(comment)"
-                  >删除</el-button>
-                </div>
-                <div v-if="comment.children && comment.children.length > 0" class="comment-replies">
-                  <div v-for="child in comment.children" :key="child.id" class="child-comment">
-                    <div class="comment-header">
-                      <el-avatar :size="24" :src="child.createUserAvatar || '/default-avatar.png'" />
-                      <span class="username">{{ child.createUserName }}</span>
-                      <span class="time">{{ formatTime(child.createTime) }}</span>
-                    </div>
-                    <div class="comment-content">
-                      <span class="reply-target">@{{ comment.createUserName }}</span>
-                      {{ child.content }}
-                    </div>
-                    <div class="comment-actions">
-                      <el-button type="text" @click="handleReply(child)">回复</el-button>
-                      <el-button 
-                        v-if="isLeader || String(child.createUser) === String(userStore.userInfo?.id)" 
-                        type="text" 
-                        @click="handleDeleteComment(child)"
-                      >删除</el-button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <comment-tree
+              v-for="comment in comments"
+              :key="comment.id"
+              :comment="comment"
+              :level="0"
+              :reply-map="commentReplyMap"
+              @reply="handleReply"
+              @delete="handleDeleteComment"
+            ></comment-tree>
           </template>
         </div>
 
@@ -351,11 +321,11 @@
             v-model="newComment.content"
             type="textarea"
             :rows="3"
-            placeholder="写下你的评论..."
+            :placeholder="replyToComment ? `回复 ${replyToComment.createUserName}...` : '写下你的评论...'"
           />
           <div class="comment-buttons">
             <el-button type="primary" @click="handleAddComment" :loading="commentLoading">
-              发表评论
+              {{ replyToComment ? '回复' : '发表评论' }}
             </el-button>
           </div>
         </div>
@@ -388,11 +358,124 @@ import { getTaskDetail, updateTask, deleteTask, getTaskComments, createComment, 
 import { getAllUsers } from '../../api/user'
 import { getTagList, getAllTags } from '@/api/tag'
 import axios from 'axios'
+import CommentTree from '../../components/CommentTree.vue'
 
 // 定义评论类型
 interface CommentData extends TaskComment {
-  children?: CommentData[]
+  id: number;
+  taskId: number;
+  content: string;
+  parentId?: number | null;
+  createTime: string;
+  createUser: number | string;
+  createUserName: string;
+  createUserAvatar: string;
+  children?: CommentData[];
 }
+
+// 定义接口和常量
+interface UpdateData {
+  id?: number;
+  name: string;
+  description: string;
+  deadline?: string;
+  priority: number;
+  status: number;
+  members: string[];
+  tagIds: number[];
+  projectId?: string;
+}
+
+// 常量和映射
+const PRIORITY_MAP = {
+  CRITICAL: 4,
+  HIGH: 3,
+  MEDIUM: 2,
+  LOW: 1
+} as const;
+
+const PRIORITY_MAP_REVERSE = {
+  4: 'CRITICAL',
+  3: 'HIGH',
+  2: 'MEDIUM',
+  1: 'LOW'
+} as const;
+
+const STATUS_MAP = {
+  PENDING: 1,
+  IN_PROGRESS: 2,
+  REVIEW: 3,
+  COMPLETED: 4
+} as const;
+
+const STATUS_MAP_REVERSE = {
+  1: 'PENDING',
+  2: 'IN_PROGRESS',
+  3: 'REVIEW',
+  4: 'COMPLETED'
+} as const;
+
+const STATUS_LABELS = {
+  PENDING: '待处理',
+  IN_PROGRESS: '进行中',
+  REVIEW: '待审核',
+  COMPLETED: '已完成'
+} as const;
+
+const PRIORITY_TYPES = {
+  CRITICAL: 'danger',
+  HIGH: 'warning',
+  MEDIUM: 'info',
+  LOW: 'success'
+} as const;
+
+const STATUS_TYPES = {
+  PENDING: 'info',
+  IN_PROGRESS: 'warning',
+  REVIEW: 'info',
+  COMPLETED: 'success'
+} as const;
+
+// 工具函数
+const formatDate = (date: string | Date | null): string => {
+  if (!date) return '';
+  try {
+    return dayjs(date).format('YYYY-MM-DD HH:mm:ss');
+  } catch (e) {
+    return '';
+  }
+};
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const formatTimeFromNow = (time: string): string => {
+  try {
+    return dayjs(time).fromNow();
+  } catch (e) {
+    return time || '未知时间';
+  }
+};
+
+// 安全地从API响应中提取数据
+const extractDataFromResponse = (response: any, fallback: any = null) => {
+  if (!response) return fallback;
+  
+  if (response.data?.code === 1 && response.data?.data) {
+    return response.data.data;
+  }
+  
+  if (response.data) {
+    return response.data;
+  }
+  
+  return fallback;
+};
 
 dayjs.extend(relativeTime)
 
@@ -419,18 +502,13 @@ const newComment = reactive({
   parentId: null as number | null
 })
 const replyToComment = ref<CommentData | null>(null)
+const commentReplyMap = ref<Record<number, string>>({})
 
 // 判断是否为leader
-const isLeader = computed(() => {
-  return userStore.userInfo?.role === 1
-})
+const isLeader = computed(() => userStore.userInfo?.role === 1)
 
 // 上传请求头
-const uploadHeaders = computed(() => {
-  return {
-    'X-Requested-With': 'XMLHttpRequest'
-  }
-})
+const uploadHeaders = computed(() => ({ 'X-Requested-With': 'XMLHttpRequest' }))
 
 // 任务表单数据
 const taskForm = reactive({
@@ -441,7 +519,7 @@ const taskForm = reactive({
   priority: 'MEDIUM' as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
   status: 'PENDING' as 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'COMPLETED',
   members: [] as string[],
-  tags: [] as string[],
+  tags: [] as Array<string | { id: string, name: string }>,
   description: ''
 })
 
@@ -464,101 +542,49 @@ const priorityOptions = [
 
 // 获取优先级标签类型
 const getPriorityType = (priority: string): 'success' | 'warning' | 'info' | 'danger' => {
-  const types: Record<string, 'success' | 'warning' | 'info' | 'danger'> = {
-    'CRITICAL': 'danger',
-    'HIGH': 'warning',
-    'MEDIUM': 'info',
-    'LOW': 'success'
-  }
-  return types[priority] || 'info'
+  return PRIORITY_TYPES[priority as keyof typeof PRIORITY_TYPES] || 'info';
 }
 
 // 获取状态标签类型
 const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'danger' => {
-  const types: Record<string, 'success' | 'warning' | 'info' | 'danger'> = {
-    'PENDING': 'info',
-    'IN_PROGRESS': 'warning',
-    'REVIEW': 'info',
-    'COMPLETED': 'success'
-  }
-  return types[status] || 'info'
+  return STATUS_TYPES[status as keyof typeof STATUS_TYPES] || 'info';
 }
 
 // 获取状态显示标签
 const getStatusLabel = (status: string): string => {
-  const labels: Record<string, string> = {
-    'PENDING': '待处理',
-    'IN_PROGRESS': '进行中',
-    'REVIEW': '待审核',
-    'COMPLETED': '已完成'
-  }
-  return labels[status] || '未知状态'
+  return STATUS_LABELS[status as keyof typeof STATUS_LABELS] || '未知状态';
 }
 
-// 格式化文件大小
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+// 使用token的工具函数
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Authorization': `Bearer ${token}`,
+    'token': token
+  };
+};
 
 // 获取标签选项
 const fetchTags = async (projectId?: string) => {
-  console.log('获取标签列表，项目ID:', projectId)
   tagsLoading.value = true
   try {
-    let response;
-    if (projectId) {
-      // 如果有项目 ID，获取特定项目的标签
-      response = await getTagList({ projectId })
-    } else {
-      // 如果没有项目 ID，获取所有标签
-      response = await getAllTags()
-    }
+    const response = projectId 
+      ? await getTagList({ projectId }) 
+      : await getAllTags();
     
-    console.log('标签列表原始响应:', response)
+    const tagsData = extractDataFromResponse(response);
+    const items = Array.isArray(tagsData) 
+      ? tagsData 
+      : (tagsData?.items || []);
     
-    // 更完善的响应处理
-    if (response?.data) {
-      if (response.data.code === 1) {
-        // 直接接收后端返回的标签数据
-        const tagsData = response.data.data;
-        
-        // 所有接口现在都统一返回 { total, items } 格式
-        if (tagsData && tagsData.items && Array.isArray(tagsData.items)) {
-          // 处理标签数据格式，确保color字段存在
-          tagOptions.value = tagsData.items.map((tag) => ({
-            id: String(tag.id), // 确保id总是字符串类型
-            name: tag.name,
-            color: tag.color || '#409EFF', // 如果后端未返回颜色，使用默认颜色
-            projectId: tag.projectId
-          }));
-          console.log('标签列表处理完成:', tagOptions.value);
-        } else if (Array.isArray(tagsData)) {
-          // 处理直接返回数组的情况
-          tagOptions.value = tagsData.map((tag) => ({
-            id: String(tag.id), // 确保id总是字符串类型
-            name: tag.name,
-            color: tag.color || '#409EFF', // 如果后端未返回颜色，使用默认颜色
-            projectId: tag.projectId
-          }));
-          console.log('标签列表处理完成 (数组格式):', tagOptions.value);
-        } else {
-          console.warn('标签数据格式异常:', tagsData);
-          tagOptions.value = [];
-        }
-      } else {
-        console.warn('获取标签列表失败:', response.data.message || '未知错误');
-        tagOptions.value = [];
-      }
-    } else {
-      console.warn('获取标签列表响应异常:', response);
-      tagOptions.value = [];
-    }
+    tagOptions.value = items.map((tag: any) => ({
+      id: String(tag.id),
+      name: tag.name,
+      color: tag.color || '#409EFF',
+      projectId: tag.projectId
+    }));
   } catch (error) {
-    console.error('获取标签列表失败:', error);
+    ElMessage.error('获取标签列表失败');
     tagOptions.value = [];
   } finally {
     tagsLoading.value = false;
@@ -570,35 +596,28 @@ const fetchUsers = async (keyword = '') => {
   membersLoading.value = true
   try {
     const params = {
-      keyword: keyword,
-      role: '0,1', // 只查询角色为0和1的用户
+      keyword,
+      role: '0,1',
       page: 1,
       pageSize: 50
     }
     const response = await getAllUsers(params)
+    const userData = extractDataFromResponse(response);
     
-    if (response && response.data && response.data.code === 1 && response.data.data) {
-      const { items } = response.data.data
-      if (Array.isArray(items)) {
-        memberOptions.value = items.map(user => ({
-          value: user.username,
-          label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
-          avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
-        }))
-      } else {
-        memberOptions.value = []
-        console.warn('返回的items不是数组:', items)
-      }
+    if (userData?.items && Array.isArray(userData.items)) {
+      memberOptions.value = userData.items.map((user: any) => ({
+        value: user.username,
+        label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+        avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
+      }));
     } else {
-      memberOptions.value = []
-      console.warn('API响应格式不符合预期:', response)
+      memberOptions.value = [];
     }
   } catch (error) {
-    memberOptions.value = []
-    console.error('获取用户列表失败:', error)
-    ElMessage.error('获取用户列表失败')
+    ElMessage.error('获取用户列表失败');
+    memberOptions.value = [];
   } finally {
-    membersLoading.value = false
+    membersLoading.value = false;
   }
 }
 
@@ -606,390 +625,262 @@ const fetchUsers = async (keyword = '') => {
 const fetchTaskDetail = async () => {
   const taskId = route.params.id as string
   if (!taskId) {
-    error.value = '任务ID不能为空'
-    return
+    error.value = '任务ID不能为空';
+    return;
   }
 
-  loading.value = true
-  error.value = null
+  loading.value = true;
+  error.value = null;
 
   try {
-    console.log('开始获取任务详情, taskId:', taskId)
-    const response = await getTaskDetail(taskId)
-    console.log('任务详情原始响应:', JSON.stringify(response, null, 2))
+    const response = await getTaskDetail(taskId);
+    const data = extractDataFromResponse(response);
     
-    // 将API返回的数据映射到表单
-    let data = (response as any).data?.data || (response as any).data
-    if (!data && (response as any).result) {
-      data = (response as any).result // 兼容返回result的情况
+    if (!data) {
+      ElMessage.warning('未获取到任务数据');
+      return;
     }
     
-    console.log('解析后的任务数据:', JSON.stringify(data, null, 2))
-    
-    if (data) {
-      // 优先级转换（API返回数字，转为字符串）
-      const priorityMap: Record<number, string> = {
-        4: 'CRITICAL',
-        3: 'HIGH',
-        2: 'MEDIUM',
-        1: 'LOW'
-      }
-      
-      // 状态转换（API返回数字，转为字符串）
-      const statusMap: Record<number, string> = {
-        1: 'PENDING',
-        2: 'IN_PROGRESS',
-        3: 'REVIEW',
-        4: 'COMPLETED'
-      }
-      
-      // 确保数据类型正确
-      const priority = typeof data.priority === 'number' ? data.priority : parseInt(data.priority) || 2
-      const status = typeof data.status === 'number' ? data.status : parseInt(data.status) || 1
-      
-      console.log('转换前的优先级和状态:', { priority, status })
-      
-      // 处理日期时间 - 优先使用startTime作为创建时间
-      const createTime = data.startTime ? dayjs(data.startTime).format('YYYY-MM-DD HH:mm:ss') 
-                       : data.createTime ? dayjs(data.createTime).format('YYYY-MM-DD HH:mm:ss') 
-                       : ''
-      
-      // 截止时间可能有多种字段名
-      const dueTimeValue = data.dueTime || data.deadline
-      let dueTime: Date | null = null
-      if (dueTimeValue) {
-        try {
-          dueTime = dayjs(dueTimeValue).toDate()
-        } catch (e) {
-          console.error('日期转换错误:', e)
-        }
-      }
-      
-      console.log('处理后的日期:', { createTime, dueTime })
-      
-      // 更新任务表单数据
-      const formData = {
-        number: data.id?.toString() || data.number || '',
-        name: data.name || data.title || '',
-        description: data.description || '',
-        createTime,
-        dueTime,
-        priority: (priorityMap[priority] || 'MEDIUM') as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
-        status: (statusMap[status] || 'PENDING') as 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'COMPLETED',
-        members: [],
-        tags: []
-      }
-      
-      // 处理成员数据 - 确保members是字符串数组
-      if (Array.isArray(data.members)) {
-        formData.members = data.members.map((member: any) => {
-          return typeof member === 'string' ? member : member?.username || member
-        }).filter(Boolean)
-      }
-      
-      // 处理标签数据 - 检查并打印tagIds和tags字段
-      console.log('任务数据中的标签相关字段:', {
-        tags: data.tags,
-        tagIds: data.tagIds
-      });
-      
-      // 首先检查tagIds字段
-      if (Array.isArray(data.tagIds)) {
-        console.log('使用tagIds字段:', data.tagIds);
-        formData.tags = data.tagIds.map((tagId: any) => {
-          return tagId?.toString() || '';
-        }).filter(Boolean);
-      }
-      // 如果没有tagIds字段，再使用tags字段
-      else if (Array.isArray(data.tags)) {
-        console.log('使用tags字段:', data.tags);
-        formData.tags = data.tags.map((tag: any) => {
-          if (typeof tag === 'object' && tag !== null) {
-            return tag.id?.toString() || '';
-          }
-          return tag?.toString() || '';
-        }).filter(Boolean);
-      }
-      
-      console.log('任务加载时处理后的标签IDs:', formData.tags);
-      
-      console.log('更新表单数据:', formData)
-      
-      // 使用Object.assign更新表单数据
-      Object.assign(taskForm, formData)
-      
-      console.log('更新后的表单数据:', taskForm)
-      
-      // 加载评论和文件列表
-      await fetchComments()
-      await fetchAttachments(parseInt(taskId))
-    } else {
-      console.warn('未获取到任务数据:', response)
-      ElMessage.warning('未获取到任务数据')
+    // 处理日期时间
+    const createTime = formatDate(data.startTime || data.createTime);
+    let dueTime = null;
+    try {
+      dueTime = data.dueTime || data.deadline ? dayjs(data.dueTime || data.deadline).toDate() : null;
+    } catch (e) {
+      dueTime = null;
     }
+    
+    // 确保数据类型正确
+    const priority = typeof data.priority === 'number' ? data.priority : parseInt(data.priority) || 2;
+    const status = typeof data.status === 'number' ? data.status : parseInt(data.status) || 1;
+    
+    // 更新任务表单数据
+    Object.assign(taskForm, {
+      number: data.id?.toString() || data.number || '',
+      name: data.name || data.title || '',
+      description: data.description || '',
+      createTime,
+      dueTime,
+      priority: PRIORITY_MAP_REVERSE[priority as keyof typeof PRIORITY_MAP_REVERSE] || 'MEDIUM',
+      status: STATUS_MAP_REVERSE[status as keyof typeof STATUS_MAP_REVERSE] || 'PENDING',
+      members: processMembers(data.members),
+      tags: processTags(data)
+    });
+    
+    // 加载评论和文件列表
+    await Promise.all([
+      fetchComments(),
+      fetchAttachments(parseInt(taskId))
+    ]);
   } catch (err: any) {
-    console.error('获取任务详情失败:', err)
-    error.value = err.message || '获取任务详情失败'
+    error.value = err.message || '获取任务详情失败';
+    ElMessage.error(error.value || '获取任务详情失败');
   } finally {
-    loading.value = false
+    loading.value = false;
   }
+}
+
+// 处理成员数据
+const processMembers = (members: any[] | undefined): string[] => {
+  if (!members || !Array.isArray(members)) return [];
+  
+  return members
+    .map(member => typeof member === 'string' ? member : member?.username || '')
+    .filter(Boolean);
+}
+
+// 处理标签数据
+const processTags = (data: any): string[] => {
+  // 首先检查tagIds字段
+  if (Array.isArray(data.tagIds)) {
+    return data.tagIds
+      .map((tagId: any) => tagId?.toString() || '')
+      .filter(Boolean);
+  }
+  
+  // 如果没有tagIds字段，再使用tags字段
+  if (Array.isArray(data.tags)) {
+    return data.tags
+      .map((tag: any) => {
+        if (typeof tag === 'object' && tag !== null) {
+          return tag.id?.toString() || '';
+        }
+        return tag?.toString() || '';
+      })
+      .filter(Boolean);
+  }
+  
+  return [];
 }
 
 // 添加一个函数，用于调试和刷新任务标签
 const refreshTaskTags = async () => {
   try {
-    console.log('刷新任务标签');
     // 先重新获取标签列表
-    await fetchTags(route.query.projectId as string)
+    await fetchTags(route.query.projectId as string);
     
     // 然后重新获取任务详情
-    await fetchTaskDetail()
+    await fetchTaskDetail();
     
-    console.log('刷新后的标签选项:', tagOptions.value);
-    console.log('刷新后的任务标签:', taskForm.tags);
-    
-    ElMessage.success('标签已刷新')
+    ElMessage.success('标签已刷新');
   } catch (err: any) {
-    console.error('刷新标签失败:', err)
-    ElMessage.error('刷新标签失败')
+    ElMessage.error('刷新标签失败');
   }
 }
 
 // 保存任务修改
 const handleSave = async () => {
   if (!isLeader.value) {
-    ElMessage.warning('您没有权限修改任务信息')
-    return
+    ElMessage.warning('您没有权限修改任务信息');
+    return;
   }
 
-  saveLoading.value = true
+  saveLoading.value = true;
   try {
-    // 将优先级字符串转换为数字
-    const priorityMap: Record<string, number> = {
-      'CRITICAL': 4,
-      'HIGH': 3,
-      'MEDIUM': 2,
-      'LOW': 1
-    }
-    
-    // 将状态字符串转换为数字
-    const statusMap: Record<string, number> = {
-      'PENDING': 1,
-      'IN_PROGRESS': 2,
-      'REVIEW': 3,
-      'COMPLETED': 4
-    }
-    
     // 日期处理
-    let deadline = null
-    if (taskForm.dueTime) {
-      try {
-        deadline = dayjs(taskForm.dueTime).format('YYYY-MM-DD HH:mm:ss')
-      } catch (e) {
-        console.error('日期格式化错误:', e)
-      }
-    }
+    const deadline = taskForm.dueTime ? formatDate(taskForm.dueTime) : undefined;
     
-    // 标签处理逻辑 - 将标签ID转换为Long类型
-    console.log('保存前的原始标签数据:', taskForm.tags);
-    
-    // 将标签ID转换为数字类型，后端需要Long类型
-    const tagIds = taskForm.tags.map((tag: any) => {
-      // 如果是对象类型，尝试提取id
-      if (typeof tag === 'object' && tag !== null) {
-        const id = tag.id?.toString() || '';
-        return id ? Number(id) : null;
-      }
-      // 直接转换为数字
-      const id = tag?.toString() || '';
-      return id ? Number(id) : null;
-    }).filter((id): id is number => id !== null); // 过滤掉null值
-    
-    console.log('处理后的标签IDs:', tagIds);
+    // 将标签ID转换为数字类型
+    const tagIds = taskForm.tags
+      .map(tag => {
+        const tagId = typeof tag === 'object' && tag !== null 
+          ? tag.id
+          : tag;
+        return tagId ? Number(tagId) : null;
+      })
+      .filter((id): id is number => id !== null);
     
     // 构建更新数据
-    const updateData = {
+    const updateData: UpdateData = {
       id: parseInt(taskForm.number) || undefined,
       name: taskForm.name,
       description: taskForm.description,
-      deadline: deadline || undefined,  // 使用undefined替代null
-      priority: priorityMap[taskForm.priority] || 2, // 默认为中等优先级
-      status: statusMap[taskForm.status] || 1, // 默认为待处理
+      deadline,
+      priority: PRIORITY_MAP[taskForm.priority] || 2,
+      status: STATUS_MAP[taskForm.status] || 1,
       members: taskForm.members,
-      tagIds: tagIds, // 使用数字数组作为tagIds传递给后端
-      projectId: route.query.projectId ? Number(route.query.projectId) : undefined // 将projectId转换为数字
-    }
+      tagIds,
+      projectId: route.query.projectId as string
+    };
     
-    console.log('更新任务数据:', updateData) // 调试日志
+    // 更新任务
+    await updateTask(route.params.id as string, updateData);
+    ElMessage.success('保存成功');
     
-    // 尝试直接使用axios发送请求，添加更多调试信息
-    try {
-      const taskId = route.params.id as string;
-      const token = localStorage.getItem('token');
-      console.log('开始发送直接API请求，任务ID:', taskId);
-      console.log('API请求体:', JSON.stringify(updateData));
-      
-      const directResponse = await axios({
-        method: 'put',
-        url: `/api/tasks/${taskId}`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'token': token
-        },
-        data: updateData,
-        timeout: 10000
-      });
-      
-      console.log('直接API请求响应:', directResponse);
-    } catch (directError: any) {
-      console.error('直接API请求失败:', directError);
-      console.error('直接API请求错误详情:', directError.response || '无响应数据');
-    }
-    
-    // 使用封装的updateTask函数
-    const response = await updateTask(route.params.id as string, updateData)
-    console.log('更新任务响应:', response) // 调试日志
-    
-    ElMessage.success('保存成功')
-    
-    // 延迟一点时间后刷新数据，确保后端处理完成
+    // 刷新数据
     setTimeout(async () => {
-      // 重新获取标签列表，确保新添加的标签也显示出来
-      await fetchTags(route.query.projectId as string)
-      
-      // 刷新任务数据
-      await fetchTaskDetail()
-    }, 500)
+      await fetchTags(route.query.projectId as string);
+      await fetchTaskDetail();
+    }, 500);
   } catch (err: any) {
-    console.error('保存任务失败:', err)
+    // 精简错误处理
     if (err.response) {
-      console.error('错误响应:', err.response.data)
-      console.error('错误状态:', err.response.status)
-      ElMessage.error(`保存失败: ${err.response.status} - ${err.response.data?.message || JSON.stringify(err.response.data)}`)
+      ElMessage.error(`保存失败: ${err.response.status} - ${err.response.data?.message || '服务器错误'}`);
     } else if (err.request) {
-      console.error('无响应:', err.request)
-      ElMessage.error('保存失败: 服务器没有响应')
+      ElMessage.error('保存失败: 服务器没有响应');
     } else {
-      console.error('请求设置错误:', err.message)
-      ElMessage.error(err.message || '保存失败')
+      ElMessage.error(err.message || '保存失败');
     }
   } finally {
-    saveLoading.value = false
+    saveLoading.value = false;
   }
 }
 
 // 文件上传相关方法
 const handleUpload = () => {
-  uploadDialogVisible.value = true
-}
+  uploadDialogVisible.value = true;
+};
 
 const handleBatchUpload = () => {
-  ElMessage.info('批量导入功能正在开发中')
-}
+  ElMessage.info('批量导入功能正在开发中');
+};
 
-const uploadFiles = ref<File[]>([])
+const uploadFiles = ref<File[]>([]);
 
 const handleFileChange = (file: any) => {
-  uploadFiles.value.push(file.raw)
-}
+  uploadFiles.value.push(file.raw);
+};
 
 const handleManualUpload = async () => {
   if (uploadFiles.value.length === 0) {
-    ElMessage.warning('请选择要上传的文件')
-    return
+    ElMessage.warning('请选择要上传的文件');
+    return;
   }
 
-  uploadLoading.value = true
+  uploadLoading.value = true;
   try {
-    const formData = new FormData()
+    const formData = new FormData();
     uploadFiles.value.forEach(file => {
-      formData.append('file', file)
-    })
+      formData.append('file', file);
+    });
 
-    const token = localStorage.getItem('token')
-    const response = await axios.post(`/api/tasks/${route.params.id}/attachments`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`,
-        'token': token
-      }
-    })
+    const response = await axios.post(
+      `/api/tasks/${route.params.id}/attachments`,
+      formData,
+      { headers: { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' } }
+    );
 
     if (response.data.code === 1) {
-      ElMessage.success('上传成功')
-      uploadDialogVisible.value = false
-      uploadFiles.value = []
+      ElMessage.success('上传成功');
+      uploadDialogVisible.value = false;
+      uploadFiles.value = [];
       // 刷新文件列表
-      await fetchAttachments(parseInt(route.params.id as string))
+      await fetchAttachments(parseInt(route.params.id as string));
     } else {
-      ElMessage.error(response.data.message || '上传失败')
+      ElMessage.error(response.data.message || '上传失败');
     }
   } catch (error: any) {
-    console.error('上传失败:', error)
     if (error.response?.status === 401) {
-      ElMessage.error('认证失败，请重新登录')
-      userStore.logout()
-      router.push('/login')
-      return
+      ElMessage.error('认证失败，请重新登录');
+      userStore.logout();
+      router.push('/login');
+      return;
     }
     
-    // 处理OSS相关错误
     if (error.response?.data?.message?.includes('UserDisable')) {
-      ElMessage.error('文件存储服务暂时不可用，请联系管理员')
-      return
+      ElMessage.error('文件存储服务暂时不可用，请联系管理员');
+    } else if (error.response?.status === 500) {
+      ElMessage.error('服务器内部错误，请稍后重试');
+    } else {
+      ElMessage.error(error.message || '上传失败，请稍后重试');
     }
-    
-    // 处理其他服务器错误
-    if (error.response?.status === 500) {
-      ElMessage.error('服务器内部错误，请稍后重试')
-      return
-    }
-    
-    ElMessage.error(error.message || '上传失败，请稍后重试')
   } finally {
-    uploadLoading.value = false
+    uploadLoading.value = false;
   }
-}
+};
 
 // 文件操作方法
 const handleViewFile = (file: TaskFile) => {
   if (!file.url) {
-    ElMessage.warning('文件链接不可用')
-    return
+    ElMessage.warning('文件链接不可用');
+    return;
   }
-  window.open(file.url)
-}
+  window.open(file.url);
+};
 
 const handleDownloadFile = (file: TaskFile) => {
   if (!file.url) {
-    ElMessage.warning('文件链接不可用')
-    return
+    ElMessage.warning('文件链接不可用');
+    return;
   }
   
   try {
-    // 创建一个XMLHttpRequest对象来处理下载
     const xhr = new XMLHttpRequest();
     xhr.open('GET', file.url, true);
     xhr.responseType = 'blob';
     
     xhr.onload = function() {
       if (this.status === 200) {
-        // 创建一个新的Blob对象
         const blob = new Blob([this.response], {type: 'application/octet-stream'});
-        
-        // 创建下载链接
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = file.name; // 使用文件原始名称
+        a.download = file.name;
         
-        // 添加到文档并触发点击
         document.body.appendChild(a);
         a.click();
         
-        // 清理
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       }
@@ -997,15 +888,14 @@ const handleDownloadFile = (file: TaskFile) => {
     
     xhr.send();
   } catch (err) {
-    console.error('下载失败:', err);
     ElMessage.error('下载失败');
   }
-}
+};
 
 const handleDeleteFile = async (file: TaskFile) => {
   if (!isLeader.value && file.uploader !== userStore.userInfo?.username) {
-    ElMessage.warning('您没有权限删除此文件')
-    return
+    ElMessage.warning('您没有权限删除此文件');
+    return;
   }
 
   try {
@@ -1013,189 +903,158 @@ const handleDeleteFile = async (file: TaskFile) => {
       type: 'warning',
       confirmButtonText: '确定',
       cancelButtonText: '取消'
-    })
+    });
 
     // 删除文件
-    const taskId = parseInt(route.params.id as string)
-    const fileId = parseInt(file.id)
-    
-    console.log('准备删除文件:', { taskId, fileId, fileName: file.name })
+    const taskId = parseInt(route.params.id as string);
+    const fileId = parseInt(file.id);
     
     if(isNaN(taskId) || isNaN(fileId)) {
-      throw new Error('任务ID或文件ID无效')
+      throw new Error('任务ID或文件ID无效');
     }
     
-    const response = await deleteAttachment(taskId, fileId)
-    console.log('删除文件响应:', response)
-    
-    ElMessage.success('删除成功')
+    await deleteAttachment(taskId, fileId);
+    ElMessage.success('删除成功');
     
     // 刷新文件列表
-    console.log('刷新文件列表, taskId:', taskId)
-    await fetchAttachments(taskId)
+    await fetchAttachments(taskId);
   } catch (err: any) {
     if (err !== 'cancel') {
-      console.error('删除文件失败:', err)
-      ElMessage.error(err.message || '删除失败')
+      ElMessage.error(err.message || '删除失败');
     }
   }
-}
+};
 
 // 获取评论列表
 const fetchComments = async () => {
   try {
-    console.log('开始获取评论列表, taskId:', route.params.id)
-    const response = await getTaskComments(parseInt(route.params.id as string))
-    console.log('评论列表原始响应:', JSON.stringify(response, null, 2))
+    const taskId = parseInt(route.params.id as string);
+    const response = await getTaskComments(taskId);
+    let commentsData = extractDataFromResponse(response, []);
     
-    // 处理API响应
-    const apiResponse = response as any
-    
-    // 提取评论数据数组 - 处理不同的响应结构
-    let commentsData: any[] = []
-    
-    if (apiResponse?.data?.code === 1 && apiResponse?.data?.data) {
-      // 标准响应格式：{ code: 1, data: [...] }
-      commentsData = Array.isArray(apiResponse.data.data) ? apiResponse.data.data : []
-    } else if (Array.isArray(apiResponse?.data)) {
-      // 直接返回数组的格式
-      commentsData = apiResponse.data
-    } else if (apiResponse?.data) {
-      // 其他可能的格式
-      commentsData = Array.isArray(apiResponse.data) ? apiResponse.data : []
+    // 确保commentsData是数组
+    if (!Array.isArray(commentsData)) {
+      commentsData = commentsData?.items || commentsData?.data || [];
     }
     
-    console.log('解析后的评论数据数组长度:', commentsData.length)
-    if (commentsData.length > 0) {
-      console.log('第一个评论样本:', JSON.stringify(commentsData[0], null, 2))
-      console.log('第一个评论字段列表:', Object.keys(commentsData[0]))
-    }
+    // 简化树构建逻辑
+    const idToComment = new Map<number, CommentData>();
+    const rootComments: CommentData[] = [];
     
-    // 构建评论树
-    const commentMap = new Map<number, CommentData>()
-    const rootComments: CommentData[] = []
-    
-    // 第一步：创建所有评论节点并存入Map
-    commentsData.forEach((comment: any) => {
-      // 兼容不同的API响应结构
-      const commentId = Number(comment.id)
-      const parentId = comment.parentId || comment.parent_id || comment.reply_to || null
-      
-      const commentNode: CommentData = {
-        id: commentId,
-        taskId: comment.taskId || comment.task_id,
-        content: comment.content,
-        parentId: parentId,
-        createTime: comment.createTime || comment.create_time || new Date().toISOString(),
-        createUser: comment.creator?.id || comment.createUser || comment.create_user || comment.user_id,
-        createUserName: comment.creator?.username || comment.createUserName || comment.username || '未知用户',
-        createUserAvatar: comment.creator?.avatar || comment.createUserAvatar || comment.avatar || '',
+    // 第一步：标准化所有评论并建立ID映射
+    commentsData.forEach((c: any) => {
+      const comment: CommentData = {
+        id: Number(c.id),
+        taskId: Number(c.taskId || c.task_id || taskId),
+        content: c.content || '',
+        parentId: c.parentId !== null && c.parentId !== undefined ? Number(c.parentId) : null,
+        createTime: c.createTime || c.create_time || new Date().toISOString(),
+        createUser: c.createUser || c.create_user || 0,
+        createUserName: c.createUserName || c.username || '未知用户',
+        createUserAvatar: c.createUserAvatar || c.avatar || '',
         children: []
-      }
+      };
       
-      commentMap.set(commentId, commentNode)
-    })
+      idToComment.set(comment.id, comment);
+      commentReplyMap.value[comment.id] = comment.createUserName;
+    });
     
-    // 第二步：构建树结构 - 将子评论添加到父评论的children数组中
-    commentMap.forEach(comment => {
-      if (comment.parentId) {
-        // 这是一个子评论，尝试找到其父评论
-        const parentComment = commentMap.get(Number(comment.parentId))
-        if (parentComment) {
-          // 确保父评论有children数组
-          if (!parentComment.children) {
-            parentComment.children = []
-          }
-          parentComment.children.push(comment)
-        } else {
-          // 如果找不到父评论，作为根评论处理
-          rootComments.push(comment)
-        }
+    // 第二步：构建树结构
+    idToComment.forEach(comment => {
+      if (comment.parentId === null || !idToComment.has(comment.parentId)) {
+        // 根评论或父评论不存在的情况
+        rootComments.push(comment);
       } else {
-        // 这是一个根评论
-        rootComments.push(comment)
+        // 添加到父评论的子评论列表
+        const parent = idToComment.get(comment.parentId);
+        if (parent && parent.children) {
+          parent.children.push(comment);
+        }
       }
-    })
+    });
     
-    // 对根评论和子评论进行排序 - 按创建时间降序
-    rootComments.sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
+    // 第三步：递归排序所有层级（新评论在前）
+    const sortByTime = (items: CommentData[]): CommentData[] => {
+      items.sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
+      items.forEach(item => {
+        if (item.children && item.children.length > 0) {
+          sortByTime(item.children);
+        }
+      });
+      return items;
+    };
     
-    // 同样对所有子评论排序
-    rootComments.forEach(comment => {
-      if (comment.children && comment.children.length > 0) {
-        comment.children.sort((a, b) => new Date(a.createTime).getTime() - new Date(b.createTime).getTime())
-      }
-    })
-    
-    comments.value = rootComments
-    console.log('最终处理后的评论树, 根评论数:', rootComments.length, rootComments)
+    comments.value = sortByTime(rootComments);
   } catch (err) {
-    console.error('获取评论列表失败:', err)
-    comments.value = []
+    console.error('获取评论失败:', err);
+    ElMessage.error('获取评论列表失败');
+    comments.value = [];
   }
-}
+};
 
-// 评论相关方法
+// 修改handleAddComment函数以支持多层级评论
 const handleAddComment = async () => {
   if (!newComment.content.trim()) {
-    ElMessage.warning('请输入评论内容')
-    return
+    ElMessage.warning('请输入评论内容');
+    return;
   }
 
-  commentLoading.value = true
+  commentLoading.value = true;
   try {
-    // 构建评论数据
+    const taskId = parseInt(route.params.id as string);
     const commentData = {
       content: newComment.content,
-      parentId: newComment.parentId,
-      taskId: parseInt(route.params.id as string)
+      parentId: newComment.parentId ? Number(newComment.parentId) : null,
+      taskId: taskId
+    };
+    
+    const response = await createComment(taskId, commentData);
+    const createdComment = extractDataFromResponse(response);
+    
+    if (createdComment) {
+      // 评论成功后，直接重新获取所有评论以确保数据一致性
+      await fetchComments();
+      ElMessage.success('评论成功');
+    } else {
+      ElMessage.warning('评论已提交，但无法获取评论详情');
+      await fetchComments();
     }
     
-    console.log('准备提交的评论数据:', commentData)
-    
-    // 添加评论
-    await createComment(parseInt(route.params.id as string), commentData)
-    
-    ElMessage.success('评论成功')
-    
     // 清空评论输入框和回复信息
-    newComment.content = ''
-    newComment.parentId = null
-    replyToComment.value = null
-    
-    // 刷新评论列表
-    await fetchComments()
+    newComment.content = '';
+    newComment.parentId = null;
+    replyToComment.value = null;
   } catch (err: any) {
-    console.error('评论失败:', err)
-    ElMessage.error(err.message || '评论失败')
+    ElMessage.error(err.message || '评论失败');
+    await fetchComments();
   } finally {
-    commentLoading.value = false
+    commentLoading.value = false;
   }
-}
+};
 
 const handleReply = (comment: CommentData) => {
-  replyToComment.value = comment
-  newComment.parentId = comment.id
-  newComment.content = ''
+  replyToComment.value = comment;
+  newComment.parentId = comment.id;
+  newComment.content = '';
   
   // 聚焦评论输入框
   setTimeout(() => {
-    const textarea = document.querySelector('.comment-input .el-textarea__inner') as HTMLTextAreaElement
+    const textarea = document.querySelector('.comment-input .el-textarea__inner') as HTMLTextAreaElement;
     if (textarea) {
-      textarea.focus()
+      textarea.focus();
     }
-  }, 100)
-}
+  }, 100);
+};
 
 const cancelReply = () => {
-  replyToComment.value = null
-  newComment.parentId = null
-}
+  replyToComment.value = null;
+  newComment.parentId = null;
+};
 
 const handleDeleteComment = async (comment: CommentData) => {
   if (!isLeader.value && String(comment.createUser) !== String(userStore.userInfo?.id)) {
-    ElMessage.warning('您没有权限删除此评论')
-    return
+    ElMessage.warning('您没有权限删除此评论');
+    return;
   }
 
   try {
@@ -1203,44 +1062,23 @@ const handleDeleteComment = async (comment: CommentData) => {
       type: 'warning',
       confirmButtonText: '确定',
       cancelButtonText: '取消'
-    })
+    });
 
     // 删除评论
-    const taskId = parseInt(route.params.id as string)
-    const commentId = comment.id
+    const taskId = parseInt(route.params.id as string);
+    const commentId = comment.id;
     
-    console.log('准备删除评论:', { taskId, commentId })
-    
-    try {
-      // 直接使用axios发送删除请求，规避可能的接口问题
-      const token = localStorage.getItem('token')
-      const response = await axios({
-        method: 'delete',
-        url: `/api/tasks/${taskId}/comments/${commentId}`,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'token': token
-        },
-        timeout: 10000
-      })
-      console.log('直接删除评论响应:', response)
-      ElMessage.success('删除成功')
-    } catch (directErr: any) {
-      console.error('直接删除评论失败:', directErr)
-      // 尝试使用封装的API函数
-      await deleteComment(taskId, commentId)
-      ElMessage.success('删除成功')
-    }
+    await deleteComment(taskId, commentId);
+    ElMessage.success('删除成功');
     
     // 刷新评论列表
-    await fetchComments()
+    await fetchComments();
   } catch (err: any) {
     if (err !== 'cancel') {
-      console.error('删除评论失败:', err)
-      ElMessage.error(err.message || '删除失败')
+      ElMessage.error(err.message || '删除失败');
     }
   }
-}
+};
 
 // 处理删除任务
 const handleDelete = async () => {
@@ -1254,25 +1092,25 @@ const handleDelete = async () => {
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
-    )
+    );
     
-    loading.value = true
-    await deleteTask(route.params.id as string)
-    ElMessage.success('删除成功')
-    router.push('/list')
+    loading.value = true;
+    await deleteTask(route.params.id as string);
+    ElMessage.success('删除成功');
+    router.push('/list');
   } catch (err: any) {
     if (err !== 'cancel') {
-      ElMessage.error(err.message || '删除失败')
+      ElMessage.error(err.message || '删除失败');
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 返回上一页
 const handleBack = () => {
-  router.back()
-}
+  router.back();
+};
 
 // 监听路由参数变化
 watch(
@@ -1308,83 +1146,56 @@ interface TaskAttachment {
 // 获取文件列表
 const fetchAttachments = async (taskId: number) => {
   try {
-    console.log('获取任务附件列表, taskId:', taskId)
-    const response = await getTaskAttachments(taskId)
-    console.log('附件列表原始响应:', response)
+    const response = await getTaskAttachments(taskId);
+    const attachmentsData = extractDataFromResponse(response);
     
-    let attachmentsData: TaskAttachment[] = []
-    
-    // 使用类型断言
-    const apiResponse = response as any
-    
-    if (apiResponse && apiResponse.data) {
-      // 处理不同的响应格式
-      if (Array.isArray(apiResponse.data)) {
-        attachmentsData = apiResponse.data.map((file: any) => ({
-          id: file.id,
-          fileName: file.filename || file.name || '未命名文件',
-          filePath: file.url || file.filePath || '',
-          fileSize: file.size || file.fileSize || 0,
-          // 确保上传者是名字而非ID
-          createUser: typeof file.uploader === 'object' ? file.uploader.username || '未知用户' : 
-                    file.uploaderName || file.createUserName || file.uploader?.toString() || '未知用户',
-          createTime: file.uploadTime || file.updateTime || file.createTime || new Date().toISOString()
-        }))
-      } else if (apiResponse.data.code === 1 && apiResponse.data.data) {
-        const data = Array.isArray(apiResponse.data.data) ? apiResponse.data.data : 
-                    (apiResponse.data.data.items || [])
-        attachmentsData = data.map((file: any) => ({
-          id: file.id,
-          fileName: file.fileName || file.filename || file.name || '未命名文件',
-          filePath: file.filePath || file.url || '',
-          fileSize: file.fileSize || file.size || 0,
-          // 确保上传者是名字而非ID
-          createUser: typeof file.createUser === 'object' ? file.createUser.username || '未知用户' : 
-                    file.createUserName || file.uploaderName || file.createUser?.toString() || '未知用户',
-          createTime: file.createTime || file.uploadTime || file.updateTime || new Date().toISOString()
-        }))
-      }
+    // 标准化附件数据
+    let items: any[] = [];
+    if (Array.isArray(attachmentsData)) {
+      items = attachmentsData;
+    } else if (attachmentsData?.items && Array.isArray(attachmentsData.items)) {
+      items = attachmentsData.items;
     }
     
-    console.log('解析后的附件数据:', attachmentsData)
-    
-    fileList.value = attachmentsData.map(file => ({
+    fileList.value = items.map(file => ({
       id: file.id?.toString() || '',
-      name: file.fileName || '', 
-      url: file.filePath || '',   
-      size: file.fileSize || 0,
-      uploader: file.createUser || '未知', 
-      uploadTime: dayjs(file.createTime).format('YYYY-MM-DD HH:mm:ss') || ''
-    }))
-    
-    console.log('最终的文件列表:', fileList.value)
+      name: file.fileName || file.filename || file.name || '未命名文件', 
+      url: file.filePath || file.url || '',   
+      size: file.fileSize || file.size || 0,
+      uploader: typeof file.createUser === 'object' 
+        ? file.createUser.username || '未知用户' 
+        : file.createUserName || file.uploaderName || file.createUser?.toString() || '未知用户', 
+      uploadTime: formatDate(file.createTime || file.uploadTime || file.updateTime)
+    }));
   } catch (err) {
-    console.error('获取文件列表失败:', err)
-    fileList.value = []
+    ElMessage.error('获取文件列表失败');
+    fileList.value = [];
   }
 }
 
 // 格式化时间
-const formatTime = (time: string) => {
-  try {
-    return dayjs(time).fromNow()
-  } catch (e) {
-    console.error('时间格式化错误:', e)
-    return time || '未知时间'
-  }
-}
+const formatTime = (time: string) => formatTimeFromNow(time);
 
-// 获取评论总数（包括子评论）
+// 获取评论总数（包括所有子评论）
 const getTotalCommentCount = () => {
   let total = 0;
-  comments.value.forEach(comment => {
-    total++; // 计算根评论
-    if (comment.children && comment.children.length > 0) {
-      total += comment.children.length; // 计算子评论
+  
+  // 递归计算评论数量
+  const countComments = (commentsList: CommentData[]) => {
+    if (!commentsList) return 0;
+    
+    let count = 0;
+    for (const comment of commentsList) {
+      count++; // 计算当前评论
+      if (comment.children && comment.children.length > 0) {
+        count += countComments(comment.children); // 递归计算子评论
+      }
     }
-  });
-  return total;
-}
+    return count;
+  };
+  
+  return countComments(comments.value);
+};
 </script>
 
 <style scoped>

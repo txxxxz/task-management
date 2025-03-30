@@ -52,9 +52,9 @@ export interface TaskComment {
   id: number
   taskId: number
   content: string
-  parentId?: number
+  parentId?: number | null
   createTime: string
-  createUser: number
+  createUser: number | string
   createUserName: string
   createUserAvatar: string
   children?: TaskComment[]
@@ -68,7 +68,7 @@ export interface CreateTaskParams {
   startTime?: string // ISO格式：YYYY-MM-DDTHH:mm:ss
   priority: number // 1-低，2-中，3-高，4-紧急
   members: string[]
-  tagIds: string[]
+  tagIds: string[] | number[]
   projectId: string
   attachments?: string[]
 }
@@ -77,6 +77,7 @@ export interface CreateTaskParams {
 export interface UpdateTaskParams extends Partial<CreateTaskParams> {
   status?: number // 0-待处理，1-进行中，2-已完成，3-已取消
   projectId?: string
+  tagIds?: string[] | number[]
 }
 
 // 评论参数

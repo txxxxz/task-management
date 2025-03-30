@@ -20,7 +20,7 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * @param taskId 任务ID
      * @return 评论列表
      */
-    @Select("SELECT id, task_id, content, parent_id, create_time, create_user FROM tb_comment WHERE task_id = #{taskId}")
+    @Select("SELECT id, task_id, content, parent_id, create_time, create_user FROM tb_comment WHERE task_id = #{taskId} ORDER BY create_time ASC")
     List<Comment> selectByTaskId(@Param("taskId") Long taskId);
     
     /**
@@ -28,7 +28,7 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * @param taskId 任务ID
      * @return 评论列表
      */
-    @Select("SELECT * FROM tb_comment WHERE task_id = #{taskId} AND parent_id IS NULL ORDER BY create_time DESC")
+    @Select("SELECT * FROM tb_comment WHERE task_id = #{taskId} AND parent_id IS NULL ORDER BY create_time ASC")
     List<Comment> selectTopLevelByTaskId(@Param("taskId") Long taskId);
     
     /**
@@ -36,14 +36,21 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * @param parentId 父评论ID
      * @return 子评论列表
      */
-    @Select("SELECT id, task_id, content, parent_id, create_time, create_user FROM tb_comment WHERE parent_id = #{parentId}")
+    @Select("SELECT id, task_id, content, parent_id, create_time, create_user FROM tb_comment WHERE parent_id = #{parentId} ORDER BY create_time ASC")
     List<Comment> selectChildrenByParentId(@Param("parentId") Long parentId);
     
     /**
-     * 删除评论及其子评论
+     * 删除评论及其所有子孙评论
      * @param commentId 评论ID
      */
-    @Delete("DELETE FROM tb_comment WHERE id = #{commentId} OR parent_id = #{commentId}")
+    @Delete({"<script>",
+             "WITH RECURSIVE comment_tree AS (",
+             "  SELECT id FROM tb_comment WHERE id = #{commentId}",
+             "  UNION ALL",
+             "  SELECT c.id FROM tb_comment c JOIN comment_tree ct ON c.parent_id = ct.id",
+             ")",
+             "DELETE FROM tb_comment WHERE id IN (SELECT id FROM comment_tree)",
+             "</script>"})
     void deleteWithChildren(@Param("commentId") Long commentId);
     
     /**
