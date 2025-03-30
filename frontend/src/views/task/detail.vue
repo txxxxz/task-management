@@ -937,43 +937,81 @@ const fetchComments = async () => {
       commentsData = commentsData?.items || commentsData?.data || [];
     }
     
-    // 简化树构建逻辑
+    // 打印原始数据便于调试
+    console.log('原始评论数据:', commentsData);
+    if (commentsData.length > 0) {
+      console.log('第一条评论示例:', JSON.stringify(commentsData[0]));
+    }
+    
+    // 默认头像URL
+    const defaultAvatar = 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png';
+    
+    // 构建评论树
     const idToComment = new Map<number, CommentData>();
     const rootComments: CommentData[] = [];
     
-    // 第一步：标准化所有评论并建立ID映射
+    // 第一步：处理每条评论
     commentsData.forEach((c: any) => {
+      const commentId = Number(c.id);
+      const parentId = c.parentId !== null ? Number(c.parentId) : null;
+      
+      // 处理嵌套的creator对象
+      let userName = '';
+      let userAvatar = '';
+      let userId = 0;
+      
+      if (c.creator) {
+        // 新的JSON格式使用creator对象
+        userName = c.creator.username || '未知用户';
+        userAvatar = c.creator.avatar || defaultAvatar;
+        userId = c.creator.id || 0;
+      } else {
+        // 旧的格式可能使用不同的字段名
+        userName = c.createUserName || c.create_user_name || 
+                  c.userName || c.user_name || 
+                  c.username || `用户${c.createUser || c.create_user || '未知'}`;
+                  
+        userAvatar = c.createUserAvatar || c.create_user_avatar || 
+                    c.userAvatar || c.user_avatar || 
+                    c.avatar || defaultAvatar;
+                    
+        userId = c.createUser || c.create_user || 0;
+      }
+      
+      // 创建标准化的评论对象
       const comment: CommentData = {
-        id: Number(c.id),
+        id: commentId,
         taskId: Number(c.taskId || c.task_id || taskId),
         content: c.content || '',
-        parentId: c.parentId !== null && c.parentId !== undefined ? Number(c.parentId) : null,
+        parentId: parentId,
         createTime: c.createTime || c.create_time || new Date().toISOString(),
-        createUser: c.createUser || c.create_user || 0,
-        createUserName: c.createUserName || c.username || '未知用户',
-        createUserAvatar: c.createUserAvatar || c.avatar || '',
+        createUser: userId,
+        createUserName: userName,
+        createUserAvatar: userAvatar,
         children: []
       };
       
-      idToComment.set(comment.id, comment);
-      commentReplyMap.value[comment.id] = comment.createUserName;
+      // 保存评论映射
+      idToComment.set(commentId, comment);
+      // 记录用户名，用于显示回复关系
+      commentReplyMap.value[commentId] = comment.createUserName;
     });
     
     // 第二步：构建树结构
     idToComment.forEach(comment => {
-      if (comment.parentId === null || !idToComment.has(comment.parentId)) {
-        // 根评论或父评论不存在的情况
+      if (comment.parentId === null || !idToComment.has(Number(comment.parentId!))) {
+        // 如果是顶级评论或找不到父评论，则作为根评论
         rootComments.push(comment);
       } else {
-        // 添加到父评论的子评论列表
-        const parent = idToComment.get(comment.parentId);
+        // 否则添加到父评论的子评论列表
+        const parent = idToComment.get(Number(comment.parentId!));
         if (parent && parent.children) {
           parent.children.push(comment);
         }
       }
     });
     
-    // 第三步：递归排序所有层级（新评论在前）
+    // 第三步：按时间排序（新评论在前）
     const sortByTime = (items: CommentData[]): CommentData[] => {
       items.sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
       items.forEach(item => {

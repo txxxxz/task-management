@@ -54,9 +54,25 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         
         // 直接获取所有评论并返回扁平列表，前端负责构建树结构
         List<Comment> comments = commentMapper.selectByTaskId(taskId);
-        return comments.stream()
+        List<CommentDTO> result = comments.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+        
+        // 打印前5条评论数据查看格式
+        if (!result.isEmpty()) {
+            int count = Math.min(result.size(), 2);
+            for (int i = 0; i < count; i++) {
+                try {
+                    CommentDTO dto = result.get(i);
+                    log.info("评论数据示例[{}]: id={}, createUserName={}, createUserAvatar={}",
+                            i, dto.getId(), dto.getCreateUserName(), dto.getCreateUserAvatar());
+                } catch (Exception e) {
+                    log.error("打印评论数据异常", e);
+                }
+            }
+        }
+        
+        return result;
     }
     
     /**
@@ -93,8 +109,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             if (user != null) {
                 commentDTO.setCreateUserName(user.getUsername());
                 commentDTO.setCreateUserAvatar(user.getAvatar());
+                log.debug("评论ID:{} 设置用户信息 - 用户:{}, 头像:{}", 
+                         comment.getId(), user.getUsername(), user.getAvatar());
             } else {
-                commentDTO.setCreateUserName("未知用户");
+                log.warn("评论ID:{} 找不到用户ID:{}", comment.getId(), comment.getCreateUser());
+                commentDTO.setCreateUserName("用户" + comment.getCreateUser());
                 commentDTO.setCreateUserAvatar("");
             }
         } else {

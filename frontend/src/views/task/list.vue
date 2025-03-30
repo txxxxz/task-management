@@ -6,19 +6,10 @@
         <!-- 第一行：任务编号、任务名称 -->
         <div class="filter-row">
           <div class="filter-item-half">
-            <el-form-item label="Task ID">
-              <el-input v-model="filterForm.number" placeholder="Please enter task ID" clearable />
-            </el-form-item>
-          </div>
-          <div class="filter-item-half">
             <el-form-item label="Name">
               <el-input v-model="filterForm.name" placeholder="Please enter task name" clearable />
             </el-form-item>
           </div>
-        </div>
-        
-        <!-- 第二行：状态、优先级 -->
-        <div class="filter-row">
           <div class="filter-item-half">
             <el-form-item label="Status">
               <el-select v-model="filterForm.status" placeholder="Please select status" clearable style="width: 100%">
@@ -30,8 +21,6 @@
                 />
               </el-select>
             </el-form-item>
-          </div>
-          <div class="filter-item-half">
             <el-form-item label="Priority">
               <el-select v-model="filterForm.priority" placeholder="Please select priority" clearable style="width: 100%">
                 <el-option
@@ -44,6 +33,7 @@
             </el-form-item>
           </div>
         </div>
+      
         
         <!-- 第三行：成员、标签 -->
         <div class="filter-row">
@@ -172,11 +162,6 @@
       <div class="left-buttons">
         <el-button type="primary" @click="handleNewTask">
           <el-icon><Plus /></el-icon> New Task
-        </el-button>
-      </div>
-      <div class="right-buttons">
-        <el-button @click="handleDownload">
-          <el-icon><Download /></el-icon> Download
         </el-button>
       </div>
     </div>
@@ -988,14 +973,6 @@ const handleNewTask = () => {
   router.push('/create')
 }
 
-const handleImportBatch = () => {
-  ElMessage.info('批量导入功能即将上线')
-}
-
-const handleDownload = () => {
-  ElMessage.info('下载功能即将上线')
-}
-
 const handleSizeChange = (val: number) => {
   pageSize.value = val
   fetchTaskList()
@@ -1013,7 +990,7 @@ const handleEditTask = (row: TaskDetail) => {
   }
   
   // 跳转到编辑页面
-  router.push(`/form/${row.id}`)
+  router.push(`/detail/${row.id}`)
 }
 
 const handleDeleteTask = (row: TaskDetail) => {

@@ -1,23 +1,31 @@
 <template>
   <div class="comment-item" :style="{ marginLeft: level > 0 ? `${level * 20}px` : '0' }">
     <div class="comment-header">
-      <el-avatar :size="32" :src="comment.createUserAvatar || '/default-avatar.png'" />
+      <el-avatar 
+        :size="32" 
+        :src="comment.createUserAvatar" 
+        @error="handleAvatarError"
+      >
+        {{ comment.createUserName ? comment.createUserName.charAt(0).toUpperCase() : '用' }}
+      </el-avatar>
       <span class="username">{{ comment.createUserName }}</span>
       <span class="time">{{ formatTime(comment.createTime) }}</span>
     </div>
-    <div class="comment-content">
-      <template v-if="comment.parentId && replyToUsername">
-        <span class="reply-target">@{{ replyToUsername }}</span>
-      </template>
-      {{ comment.content }}
-    </div>
-    <div class="comment-actions">
-      <el-button type="text" @click="handleReply(comment)">回复</el-button>
-      <el-button 
-        v-if="canDelete(comment)" 
-        type="text" 
-        @click="handleDelete(comment)"
-      >删除</el-button>
+    <div class="comment-content-wrapper">
+      <div class="comment-content">
+        <template v-if="comment.parentId && replyToUsername">
+          <span class="reply-target">@{{ replyToUsername }}</span>
+        </template>
+        {{ comment.content }}
+      </div>
+      <div class="comment-actions">
+        <el-button type="text" @click="handleReply(comment)">回复</el-button>
+        <el-button 
+          v-if="canDelete(comment)" 
+          type="text" 
+          @click="handleDelete(comment)"
+        >删除</el-button>
+      </div>
     </div>
     
     <!-- 递归渲染子评论 -->
@@ -76,14 +84,24 @@ export default defineComponent({
   emits: ['reply', 'delete'],
   setup(props, { emit }) {
     const userStore = useUserStore();
+    
+    // 打印接收到的评论数据
+    console.log('CommentTree接收的评论数据:', props.comment.id, 
+                '用户名:', props.comment.createUserName, 
+                '头像:', props.comment.createUserAvatar);
 
     // 获取该评论回复对象的用户名
     const replyToUsername = computed(() => {
       if (props.comment.parentId) {
-        return props.replyMap[props.comment.parentId] || '';
+        return props.replyMap[props.comment.parentId] || `用户${props.comment.parentId}`;
       }
       return '';
     });
+
+    // 处理头像加载错误 - 在这种情况下，el-avatar将回退到默认插槽中的内容
+    const handleAvatarError = () => {
+      // 头像加载失败时不需要特别处理，el-avatar组件会自动显示默认插槽内容
+    };
 
     // 格式化相对时间
     const formatTime = (time: string): string => {
@@ -116,7 +134,8 @@ export default defineComponent({
       formatTime,
       canDelete,
       handleReply,
-      handleDelete
+      handleDelete,
+      handleAvatarError
     };
   }
 });
@@ -153,8 +172,15 @@ export default defineComponent({
   margin-left: 8px;
 }
 
-.comment-content {
+.comment-content-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin: 10px 0;
+}
+
+.comment-content {
+  flex: 1;
   line-height: 1.5;
   word-break: break-word;
 }
@@ -167,9 +193,10 @@ export default defineComponent({
 
 .comment-actions {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 8px;
-  margin-top: 10px;
+  flex-shrink: 0;
+  margin-left: 10px;
 }
 
 .comment-children {
