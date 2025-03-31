@@ -80,8 +80,8 @@
                 <el-select v-model="taskForm.status" style="width: 100%">
                   <el-option label="待处理" value="PENDING" />
                   <el-option label="进行中" value="IN_PROGRESS" />
-                  <el-option label="待审核" value="REVIEW" />
                   <el-option label="已完成" value="COMPLETED" />
+                  <el-option label="已取消" value="CANCELLED" />
                 </el-select>
               </template>
               <template v-else>
@@ -93,22 +93,44 @@
           </el-col>
         </el-row>
 
-        <el-form-item label="任务名称">
-          <el-input 
-            v-model="taskForm.name" 
-            :disabled="!isLeader"
-            placeholder="请输入任务名称"
-          />
-        </el-form-item>
-
-
         <el-row :gutter="20">
           <el-col :xs="24" :sm="12" :md="12" :lg="12">
+            <el-form-item label="任务名称">
+              <el-input 
+                v-model="taskForm.name" 
+                :disabled="!isLeader"
+                placeholder="请输入任务名称"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="12" :lg="12">
+            <el-form-item label="所属项目">
+              <el-input 
+                v-model="taskForm.projectName" 
+                disabled
+                placeholder="未选择项目"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :xs="24" :sm="8" :md="8" :lg="8">
             <el-form-item label="创建时间">
               <el-input v-model="taskForm.createTime" disabled />
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="12" :lg="12">
+          <el-col :xs="24" :sm="8" :md="8" :lg="8">
+            <el-form-item label="开始时间">
+              <el-date-picker
+                v-model="taskForm.startTime as string | Date"
+                type="datetime"
+                :disabled="!isLeader"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="8" :md="8" :lg="8">
             <el-form-item label="截止时间">
               <el-date-picker
                 v-model="taskForm.dueTime as string | Date"
@@ -127,8 +149,6 @@
             multiple
             :disabled="!isLeader"
             style="width: 100%"
-            collapse-tags
-            collapse-tags-tooltip
           >
             <el-option
               v-for="member in memberOptions"
@@ -352,6 +372,7 @@ import type { Comment } from '../../types/models'
 import { getTaskDetail, updateTask, deleteTask, getTaskComments, createComment, deleteComment, getTaskAttachments, deleteAttachment } from '../../api/task'
 import { getAllUsers } from '../../api/user'
 import { getTagList, getAllTags } from '@/api/tag'
+import { getAllProjects, getProjectDetail } from '@/api/project'
 import axios from 'axios'
 import CommentTree from '../../components/CommentTree.vue'
 
@@ -373,6 +394,7 @@ interface UpdateData {
   id?: number;
   name: string;
   description: string;
+  startTime?: string;
   deadline?: string;
   priority: number;
   status: number;
@@ -413,8 +435,8 @@ const STATUS_MAP_REVERSE = {
 const STATUS_LABELS = {
   PENDING: '待处理',
   IN_PROGRESS: '进行中',
-  REVIEW: '待审核',
-  COMPLETED: '已完成'
+  COMPLETED: '已完成',
+  CANCELLED: '已取消'
 } as const;
 
 const PRIORITY_TYPES = {
@@ -510,12 +532,15 @@ const taskForm = reactive({
   number: '',
   name: '',
   createTime: '',
+  startTime: '' as string | Date | null,
   dueTime: '' as string | Date | null,
   priority: 'MEDIUM' as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
   status: 'PENDING' as 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'COMPLETED',
   members: [] as string[],
   tags: [] as Array<string | { id: string, name: string }>,
-  description: ''
+  description: '',
+  projectId: undefined as number | undefined,
+  projectName: ''
 })
 
 // 成员选项 - 从后端获取
@@ -638,10 +663,13 @@ const fetchTaskDetail = async () => {
     
     // 处理日期时间
     const createTime = formatDate(data.startTime || data.createTime);
+    let startTime = null;
     let dueTime = null;
     try {
+      startTime = data.startTime ? dayjs(data.startTime).toDate() : null;
       dueTime = data.dueTime || data.deadline ? dayjs(data.dueTime || data.deadline).toDate() : null;
     } catch (e) {
+      startTime = null;
       dueTime = null;
     }
     
@@ -649,17 +677,38 @@ const fetchTaskDetail = async () => {
     const priority = typeof data.priority === 'number' ? data.priority : parseInt(data.priority) || 2;
     const status = typeof data.status === 'number' ? data.status : parseInt(data.status) || 1;
     
+    // 获取项目ID
+    const projectId = data.projectId ? Number(data.projectId) : undefined;
+    
+    // 如果有项目ID，获取项目详情
+    let projectName = '未选择项目';
+    if (projectId) {
+      try {
+        const projectResponse = await getProjectDetail(projectId);
+        const projectData = extractDataFromResponse(projectResponse);
+        if (projectData && projectData.name) {
+          projectName = projectData.name;
+        }
+      } catch (err) {
+        console.error('获取项目详情失败:', err);
+        projectName = '项目获取失败';
+      }
+    }
+    
     // 更新任务表单数据
     Object.assign(taskForm, {
       number: data.id?.toString() || data.number || '',
       name: data.name || data.title || '',
       description: data.description || '',
       createTime,
+      startTime,
       dueTime,
       priority: PRIORITY_MAP_REVERSE[priority as keyof typeof PRIORITY_MAP_REVERSE] || 'MEDIUM',
       status: STATUS_MAP_REVERSE[status as keyof typeof STATUS_MAP_REVERSE] || 'PENDING',
       members: processMembers(data.members),
-      tags: processTags(data)
+      tags: processTags(data),
+      projectId,
+      projectName
     });
     
     // 加载评论和文件列表
@@ -733,6 +782,7 @@ const handleSave = async () => {
   saveLoading.value = true;
   try {
     // 日期处理
+    const startTime = taskForm.startTime ? formatDate(taskForm.startTime) : undefined;
     const deadline = taskForm.dueTime ? formatDate(taskForm.dueTime) : undefined;
     
     // 将标签ID转换为数字类型
@@ -750,12 +800,12 @@ const handleSave = async () => {
       id: parseInt(taskForm.number) || undefined,
       name: taskForm.name,
       description: taskForm.description,
+      startTime,
       deadline,
       priority: PRIORITY_MAP[taskForm.priority] || 2,
       status: STATUS_MAP[taskForm.status] || 1,
       members: taskForm.members,
-      tagIds,
-      projectId: route.query.projectId as string
+      tagIds
     };
     
     // 更新任务
@@ -1140,12 +1190,14 @@ watch(
 // 在组件挂载时获取数据
 onMounted(async () => {
   // 初始化获取标签和成员
-  await fetchTags()
-  await fetchUsers()
+  await Promise.all([
+    fetchTags(),
+    fetchUsers()
+  ])
   
   // 获取任务详情
   await fetchTaskDetail()
-  await fetchComments()  // 单独获取评论列表
+  await fetchComments()
 })
 
 interface TaskAttachment {

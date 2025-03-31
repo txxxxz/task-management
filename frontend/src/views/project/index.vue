@@ -172,7 +172,7 @@ import type { FormInstance } from 'element-plus'
 import { useUserStore } from '../../stores/user'
 import type { ProjectStatus } from '../../utils/status'
 import {
-  getProjectList,
+  getAllProjects as getProjectList,
   createProject,
   updateProject,
   deleteProject,

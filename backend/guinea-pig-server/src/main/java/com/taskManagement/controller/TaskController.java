@@ -363,4 +363,86 @@ public class TaskController {
         taskService.deleteTaskAttachment(taskId, attachmentId);
         return Result.success("删除附件成功");
     }
+
+    /**
+     * 获取当前用户任务统计信息
+     * @return 统计信息
+     */
+    @GetMapping("/user/stats")
+    @ApiOperation("获取当前用户任务统计信息")
+    public Result<Map<String, Object>> getCurrentUserTaskStats() {
+        log.info("获取当前用户任务统计信息");
+        
+        // 获取当前用户ID
+        Long userId = BaseContext.getCurrentId();
+        
+        // 调用service
+        Map<String, Object> stats = taskService.getUserTaskStats(userId);
+        return Result.success(stats);
+    }
+
+    /**
+     * 获取当前用户任务列表根据状态
+     * @param status 状态
+     * @param page 页码
+     * @param pageSize 每页数量
+     * @return 任务列表
+     */
+    @GetMapping("/user/status/{status}")
+    @ApiOperation("获取当前用户任务列表根据状态")
+    public Result<Map<String, Object>> getUserTasksByStatus(
+            @PathVariable Integer status,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        log.info("获取当前用户任务列表根据状态: status={}, page={}, pageSize={}", status, page, pageSize);
+        
+        // 获取当前用户ID
+        Long userId = BaseContext.getCurrentId();
+        
+        // 调用service
+        Map<String, Object> result = taskService.getUserTasksByStatus(userId, status, page, pageSize);
+        return Result.success(result);
+    }
+
+    /**
+     * 获取当前用户所有任务列表
+     * @param page 页码
+     * @param pageSize 每页数量
+     * @return 任务列表
+     */
+    @GetMapping("/user/all")
+    @ApiOperation("获取当前用户所有任务列表")
+    public Result<Map<String, Object>> getAllUserTasks(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        log.info("获取当前用户所有任务列表: page={}, pageSize={}", page, pageSize);
+        
+        // 获取当前用户ID
+        Long userId = BaseContext.getCurrentId();
+        
+        // 调用service，传null表示获取所有状态
+        Map<String, Object> result = taskService.getUserTasksByStatus(userId, null, page, pageSize);
+        return Result.success(result);
+    }
+
+    /**
+     * 获取当前用户今日到期的任务列表
+     * @param page 页码
+     * @param pageSize 每页数量
+     * @return 任务列表
+     */
+    @GetMapping("/user/today-expired")
+    @ApiOperation("获取当前用户今日到期的任务列表")
+    public Result<Map<String, Object>> getUserTodayExpiredTasks(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        log.info("获取当前用户今日到期的任务列表: page={}, pageSize={}", page, pageSize);
+        
+        // 获取当前用户ID
+        Long userId = BaseContext.getCurrentId();
+        
+        // 调用service
+        Map<String, Object> result = taskService.getUserTodayExpiredTasks(userId, page, pageSize);
+        return Result.success(result);
+    }
 } 

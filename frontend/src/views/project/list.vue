@@ -316,7 +316,7 @@ import {
 } from '@element-plus/icons-vue'
 import type { Project } from '../../types/task'
 import {
-  getProjectList,
+  getAllProjects as getProjectList,
   deleteProject,
   updateProject,
   addProjectMember,
@@ -473,7 +473,7 @@ const fetchProjects = async () => {
       params.endTimeEnd = searchForm.endTimeRange[1]
     }
     
-    const response = await getProjectList(params)
+    const response = await getProjectList()
     if (response.data && (response.data.code === 1 || response.data.code === 200)) {
       projectList.value = response.data.data.items
       total.value = response.data.data.total
@@ -668,7 +668,7 @@ const handleProjectAction = async (action: string, project: Project) => {
         router.push(path);
         break
       case 'delete':
-        const deleteResponse = await deleteProject(project.id)
+        const deleteResponse = await deleteProject(project.id.toString())
         if (deleteResponse.data.code === 1 || deleteResponse.data.code === 200) {
           ElMessage.success('Project has been deleted')
           fetchProjects()

@@ -57,35 +57,6 @@
         </el-card>
       </el-col>
     </el-row>
-
-    <!-- 任务列表 -->
-    <el-card class="task-list">
-      <template #header>
-        <div class="card-header">
-          <span>Task list</span>
-          <el-button type="primary" size="small" @click="router.push('/list')">View more</el-button>
-        </div>
-      </template>
-      <el-table :data="taskList" style="width: 100%">
-        <el-table-column prop="id" label="No." width="80" />
-        <el-table-column prop="title" label="Task title" />
-        <el-table-column prop="deadline" label="Deadline" width="180" />
-        <el-table-column prop="priority" label="Priority" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getPriorityType(row.priority)">
-              {{ row.priority }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="Status" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ row.status }}
-            </el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
   </div>
 </template>
 
@@ -101,10 +72,11 @@ import {
   GridComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { Clock, Document, Loading, Check } from '@element-plus/icons-vue'
+import { Clock, Document, Loading, Check, Close } from '@element-plus/icons-vue'
 import { useUserStore } from '../../stores/user'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { getCurrentUserTaskStats } from '@/api/task'
 
 use([
   CanvasRenderer,
@@ -124,32 +96,36 @@ const router = useRouter()
 // 任务状态数据
 const taskStatus = ref([
   {
-    label: 'Pending',
+    label: '待处理',
     status: 'Pending',
-    count: 5,
+    count: 0,
     icon: 'Clock',
-    iconClass: 'status-pending'
+    iconClass: 'status-pending',
+    statusCode: 0
   },
   {
-    label: 'In progress',
+    label: '进行中',
     status: 'In progress',
-    count: 6,
+    count: 0,
     icon: 'Loading',
-    iconClass: 'status-progress'
+    iconClass: 'status-progress',
+    statusCode: 1
   },
   {
-    label: 'Today expired',
-    status: 'Expired',
-    count: 1,
+    label: '今日到期',
+    status: 'Today expired',
+    count: 0,
     icon: 'Document',
-    iconClass: 'status-due'
+    iconClass: 'status-due',
+    statusCode: 'expired'
   },
   {
-    label: 'Completed',
+    label: '已完成',
     status: 'Completed',
-    count: 1,
+    count: 0,
     icon: 'Check',
-    iconClass: 'status-completed'
+    iconClass: 'status-completed',
+    statusCode: 2
   }
 ])
 
@@ -253,78 +229,55 @@ const priorityOption = ref({
   ]
 })
 
-// 任务列表数据
-const taskList = ref([
-  {
-    id: 1,
-    title: 'Implement responsive layout',
-    deadline: '2024-12-12',
-    priority: 'High',
-    status: 'In progress'
-  },
-  {
-    id: 2,
-    title: 'Fix login page authentication issue',
-    deadline: '2024-12-25',
-    priority: 'Medium',
-    status: 'Pending'
-  },
-  {
-    id: 3,
-    title: 'Cross-browser testing',
-    deadline: '2024-12-09',
-    priority: 'Low',
-    status: 'Pending'
-  },
-  {
-    id: 4,
-    title: 'Write unit test cases',
-    deadline: '2024-12-08',
-    priority: 'Critical',
-    status: 'In progress'
-  },
-  {
-    id: 5,
-    title: 'Set up API integration tests',
-    deadline: '2025-01-04',
-    priority: 'Medium',
-    status: 'Pending'
-  }
-])
-
-// 获取优先级标签类型
-const getPriorityType = (priority: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
-  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
-    'Critical': 'danger',
-    'High': 'warning',
-    'Medium': 'primary',
-    'Low': 'info'
-  }
-  return types[priority] || 'primary'
-}
-
-// 获取状态标签类型
-const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
-  const types: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
-    'Pending': 'info',
-    'In progress': 'warning',
-    'Completed': 'success'
-  }
-  return types[status] || 'primary'
-}
-
 // 处理状态卡片点击
 const handleStatusCardClick = (status: string) => {
-  router.push({
-    path: '/list',
-    query: { status }
-  })
+  const statusItem = taskStatus.value.find(item => item.status === status)
+  
+  if (statusItem) {
+    if (status === 'Today expired') {
+      // 今日到期任务特殊处理
+      router.push('/list?todayExpired=true')
+    } else {
+      // 其他状态
+      router.push({
+        path: '/list',
+        query: { status: statusItem.statusCode }
+      })
+    }
+  }
+}
+
+// 获取用户任务统计信息
+const fetchUserTaskStats = async () => {
+  try {
+    const response = await getCurrentUserTaskStats()
+    console.log('任务统计响应:', response)
+    
+    if (response.data && response.data.data) {
+      const stats = response.data.data
+      console.log('任务统计数据:', stats)
+      
+      // 直接更新任务状态的数量
+      taskStatus.value[0].count = stats.pending
+      taskStatus.value[1].count = stats.inProgress
+      taskStatus.value[2].count = stats.todayExpired
+      taskStatus.value[3].count = stats.completed
+      
+      console.log('更新后的任务状态:', taskStatus.value)
+    }
+  } catch (error) {
+    console.error('获取任务统计信息失败:', error)
+    ElMessage.error('获取任务统计信息失败')
+  }
 }
 
 onMounted(async () => {
   // 获取用户信息
   try {
     await userStore.fetchUserInfo()
+    
+    // 获取任务统计信息
+    await fetchUserTaskStats()
   } catch (error: any) {
     let errorMessage = 'Failed to get user information'
     if (error.response) {
@@ -342,8 +295,6 @@ onMounted(async () => {
     console.error(errorMessage)
     ElMessage.error(errorMessage)
   }
-
-  // 在这里可以调用API获取实际数据
 })
 </script>
 
@@ -406,5 +357,9 @@ onMounted(async () => {
 
 .status-completed {
   color: var(--el-color-success);
+}
+
+.status-canceled {
+  color: var(--el-color-info);
 }
 </style> 

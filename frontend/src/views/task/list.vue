@@ -144,7 +144,7 @@
         </div>
 
         <!-- 搜索按钮行 -->
-        <div class="filter-buttons-row">
+        <div class="filter-buttons-row" style="display: flex; justify-content: center;">
           <div class="filter-buttons">
             <el-button type="primary" @click="handleSearch">
               <el-icon><Search /></el-icon> Search
@@ -417,7 +417,7 @@ const loadingCount = ref(0)
 // 监听路由参数变化并自动筛选
 onMounted(() => {
   // 从URL参数中获取筛选条件
-  const { status, priority, keyword } = route.query
+  const { status, priority, keyword, todayExpired } = route.query
   
   if (status) {
     filterForm.status = Number(status)
@@ -429,6 +429,13 @@ onMounted(() => {
   
   if (keyword) {
     filterForm.name = keyword as string
+  }
+  
+  // 处理今日到期参数
+  if (todayExpired === 'true') {
+    // 设置日期范围为今天
+    const today = new Date().toISOString().split('T')[0] // 格式: YYYY-MM-DD
+    filterForm.dueDateRange = [today, today]
   }
   
   // 加载任务列表
@@ -489,6 +496,21 @@ const fetchTaskList = async () => {
     if (filterForm.createDateRange && filterForm.createDateRange.length === 2) {
       cleanParams.startTime = filterForm.createDateRange[0]
       cleanParams.endTime = filterForm.createDateRange[1]
+    }
+    
+    // 截止日期范围
+    if (filterForm.dueDateRange && filterForm.dueDateRange.length === 2) {
+      cleanParams.dueStartTime = filterForm.dueDateRange[0]
+      cleanParams.dueEndTime = filterForm.dueDateRange[1]
+    }
+    
+    // 特殊处理今日到期参数
+    if (route.query.todayExpired === 'true') {
+      // 如果使用专用API则替换其他参数
+      cleanParams.todayExpired = true
+      // 清除可能冲突的参数
+      delete cleanParams.dueStartTime
+      delete cleanParams.dueEndTime
     }
     
     // 项目ID
@@ -1168,15 +1190,18 @@ async function fetchProjectName(projectId: string): Promise<string | null> {
 <style scoped>
 /* 整体容器 */
 .task-list-container {
-  padding: 20px;
+  padding: 20px 40px;
   background-color: #f5f7fa;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 搜索筛选区域 */
 .filter-section {
   background-color: #fff;
-  padding: 16px 20px;
-  border-radius: 8px;
+  padding: 30px 30px;
+  border-radius: 10px;
   margin-bottom: 15px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
@@ -1184,98 +1209,57 @@ async function fetchProjectName(projectId: string): Promise<string | null> {
 .filter-form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   width: 100%;
-  max-width: 1080px;
-  margin: 0 auto;
-  position: relative;
 }
 
 .filter-row {
   display: flex;
-  width: 100%;
-  position: relative;
-  margin-bottom: 0;
-}
-
-.filter-row::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background-color: transparent;
-  /* 可见中线辅助线，调试完成后可以注释掉 */
-  /* background-color: rgba(0, 0, 255, 0.1); */
+  gap: 30px;
+  margin-bottom: 12px;
 }
 
 .filter-item-half {
-  width: 50%;
+  flex: 1;
+  min-width: 0;
   display: flex;
-  box-sizing: border-box;
+  gap: 30px;
 }
 
-.filter-item-half:first-child {
-  padding-right: 40px;
-  justify-content: flex-start;
+.filter-item-half .el-form-item {
+  flex: 1;
+  margin-bottom: 0;
 }
 
+/* 确保右列的表单项左对齐 */
 .filter-item-half:last-child {
-  padding-left: 0;
   justify-content: flex-start;
-}
-
-/* 确保右列的表单项左对齐到中线 */
-.filter-item-half:last-child :deep(.el-form-item) {
-  margin-left: 10px;
-  position: relative;
-  left: -20px; /* 微调右列位置，使其更精确地对齐中线 */
-}
-
-.filter-item-small {
-  flex: 1 1 100px;
-  min-width: 100px;
-  max-width: 200px;
-}
-
-.filter-item-large {
-  flex: 3 1 300px;
-  min-width: 300px;
-}
-
-.filter-item-medium {
-  flex: 2 1 200px;
-  min-width: 200px;
 }
 
 .filter-buttons-row {
+  display: flex;
+  justify-content: flex-start;
   margin-top: 20px;
+  padding-left: 75px;
 }
 
 .filter-buttons {
   display: flex;
-  justify-content: center;
   gap: 15px;
 }
 
 .filter-buttons .el-button {
-  padding: 6px 16px;
+  padding: 8px 20px;
   font-weight: 500;
-  min-width: 70px;
-  height: 32px;
+  min-width: 80px;
 }
 
 /* 操作按钮区域 */
 .operation-section {
+  margin-bottom: 15px;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 15px;
-}
-
-.left-buttons, .right-buttons {
-  display: flex;
-  gap: 10px;
+  align-items: center;
 }
 
 /* 表格区域 */
@@ -1284,87 +1268,50 @@ async function fetchProjectName(projectId: string): Promise<string | null> {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  --el-table-header-bg-color: #f5f7fa;
-  --el-table-border-color: #ebeef5;
-  --el-table-row-hover-bg-color: #f5f7fa;
 }
 
 :deep(.el-table th) {
-  background-color: var(--el-table-header-bg-color);
+  background-color: #f5f7fa;
   color: #606266;
   font-weight: 600;
-  padding: 6px 0;
-  height: 44px;
+  padding: 8px 0;
 }
 
 :deep(.el-table td) {
-  padding: 4px;
-  height: 50px;
+  padding: 8px;
 }
 
-:deep(.el-table--border th.el-table__cell,
-       .el-table--border td.el-table__cell,
-       .el-table__inner-wrapper::before) {
-  border-color: var(--el-table-border-color);
+/* 表单项样式 */
+:deep(.el-form-item) {
+  margin-bottom: 0;
+  width: 100%;
 }
 
-:deep(.el-table__row.hover-row) {
-  background-color: var(--el-table-row-hover-bg-color);
-}
-
-:deep(.el-table .cell) {
-  line-height: 20px;
-  padding-left: 8px;
-  padding-right: 8px;
-  word-break: break-word;
-}
-
-:deep(.el-table .el-table__cell) {
-  padding: 0;
-}
-
-:deep(.el-table .el-table__cell[align="center"] .cell) {
-  justify-content: center;
-  text-align: center;
-}
-
-:deep(.el-table .el-table__cell[align="left"] .cell) {
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.task-name-link {
-  font-size: 14px;
+:deep(.el-form-item__label) {
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: inline-block;
-  max-width: 100%;
-  padding: 0 4px;
-}
-
-.index-cell {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
-  border-radius: 4px;
-  background-color: #f0f2f5;
   color: #606266;
-  font-size: 12px;
-  font-weight: 500;
-  text-align: center;
+  padding-right: 12px;
+  width: 75px !important;
 }
 
-:deep(.el-tag) {
-  font-size: 12px;
-  padding: 0 8px;
-  height: 22px;
-  line-height: 22px;
+:deep(.el-form-item__content) {
+  flex: 1;
+  margin-left: 0 !important;
 }
 
-/* 分页 */
+:deep(.el-input__wrapper),
+:deep(.el-select .el-input__wrapper),
+:deep(.el-date-editor.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+}
+
+:deep(.el-input__wrapper:hover),
+:deep(.el-select .el-input__wrapper:hover),
+:deep(.el-date-editor.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+}
+
+/* 分页区域 */
 .pagination-section {
   margin-top: 20px;
   display: flex;
@@ -1375,316 +1322,29 @@ async function fetchProjectName(projectId: string): Promise<string | null> {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* 表单项样式 */
-:deep(.el-form-item) {
-  margin-bottom: 0;
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  align-items: center;
-}
-
-:deep(.el-form-item__label) {
-  font-weight: 500;
-  color: #606266;
-  padding-right: 12px;
-  width: 75px !important;
-  min-width: 75px;
-  text-align: right;
-  line-height: 32px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-:deep(.el-form-item__content) {
-  flex: 1;
-  width: calc(100% - 75px);
-}
-
-:deep(.el-date-editor--daterange) {
-  width: 100% !important;
-}
-
-:deep(.el-date-editor) {
-  width: 100% !important;
-}
-
-:deep(.el-select) {
-  width: 100% !important;
-}
-
-/* 控件样式 */
-:deep(.el-input__wrapper),
-:deep(.el-select .el-input__wrapper),
-:deep(.el-date-editor.el-input__wrapper) {
-  box-shadow: 0 0 0 1px #dcdfe6 inset;
-  --el-input-height: 32px;
-}
-
-:deep(.el-input__wrapper:hover),
-:deep(.el-select .el-input__wrapper:hover),
-:deep(.el-date-editor.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
-}
-
-:deep(.el-select .el-input__wrapper) {
-  height: 32px;
-}
-
-:deep(.el-select__tags) {
-  height: 30px;
-  overflow: hidden;
-  padding-top: 3px;
-}
-
-:deep(.el-select__tags-text) {
-  display: inline-flex;
-  align-items: center;
-  color: #606266;
-  font-size: 14px;
-  font-family: var(--el-font-family);
-}
-
-/* 成员选择下拉框中的文本 */
-:deep(.el-select-dropdown__item) {
-  font-size: 14px;
-  font-family: var(--el-font-family);
-  color: #68696c;
-}
-
-/* 选中的成员标签样式 */
-:deep(.el-select .el-tag) {
-  background-color: var(--el-color-primary-light-9) !important;
-  border-color: var(--el-color-primary-light-8) !important;
-  color: #606266 !important;
-  font-size: 14px;
-  font-family: var(--el-font-family);
-}
-
-:deep(.el-select .el-tag__close) {
-  color: #909399;
-}
-
-:deep(.el-select .el-tag__close:hover) {
-  background-color: #909399;
-  color: #fff;
-}
-
-/* 标签样式 */
-:deep(.el-tag) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 10px;
-  height: 24px;
-}
-
-/* 按钮样式 */
-:deep(.operation-section .el-button) {
-  padding: 8px 16px;
-}
-
-/* 响应式布局调整 */
+/* 响应式布局 */
 @media screen and (max-width: 768px) {
-  .filter-item-half {
-    flex: 0 0 100%;
-    min-width: 100%;
+  .task-list-container {
+    padding: 10px;
+  }
+  
+  .filter-section {
+    padding: 15px;
   }
   
   .filter-row {
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
   }
   
-  .filter-buttons {
-    justify-content: center;
+  .filter-item-half {
     width: 100%;
+    gap: 12px;
   }
-}
-
-/* 标签选择器样式 */
-.tag-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.color-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-/* 成员选项样式 */
-.member-option {
-  display: flex;
-  align-items: center;
-  padding: 5px 0;
-  width: 100%;
-}
-
-.member-avatar {
-  margin-right: 8px;
-  background-color: #f0f2f5;
-  flex-shrink: 0;
-}
-
-.member-name {
-  font-weight: 500;
-  color: #606266;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 已选择的成员标签内的用户名显示优化 */
-:deep(.el-select__tags .el-tag) {
-  max-width: calc(100% - 10px);
-  display: inline-flex;
-  align-items: center;
-  margin: 2px 4px;
-  border-radius: 4px;
-  padding: 0 8px;
-  height: 24px;
-  line-height: 24px;
-  transition: all 0.3s;
-}
-
-:deep(.el-select__tags .el-tag:hover) {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-:deep(.el-select .el-tag__content) {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
-  color: #606266;
-}
-
-/* 自定义成员标签样式 */
-.custom-member-tag {
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
-  margin: 2px 4px 2px 0;
-  height: 24px;
-  line-height: 24px;
-}
-
-.tag-content {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.tag-avatar {
-  height: 18px;
-  width: 18px;
-  font-size: 10px;
-  line-height: 18px;
-  margin-right: 0;
-}
-
-.empty-members {
-  text-align: center;
-  padding: 20px 0;
-  color: #909399;
-  font-size: 14px;
-}
-
-/* 下拉菜单样式优化 */
-:deep(.el-popper.is-light) {
-  border-radius: 4px;
-}
-
-:deep(.el-popper.is-light .el-select-dropdown__item) {
-  height: auto;
-  line-height: 1.5;
-  padding: 8px 20px;
-  color: #606266;
-  font-family: var(--el-font-family);
-}
-
-:deep(.el-popper.is-light .el-select-dropdown__item.selected) {
-  color: #606266;
-  font-weight: 600;
-  background-color: var(--el-color-primary-light-9);
-}
-
-:deep(.el-popper.is-light .el-select-dropdown__item:hover) {
-  background-color: var(--el-fill-color-light);
-}
-
-:deep(.empty-members p) {
-  color: #909399;
-  font-family: var(--el-font-family);
-}
-
-/* 确保成员和标签选项在下拉菜单中垂直居中对齐 */
-:deep(.member-option),
-:deep(.tag-option) {
-  padding: 3px 0;
-  display: flex;
-  align-items: center;
-}
-
-:deep(.el-button--link) {
-  padding: 4px;
-  margin: 0 1px;
-  height: 24px;
-  width: 24px;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1px;
-}
-
-.action-button {
-  font-size: 16px;
-}
-
-/* 操作按钮悬停效果 */
-:deep(.el-button--link.action-button:hover) {
-  color: var(--el-color-primary-light-3);
-  transform: scale(1.1);
-  transition: all 0.2s ease;
-}
-
-:deep(.el-button--link.action-button.is-link.is-danger:hover) {
-  color: var(--el-color-danger-light-3);
-}
-
-.empty-table {
-  padding: 30px 0;
-  text-align: center;
-}
-
-.empty-tip {
-  color: #909399;
-  font-size: 12px;
-  margin-top: 8px;
-  margin-bottom: 16px;
-}
-
-.project-tag {
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: inline-block;
-  font-size: 12px;
-  padding: 0 8px;
-  height: 22px;
-  line-height: 20px;
-  border-radius: 4px;
-  background-color: rgba(64, 158, 255, 0.1);
-  color: #606266;
-  border: 1px solid rgba(64, 158, 255, 0.2);
+  
+  .filter-buttons-row {
+    padding-left: 0;
+    justify-content: center;
+  }
 }
 </style> 

@@ -952,4 +952,276 @@ public class TaskServiceImpl implements TaskService {
         
         return taskVO;
     }
+
+    /**
+     * 获取用户任务统计信息
+     * @param userId 用户ID
+     * @return 统计信息
+     */
+    @Override
+    public Map<String, Object> getUserTaskStats(Long userId) {
+        log.info("获取用户任务统计信息: userId={}", userId);
+        
+        Map<String, Object> stats = new HashMap<>();
+        
+        // 查询待处理任务数 (状态0)
+        Long pending = countUserTasks(userId, 0);
+        stats.put("pending", pending);
+        
+        // 查询进行中任务数 (状态1)
+        Long inProgress = countUserTasks(userId, 1);
+        stats.put("inProgress", inProgress);
+        
+        // 查询已完成任务数 (状态2)
+        Long completed = countUserTasks(userId, 2);
+        stats.put("completed", completed);
+        
+        // 查询已取消任务数 (状态3)
+        Long canceled = countUserTasks(userId, 3);
+        stats.put("canceled", canceled);
+        
+        // 查询今日到期的任务数
+        Long todayExpired = countTodayExpiredTasks(userId);
+        stats.put("todayExpired", todayExpired);
+        
+        // 查询总任务数
+        Long total = countUserTasks(userId, null);
+        stats.put("total", total);
+        
+        return stats;
+    }
+
+    /**
+     * 获取用户任务列表根据状态
+     * @param userId 用户ID
+     * @param status 任务状态，null表示所有状态
+     * @param page 页码
+     * @param pageSize 每页数量
+     * @return 任务列表和总数
+     */
+    @Override
+    public Map<String, Object> getUserTasksByStatus(Long userId, Integer status, Integer page, Integer pageSize) {
+        log.info("获取用户任务列表根据状态: userId={}, status={}, page={}, pageSize={}", userId, status, page, pageSize);
+        
+        // 查询用户参与的任务ID
+        List<Long> taskIds = taskMemberMapper.getTaskIdsByUserId(userId);
+        
+        // 也包括用户创建的任务
+        LambdaQueryWrapper<Task> createdTasksQuery = new LambdaQueryWrapper<>();
+        createdTasksQuery.eq(Task::getCreateUser, userId);
+        List<Task> createdTasks = taskMapper.selectList(createdTasksQuery);
+        
+        List<Long> createdTaskIds = createdTasks.stream()
+                .map(Task::getId)
+                .collect(Collectors.toList());
+        
+        // 合并任务ID并去重
+        taskIds.addAll(createdTaskIds);
+        taskIds = taskIds.stream().distinct().collect(Collectors.toList());
+        
+        if (taskIds.isEmpty()) {
+            // 如果用户没有参与任何任务，返回空结果
+            Map<String, Object> emptyResult = new HashMap<>();
+            emptyResult.put("total", 0);
+            emptyResult.put("items", new ArrayList<>());
+            return emptyResult;
+        }
+        
+        // 构建查询条件
+        LambdaQueryWrapper<Task> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(Task::getId, taskIds);
+        
+        // 添加状态过滤条件
+        if (status != null) {
+            queryWrapper.eq(Task::getStatus, status);
+        }
+        
+        // 排序（按优先级降序，更新时间降序）
+        queryWrapper.orderByDesc(Task::getPriority)
+                  .orderByDesc(Task::getUpdateTime);
+        
+        // 执行分页查询
+        Page<Task> pageInfo = new Page<>(page, pageSize);
+        Page<Task> taskPage = taskMapper.selectPage(pageInfo, queryWrapper);
+        
+        // 构建返回结果
+        List<TaskDTO> taskDTOs = new ArrayList<>();
+        for (Task task : taskPage.getRecords()) {
+            TaskDTO taskDTO = new TaskDTO();
+            BeanUtils.copyProperties(task, taskDTO);
+            
+            // 查询任务标签ID
+            List<Long> tagIds = taskTagService.getTagIdsByTaskId(task.getId());
+            taskDTO.setTagIds(tagIds);
+            
+            // 查询任务成员
+            List<String> members = getTaskMembers(task.getId());
+            taskDTO.setMembers(members);
+            
+            taskDTOs.add(taskDTO);
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", taskPage.getTotal());
+        result.put("items", taskDTOs);
+        
+        return result;
+    }
+
+    /**
+     * 获取用户今日到期的任务列表
+     * @param userId 用户ID
+     * @param page 页码
+     * @param pageSize 每页数量
+     * @return 任务列表和总数
+     */
+    @Override
+    public Map<String, Object> getUserTodayExpiredTasks(Long userId, Integer page, Integer pageSize) {
+        log.info("获取用户今日到期的任务列表: userId={}, page={}, pageSize={}", userId, page, pageSize);
+        
+        // 查询用户参与的任务ID
+        List<Long> taskIds = taskMemberMapper.getTaskIdsByUserId(userId);
+        
+        // 也包括用户创建的任务
+        LambdaQueryWrapper<Task> createdTasksQuery = new LambdaQueryWrapper<>();
+        createdTasksQuery.eq(Task::getCreateUser, userId);
+        List<Task> createdTasks = taskMapper.selectList(createdTasksQuery);
+        
+        List<Long> createdTaskIds = createdTasks.stream()
+                .map(Task::getId)
+                .collect(Collectors.toList());
+        
+        // 合并任务ID并去重
+        taskIds.addAll(createdTaskIds);
+        taskIds = taskIds.stream().distinct().collect(Collectors.toList());
+        
+        if (taskIds.isEmpty()) {
+            // 如果用户没有参与任何任务，返回空结果
+            Map<String, Object> emptyResult = new HashMap<>();
+            emptyResult.put("total", 0);
+            emptyResult.put("items", new ArrayList<>());
+            return emptyResult;
+        }
+        
+        // 获取今天的日期范围
+        LocalDateTime todayStart = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime todayEnd = todayStart.plusDays(1).minusNanos(1);
+        
+        // 构建查询条件
+        LambdaQueryWrapper<Task> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(Task::getId, taskIds)
+                   .le(Task::getDeadline, todayEnd)  // 截止日期小于等于今天结束
+                   .ge(Task::getDeadline, todayStart) // 截止日期大于等于今天开始
+                   .and(i -> i.ne(Task::getStatus, 2).or().isNull(Task::getStatus)); // 排除已完成的任务
+        
+        // 排序（按优先级降序，截止日期升序）
+        queryWrapper.orderByAsc(Task::getDeadline)
+                  .orderByDesc(Task::getPriority);
+        
+        // 执行分页查询
+        Page<Task> pageInfo = new Page<>(page, pageSize);
+        Page<Task> taskPage = taskMapper.selectPage(pageInfo, queryWrapper);
+        
+        // 构建返回结果
+        List<TaskDTO> taskDTOs = new ArrayList<>();
+        for (Task task : taskPage.getRecords()) {
+            TaskDTO taskDTO = new TaskDTO();
+            BeanUtils.copyProperties(task, taskDTO);
+            
+            // 查询任务标签ID
+            List<Long> tagIds = taskTagService.getTagIdsByTaskId(task.getId());
+            taskDTO.setTagIds(tagIds);
+            
+            // 查询任务成员
+            List<String> members = getTaskMembers(task.getId());
+            taskDTO.setMembers(members);
+            
+            taskDTOs.add(taskDTO);
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", taskPage.getTotal());
+        result.put("items", taskDTOs);
+        
+        return result;
+    }
+
+    /**
+     * 计算用户任务数量
+     * @param userId 用户ID
+     * @param status 任务状态，null表示所有状态
+     * @return 任务数量
+     */
+    private Long countUserTasks(Long userId, Integer status) {
+        // 查询用户参与的任务ID
+        List<Long> taskIds = taskMemberMapper.getTaskIdsByUserId(userId);
+        
+        // 也包括用户创建的任务
+        LambdaQueryWrapper<Task> createdTasksQuery = new LambdaQueryWrapper<>();
+        createdTasksQuery.eq(Task::getCreateUser, userId);
+        List<Task> createdTasks = taskMapper.selectList(createdTasksQuery);
+        
+        List<Long> createdTaskIds = createdTasks.stream()
+                .map(Task::getId)
+                .collect(Collectors.toList());
+        
+        // 合并任务ID并去重
+        taskIds.addAll(createdTaskIds);
+        taskIds = taskIds.stream().distinct().collect(Collectors.toList());
+        
+        if (taskIds.isEmpty()) {
+            return 0L;
+        }
+        
+        // 构建查询条件
+        LambdaQueryWrapper<Task> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(Task::getId, taskIds);
+        
+        // 添加状态过滤条件
+        if (status != null) {
+            queryWrapper.eq(Task::getStatus, status);
+        }
+        
+        return taskMapper.selectCount(queryWrapper);
+    }
+
+    /**
+     * 计算用户今日到期的任务数量
+     * @param userId 用户ID
+     * @return 任务数量
+     */
+    private Long countTodayExpiredTasks(Long userId) {
+        // 查询用户参与的任务ID
+        List<Long> taskIds = taskMemberMapper.getTaskIdsByUserId(userId);
+        
+        // 也包括用户创建的任务
+        LambdaQueryWrapper<Task> createdTasksQuery = new LambdaQueryWrapper<>();
+        createdTasksQuery.eq(Task::getCreateUser, userId);
+        List<Task> createdTasks = taskMapper.selectList(createdTasksQuery);
+        
+        List<Long> createdTaskIds = createdTasks.stream()
+                .map(Task::getId)
+                .collect(Collectors.toList());
+        
+        // 合并任务ID并去重
+        taskIds.addAll(createdTaskIds);
+        taskIds = taskIds.stream().distinct().collect(Collectors.toList());
+        
+        if (taskIds.isEmpty()) {
+            return 0L;
+        }
+        
+        // 获取今天的日期范围
+        LocalDateTime todayStart = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime todayEnd = todayStart.plusDays(1).minusNanos(1);
+        
+        // 构建查询条件
+        LambdaQueryWrapper<Task> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(Task::getId, taskIds)
+                   .le(Task::getDeadline, todayEnd)  // 截止日期小于等于今天结束
+                   .ge(Task::getDeadline, todayStart) // 截止日期大于等于今天开始
+                   .and(i -> i.ne(Task::getStatus, 2).or().isNull(Task::getStatus)); // 排除已完成的任务
+        
+        return taskMapper.selectCount(queryWrapper);
+    }
 } 

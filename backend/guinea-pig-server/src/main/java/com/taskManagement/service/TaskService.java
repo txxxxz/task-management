@@ -159,4 +159,30 @@ public interface TaskService {
      * @return 任务列表和总数
      */
     Map<String, Object> getTasksByMember(String memberUsername, Integer page, Integer pageSize);
+    
+    /**
+     * 获取用户任务统计信息
+     * @param userId 用户ID
+     * @return 统计信息
+     */
+    Map<String, Object> getUserTaskStats(Long userId);
+    
+    /**
+     * 获取用户任务列表根据状态
+     * @param userId 用户ID
+     * @param status 任务状态，null表示所有状态
+     * @param page 页码
+     * @param pageSize 每页数量
+     * @return 任务列表和总数
+     */
+    Map<String, Object> getUserTasksByStatus(Long userId, Integer status, Integer page, Integer pageSize);
+    
+    /**
+     * 获取用户今日到期的任务列表
+     * @param userId 用户ID
+     * @param page 页码
+     * @param pageSize 每页数量
+     * @return 任务列表和总数
+     */
+    Map<String, Object> getUserTodayExpiredTasks(Long userId, Integer page, Integer pageSize);
 } 

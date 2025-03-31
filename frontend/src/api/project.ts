@@ -4,21 +4,15 @@ import axios from 'axios'
 import type { Project } from '../types/task'
 
 // 获取项目列表
-export function getProjectList(params?: {
-  keyword?: string
-  status?: number
-  page?: number
-  pageSize?: number
-}) {
+export function getAllProjects() {
   return request({
     url: '/api/projects',
-    method: 'get',
-    params
+    method: 'get'
   })
 }
 
 // 获取项目详情
-export function getProjectDetail(id: number | string) {
+export const getProjectDetail = (id: number) => {
   return request({
     url: `/api/projects/${id}`,
     method: 'get'
@@ -26,27 +20,27 @@ export function getProjectDetail(id: number | string) {
 }
 
 // 创建项目
-export function createProject(data: ProjectForm) {
+export function createProject(data: any) {
   return request({
-    url: '/api/projects',
+    url: '/projects',
     method: 'post',
     data
   })
 }
 
 // 更新项目
-export function updateProject(id: number | string, data: Partial<ProjectForm>) {
+export function updateProject(projectId: string, data: any) {
   return request({
-    url: `/api/projects/${id}`,
+    url: `/projects/${projectId}`,
     method: 'put',
     data
   })
 }
 
 // 删除项目
-export function deleteProject(id: number | string) {
+export function deleteProject(projectId: string) {
   return request({
-    url: `/api/projects/${id}`,
+    url: `/projects/${projectId}`,
     method: 'delete'
   })
 }

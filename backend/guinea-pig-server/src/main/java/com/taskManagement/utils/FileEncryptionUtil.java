@@ -70,4 +70,27 @@ public class FileEncryptionUtil {
         }
         return "encrypted_" + randomStr + extension;
     }
+
+    /**
+     * 解密文件内容
+     */
+    public static InputStream decryptFile(MultipartFile file, String key) throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        
+        // 构建AES密钥
+        SecretKeySpec secretKey = generateKey(key);
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding"); 
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+
+        try (InputStream inputStream = file.getInputStream();
+             CipherInputStream cipherInputStream = new CipherInputStream(inputStream, cipher)) {
+            
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = cipherInputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+        }
+        return new ByteArrayInputStream(outputStream.toByteArray());
+    }
 } 

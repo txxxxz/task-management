@@ -36,7 +36,7 @@ export const menuItems = [
     title: 'Project List',
     icon: Folder,
     path: '/project/list',
-    roles: ['1', '2'] // 1: leader, 2: member
+    roles: ['1', '0'] // 1: leader, 0: member
   },
   {
     title: 'Create Task',
@@ -47,7 +47,8 @@ export const menuItems = [
   {
     title: 'Task List',
     icon: List,
-    path: '/list'
+    path: '/list',
+    roles: ['1', '0'] // 1: leader, 0: member
   },
   {
     title: '创建标签',
@@ -58,7 +59,8 @@ export const menuItems = [
   {
     title: '标签列表',
     icon: PriceTag,
-    path: '/tag/list'
+    path: '/tag/list',
+    roles: ['1', '0'] // 1: leader, 0: member
   },
   
   {

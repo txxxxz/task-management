@@ -65,11 +65,6 @@ service.interceptors.response.use(
     
     console.log('收到API响应:', config.url, data)
     
-    // 处理url中的/api前缀
-    if (response.config.url) {
-      response.config.url = response.config.url.replace('/api', '')
-    }
-    
     // 不再自动处理标准响应格式，直接返回完整响应
     return response
   },
@@ -105,11 +100,6 @@ service.interceptors.response.use(
     } else {
       // 请求配置错误
       console.error('请求配置错误:', error.message)
-    }
-    
-    // 处理url中的/api前缀
-    if (error.config?.url) {
-      error.config.url = error.config.url.replace('/api', '')
     }
     
     ElMessage.error(errorMsg)

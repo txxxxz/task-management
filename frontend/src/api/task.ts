@@ -81,6 +81,56 @@ export function getTaskStats(projectId?: string) {
   })
 }
 
+// 获取当前用户任务统计信息
+export function getCurrentUserTaskStats() {
+  return request<{
+    total: number
+    pending: number
+    inProgress: number
+    completed: number
+    todayExpired: number
+  }>({
+    url: '/api/tasks/user/stats',
+    method: 'get'
+  })
+}
+
+// 获取当前用户指定状态的任务
+export function getUserTasksByStatus(status: number, page = 1, pageSize = 10) {
+  return request<{
+    total: number
+    items: TaskDetail[]
+  }>({
+    url: `/api/tasks/user/status/${status}`,
+    method: 'get',
+    params: { page, pageSize }
+  })
+}
+
+// 获取当前用户所有任务
+export function getAllUserTasks(page = 1, pageSize = 10) {
+  return request<{
+    total: number
+    items: TaskDetail[]
+  }>({
+    url: '/api/tasks/user/all',
+    method: 'get',
+    params: { page, pageSize }
+  })
+}
+
+// 获取当前用户今日到期的任务
+export function getUserTodayExpiredTasks(page = 1, pageSize = 10) {
+  return request<{
+    total: number
+    items: TaskDetail[]
+  }>({
+    url: '/api/tasks/user/today-expired',
+    method: 'get',
+    params: { page, pageSize }
+  })
+}
+
 // 评论相关
 export function getTaskComments(taskId: number) {
   return request<Comment[]>({

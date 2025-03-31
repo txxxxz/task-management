@@ -140,7 +140,7 @@ public class ProjectServiceImpl implements ProjectService {
      * 获取项目详情
      */
     @Override
-    public ProjectVO getProjectDetail(Long id) {
+    public ProjectVO getProjectDetailc x x(Long id) {
         // 查询项目信息
         Project project = projectMapper.selectById(id);
         if (project == null) {
