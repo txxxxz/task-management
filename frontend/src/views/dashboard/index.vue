@@ -33,10 +33,10 @@
           <template #header>
             <div class="card-header">
               <span>Daily task status statistics</span>
-              <el-radio-group v-model="chartTimeRange" size="small">
-                <el-radio-button label="week">Week</el-radio-button>
-                <el-radio-button label="month">Month</el-radio-button>
-              </el-radio-group>
+              <div class="week-controls">
+                <el-button @click="changeWeek(-1)" :icon="ArrowLeft">Previous Week</el-button>
+                <el-button @click="changeWeek(1)" :icon="ArrowRight">Next Week</el-button>
+              </div>
             </div>
           </template>
           <div class="chart-container">
@@ -72,11 +72,11 @@ import {
   GridComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { Clock, Document, Loading, Check, Close } from '@element-plus/icons-vue'
+import { Clock, Document, Loading, Check, Close, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { useUserStore } from '../../stores/user'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { getCurrentUserTaskStats } from '@/api/task'
+import { getCurrentUserTaskStats, getTaskStatusStatsByDay, getTaskPriorityDistribution } from '@/api/task'
 
 use([
   CanvasRenderer,
@@ -91,6 +91,7 @@ use([
 const userStore = useUserStore()
 const username = computed(() => userStore.userInfo?.username || '访客')
 const chartTimeRange = ref('week')
+const currentWeekOffset = ref(0)
 const router = useRouter()
 
 // 任务状态数据
@@ -146,7 +147,7 @@ const taskTrendOption = ref({
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    data: [] as string[]
   },
   yAxis: {
     type: 'value'
@@ -155,22 +156,30 @@ const taskTrendOption = ref({
     {
       name: 'Pending',
       type: 'line',
-      data: [5, 6, 4, 8, 7, 5, 4]
+      data: [] as number[]
     },
     {
       name: 'In progress',
       type: 'line',
-      data: [3, 4, 6, 4, 5, 3, 2]
+      data: [] as number[]
     },
     {
       name: 'Completed',
       type: 'line',
-      data: [2, 3, 1, 4, 3, 2, 1]
+      data: [] as number[]
     }
   ]
 })
 
 // 优先级分布图表配置
+type PieDataItem = {
+  value: number;
+  name: string;
+  itemStyle: {
+    color: string;
+  };
+};
+
 const priorityOption = ref({
   tooltip: {
     trigger: 'item',
@@ -185,36 +194,7 @@ const priorityOption = ref({
     {
       type: 'pie',
       radius: '50%',
-      data: [
-        { 
-          value: 2, 
-          name: 'Critical',
-          itemStyle: {
-            color: '#F56C6C' // 红色，表示紧急
-          }
-        },
-        { 
-          value: 4, 
-          name: 'High',
-          itemStyle: {
-            color: '#E6A23C' // 橙色，表示高优先级
-          }
-        },
-        { 
-          value: 6, 
-          name: 'Medium',
-          itemStyle: {
-            color: '#409EFF' // 蓝色，表示中等优先级
-          }
-        },
-        { 
-          value: 3, 
-          name: 'Low',
-          itemStyle: {
-            color: '#67C23A' // 绿色，表示低优先级
-          }
-        }
-      ],
+      data: [] as PieDataItem[],
       emphasis: {
         itemStyle: {
           shadowBlur: 10,
@@ -253,21 +233,137 @@ const fetchUserTaskStats = async () => {
     const response = await getCurrentUserTaskStats()
     console.log('任务统计响应:', response)
     
-    if (response.data && response.data.data) {
+    // 后端返回的是Result对象，包含code, data等字段
+    if (response.data && response.data.code === 1 && response.data.data) {
       const stats = response.data.data
       console.log('任务统计数据:', stats)
       
       // 直接更新任务状态的数量
-      taskStatus.value[0].count = stats.pending
-      taskStatus.value[1].count = stats.inProgress
-      taskStatus.value[2].count = stats.todayExpired
-      taskStatus.value[3].count = stats.completed
+      taskStatus.value[0].count = Number(stats.pending) || 0
+      taskStatus.value[1].count = Number(stats.inProgress) || 0
+      taskStatus.value[2].count = Number(stats.todayExpired) || 0
+      taskStatus.value[3].count = Number(stats.completed) || 0
       
       console.log('更新后的任务状态:', taskStatus.value)
+    } else {
+      console.error('任务统计数据返回错误:', response.data)
+      ElMessage.error('获取任务统计信息失败')
     }
   } catch (error) {
     console.error('获取任务统计信息失败:', error)
     ElMessage.error('获取任务统计信息失败')
+  }
+}
+
+// 切换周
+const changeWeek = async (offset: number) => {
+  currentWeekOffset.value += offset
+  await fetchTaskTrendData()
+}
+
+// 获取任务趋势数据
+const fetchTaskTrendData = async () => {
+  try {
+    const response = await getTaskStatusStatsByDay(currentWeekOffset.value)
+    console.log('任务趋势数据响应:', response)
+    
+    // 后端返回的data是一个对象，其中包含code和data字段，data是一个数组
+    if (response.data && response.data.code === 1 && response.data.data) {
+      const statsArray = response.data.data
+      // 检查stats是否为数组
+      if (Array.isArray(statsArray)) {
+        const days: string[] = []
+        const pendingData: number[] = []
+        const inProgressData: number[] = []
+        const completedData: number[] = []
+        
+        // 手动处理每个数据项
+        statsArray.forEach((item: any) => {
+          days.push(item.day || '')
+          pendingData.push(Number(item.pending) || 0)
+          inProgressData.push(Number(item.inProgress) || 0)
+          completedData.push(Number(item.completed) || 0)
+        })
+        
+        // 更新图表数据
+        taskTrendOption.value.xAxis.data = days
+        taskTrendOption.value.series[0].data = pendingData
+        taskTrendOption.value.series[1].data = inProgressData
+        taskTrendOption.value.series[2].data = completedData
+      } else {
+        console.error('任务趋势数据不是数组:', statsArray)
+        ElMessage.error('任务趋势数据格式错误')
+        
+        // 设置空数据
+        resetTrendChartData()
+      }
+    } else {
+      console.error('任务趋势数据返回错误:', response.data)
+      ElMessage.error('获取任务趋势数据失败')
+      
+      // 设置空数据
+      resetTrendChartData()
+    }
+  } catch (error) {
+    console.error('获取任务趋势数据失败:', error)
+    ElMessage.error('获取任务趋势数据失败')
+    
+    // 设置空数据
+    resetTrendChartData()
+  }
+}
+
+// 重置趋势图表数据
+const resetTrendChartData = () => {
+  taskTrendOption.value.xAxis.data = []
+  taskTrendOption.value.series.forEach(series => {
+    series.data = []
+  })
+}
+
+// 获取任务优先级分布数据
+const fetchPriorityDistribution = async () => {
+  try {
+    const response = await getTaskPriorityDistribution()
+    console.log('优先级分布响应:', response)
+    
+    if (response.data && response.data.code === 1 && response.data.data) {
+      const priorityData = response.data.data
+      // 生成饼图数据
+      const pieChartData = [
+        { 
+          value: Number(priorityData.critical) || 0, 
+          name: 'Critical',
+          itemStyle: { color: '#F56C6C' } // 红色，表示紧急
+        },
+        { 
+          value: Number(priorityData.high) || 0, 
+          name: 'High',
+          itemStyle: { color: '#E6A23C' } // 橙色，表示高优先级
+        },
+        { 
+          value: Number(priorityData.medium) || 0, 
+          name: 'Medium',
+          itemStyle: { color: '#409EFF' } // 蓝色，表示中等优先级
+        },
+        { 
+          value: Number(priorityData.low) || 0, 
+          name: 'Low',
+          itemStyle: { color: '#67C23A' } // 绿色，表示低优先级
+        }
+      ]
+      
+      // 更新图表数据
+      priorityOption.value.series[0].data = pieChartData
+    } else {
+      console.error('获取优先级分布数据失败:', response.data)
+      ElMessage.error('获取优先级分布数据失败')
+    }
+  } catch (error) {
+    console.error('获取优先级分布数据失败:', error)
+    ElMessage.error('获取优先级分布数据失败')
+    // 重置图表数据
+    priorityOption.value.series[0].data = []
   }
 }
 
@@ -278,6 +374,10 @@ onMounted(async () => {
     
     // 获取任务统计信息
     await fetchUserTaskStats()
+    // 获取任务趋势数据
+    await fetchTaskTrendData()
+    // 获取优先级分布数据
+    await fetchPriorityDistribution()
   } catch (error: any) {
     let errorMessage = 'Failed to get user information'
     if (error.response) {
@@ -361,5 +461,10 @@ onMounted(async () => {
 
 .status-canceled {
   color: var(--el-color-info);
+}
+
+.week-controls {
+  display: flex;
+  gap: 10px;
 }
 </style> 

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.taskManagement.mapper.TaskStatsMapper">
+    
+    <select id="getTaskStatusStatsByDate" resultType="com.taskManagement.dto.TaskStatusStatsDTO">
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as inProgress,
+            SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as cancelled,
+            SUM(CASE WHEN DATE(deadline) = CURDATE() AND status != 2 THEN 1 ELSE 0 END) as todayExpired
+        FROM tb_task
+        WHERE DATE(create_time) = DATE(DATE_ADD(#{date}, INTERVAL #{weekOffset} WEEK))
+    </select>
+
+    <select id="getTaskStats" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as inProgress,
+            SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as cancelled
+        FROM tb_task
+        <where>
+            <if test="projectId != null">
+                project_id = #{projectId}
+            </if>
+        </where>
+    </select>
+
+    <select id="getUserTaskStats" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as inProgress,
+            SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as cancelled,
+            SUM(CASE WHEN DATE(deadline) = CURDATE() AND status != 2 THEN 1 ELSE 0 END) as todayExpired
+        FROM tb_task
+        WHERE create_user = #{userId}
+    </select>
+
+    <select id="getUserTasksCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM tb_task
+        WHERE create_user = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <select id="getUserTasksByStatus" resultType="com.taskManagement.dto.TaskDTO">
+        SELECT 
+            id, name, description, project_id as projectId,
+            status, priority, start_time as startTime,
+            deadline, complete_time as completeTime,
+            comment_count as commentCount, create_user as createUser,
+            create_time as createTime, update_user as updateUser,
+            update_time as updateTime
+        FROM tb_task
+        WHERE create_user = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="getUserTodayExpiredTasksCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM tb_task
+        WHERE create_user = #{userId}
+        AND DATE(deadline) = CURDATE()
+        AND status != 2
+    </select>
+
+    <select id="getUserTodayExpiredTasks" resultType="com.taskManagement.dto.TaskDTO">
+        SELECT 
+            id, name, description, project_id as projectId,
+            status, priority, start_time as startTime,
+            deadline, complete_time as completeTime,
+            comment_count as commentCount, create_user as createUser,
+            create_time as createTime, update_user as updateUser,
+            update_time as updateTime
+        FROM tb_task
+        WHERE create_user = #{userId}
+        AND DATE(deadline) = CURDATE()
+        AND status != 2
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    
+    <select id="getTaskPriorityDistribution" resultType="java.util.Map">
+        SELECT 
+            SUM(CASE WHEN priority = 0 THEN 1 ELSE 0 END) as low,
+            SUM(CASE WHEN priority = 1 THEN 1 ELSE 0 END) as medium,
+            SUM(CASE WHEN priority = 2 THEN 1 ELSE 0 END) as high,
+            SUM(CASE WHEN priority = 3 THEN 1 ELSE 0 END) as critical
+        FROM tb_task
+        WHERE create_user = #{userId}
+    </select>
+</mapper> 

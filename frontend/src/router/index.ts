@@ -40,7 +40,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'gantt',
         name: 'gantt',
-        component: () => import('@/views/GanttView.vue'),
+        component: () => import('@/views/gantt/gantt.vue'),
         meta: {
           title: 'Gantt Chart',
           requiresAuth: true

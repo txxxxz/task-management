@@ -90,7 +90,7 @@ export function getCurrentUserTaskStats() {
     completed: number
     todayExpired: number
   }>({
-    url: '/api/tasks/user/stats',
+    url: '/api/tasks/stats/user/stats',
     method: 'get'
   })
 }
@@ -101,7 +101,7 @@ export function getUserTasksByStatus(status: number, page = 1, pageSize = 10) {
     total: number
     items: TaskDetail[]
   }>({
-    url: `/api/tasks/user/status/${status}`,
+    url: `/api/tasks/stats/user/status/${status}`,
     method: 'get',
     params: { page, pageSize }
   })
@@ -113,7 +113,7 @@ export function getAllUserTasks(page = 1, pageSize = 10) {
     total: number
     items: TaskDetail[]
   }>({
-    url: '/api/tasks/user/all',
+    url: '/api/tasks/stats/user/all',
     method: 'get',
     params: { page, pageSize }
   })
@@ -125,7 +125,7 @@ export function getUserTodayExpiredTasks(page = 1, pageSize = 10) {
     total: number
     items: TaskDetail[]
   }>({
-    url: '/api/tasks/user/today-expired',
+    url: '/api/tasks/stats/user/today-expired',
     method: 'get',
     params: { page, pageSize }
   })
@@ -185,5 +185,27 @@ export function deleteAttachment(taskId: number, attachmentId: number) {
   return request<void>({
     url: '/api/tasks/' + taskId + '/attachments/' + attachmentId,
     method: 'delete'
+  })
+}
+
+/**
+ * 获取任务优先级分布数据
+ */
+export function getTaskPriorityDistribution() {
+  return request({
+    url: '/api/tasks/stats/priorityDistribution',
+    method: 'get'
+  })
+}
+
+/**
+ * 获取任务状态统计数据
+ * @param weekOffset 周偏移量
+ */
+export function getTaskStatusStatsByDay(weekOffset: number) {
+  return request({
+    url: '/api/tasks/stats/statusStatsByDay',
+    method: 'get',
+    params: { weekOffset }
   })
 } 

@@ -25,16 +25,12 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.taskManagement.entity.Project;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 项目管理服务实现
@@ -140,7 +136,7 @@ public class ProjectServiceImpl implements ProjectService {
      * 获取项目详情
      */
     @Override
-    public ProjectVO getProjectDetailc x x(Long id) {
+    public ProjectVO getProjectDetail(Long id) {
         // 查询项目信息
         Project project = projectMapper.selectById(id);
         if (project == null) {
