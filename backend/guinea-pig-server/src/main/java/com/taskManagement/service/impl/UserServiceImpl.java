@@ -22,6 +22,11 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.web.multipart.MultipartFile;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.taskManagement.vo.PageResult;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -214,5 +219,90 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         } catch (Exception e) {
             throw new UserBusinessException("头像上传失败：" + e.getMessage());
         }
+    }
+    
+    @Override
+    public PageResult<UserVO> getUserList(Map<String, Object> params) {
+        // 构建查询条件
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 添加查询条件：用户名模糊查询
+        if (params.containsKey("username") && params.get("username") != null) {
+            queryWrapper.like(User::getUsername, params.get("username"));
+        }
+        
+        // 添加查询条件：邮箱模糊查询
+        if (params.containsKey("email") && params.get("email") != null) {
+            queryWrapper.like(User::getEmail, params.get("email"));
+        }
+        
+        // 添加查询条件：角色精确查询
+        if (params.containsKey("role") && params.get("role") != null) {
+            queryWrapper.eq(User::getRole, params.get("role"));
+        }
+        
+        // 添加查询条件：状态精确查询
+        if (params.containsKey("status") && params.get("status") != null) {
+            queryWrapper.eq(User::getStatus, params.get("status"));
+        }
+        
+        // 获取分页参数，默认第1页，每页10条数据
+        long page = params.containsKey("page") ? Long.parseLong(params.get("page").toString()) : 1L;
+        long pageSize = params.containsKey("pageSize") ? Long.parseLong(params.get("pageSize").toString()) : 10L;
+        
+        // 执行分页查询
+        Page<User> pageResult = page(new Page<>(page, pageSize), queryWrapper);
+        
+        // 转换为VO列表
+        List<UserVO> userVOList = new ArrayList<>();
+        for (User user : pageResult.getRecords()) {
+            UserVO userVO = new UserVO();
+            BeanUtils.copyProperties(user, userVO);
+            // 设置创建时间
+            if (user.getCreateTime() != null) {
+                userVO.setCreateTime(user.getCreateTime().toString());
+            }
+            userVOList.add(userVO);
+        }
+        
+        // 构建分页结果对象
+        return new PageResult<>(userVOList, pageResult.getTotal());
+    }
+    
+    @Override
+    public void deleteUser(Long id) {
+        // 检查用户是否存在
+        User user = getById(id);
+        if (user == null) {
+            throw new UserBusinessException("删除失败：用户不存在");
+        }
+        
+        // 不允许删除管理员账号
+        if (user.getRole() == 2) {
+            throw new UserBusinessException("删除失败：不能删除管理员账号");
+        }
+        
+        // 执行删除操作
+        removeById(id);
+    }
+    
+    @Override
+    public boolean updateUserStatus(Long userId, Integer status) {
+        // 检查用户是否存在
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new UserBusinessException("更新状态失败：用户不存在");
+        }
+        
+        // 不允许禁用管理员账号
+        if (user.getRole() == 2 && status == 0) {
+            throw new UserBusinessException("更新状态失败：不能禁用管理员账号");
+        }
+        
+        // 更新状态
+        user.setStatus(status);
+        
+        // 执行更新操作
+        return this.updateById(user);
     }
 }

@@ -152,8 +152,8 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'employee',
-        name: 'EmployeeList',
-        component: () => import('@/views/employee/index.vue'),
+        name: 'EmployeeManagement',
+        component: () => import('@/views/user/index.vue'),
         meta: {
           title: 'Employee Management',
           requiresAuth: true,

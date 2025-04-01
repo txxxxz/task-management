@@ -187,3 +187,122 @@ export const getUserDetails = (userId: string) => {
     method: 'get'
   })
 }
+
+// 用户类型定义
+export interface UserDetail {
+  id: number
+  username: string
+  email: string
+  phone: string
+  avatar?: string
+  status: number
+  role: number
+  createTime: string
+}
+
+// 分页结果接口
+export interface PageResult<T> {
+  records: T[]
+  total: number
+}
+
+// 查询参数接口
+export interface UserQuery {
+  username?: string
+  email?: string
+  phone?: string
+  role?: number
+  status?: number
+  page?: number
+  pageSize?: number
+}
+
+// 用户表单数据
+export interface UserForm {
+  username: string
+  email: string
+  phone?: string
+  password?: string
+  role: number
+  status: number
+}
+
+// 用户注册数据
+export interface UserRegisterData {
+  username: string
+  password: string
+  email: string
+  phone?: string
+}
+
+/**
+ * 获取用户列表
+ * @param params 查询参数
+ */
+export function getUserList(params: UserQuery) {
+  return request({
+    url: '/auth/users',
+    method: 'get',
+    params
+  }).then(res => res.data)
+}
+
+/**
+ * 获取用户详情
+ * @param id 用户ID
+ */
+export function getUserById(id: number) {
+  return request({
+    url: `/auth/users/${id}`,
+    method: 'get'
+  }).then(res => res.data)
+}
+
+/**
+ * 创建用户
+ * @param data 用户数据
+ */
+export function createUser(data: UserRegisterData) {
+  return request({
+    url: '/auth/users',
+    method: 'post',
+    data
+  }).then(res => res.data)
+}
+
+/**
+ * 更新用户
+ * @param id 用户ID
+ * @param data 用户数据
+ */
+export function updateUser(id: number, data: Partial<UserForm>) {
+  return request({
+    url: `/auth/users/${id}`,
+    method: 'put',
+    data
+  }).then(res => res.data)
+}
+
+/**
+ * 删除用户
+ * @param id 用户ID
+ */
+export function deleteUser(id: number) {
+  return request({
+    url: `/auth/users/${id}`,
+    method: 'delete'
+  }).then(res => res.data)
+}
+
+/**
+ * 更新用户状态
+ * @param id 用户ID
+ * @param status 状态值 0-禁用 1-启用
+ */
+export function updateUserStatusById(id: number, status: number) {
+  return request({
+    url: `/auth/users/${id}/status`,
+    method: 'patch',
+    data: { status }
+  }).then(res => res.data)
+}

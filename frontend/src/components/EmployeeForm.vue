@@ -40,8 +40,8 @@
 import { ref, reactive, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import type { Employee, EmployeeForm } from '../../../types/employee'
-import { createEmployee, updateEmployee } from '../../../api/employee'
+import type { Employee, EmployeeForm } from '../types/employee'
+import { createEmployee, updateEmployee } from '../api/employee'
 
 const props = defineProps<{
   employee?: Partial<Employee>

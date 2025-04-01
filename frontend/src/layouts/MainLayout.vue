@@ -4,7 +4,7 @@
     <header class="header">
       <div class="logo">
         <img src="/Users/txxxxz/Desktop/斗转星移/final project/task-management/frontend/img/guineahead.svg" alt="Task Management System" />
-        <span>Guinea Pig Task Management System</span>
+        <span class="logo-text" style="font-size: 16px; color: #333;">Guinea Pig Task Management System</span>
       </div>
       <div class="header-right">
         <el-input
