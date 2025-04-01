@@ -576,7 +576,7 @@ const fetchProjectDetail = async () => {
   error.value = null;
 
   try {
-    const response = await getProjectDetail(projectId);
+    const response = await getProjectDetail(parseInt(projectId));
     const data = extractDataFromResponse(response);
     
     if (!data) {

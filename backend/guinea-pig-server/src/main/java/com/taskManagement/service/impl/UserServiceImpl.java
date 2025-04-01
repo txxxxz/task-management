@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.web.multipart.MultipartFile;
-import com.taskManagement.utils.AliOssUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +29,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     private final UserMapper userMapper;
     private final JwtProperties jwtProperties;
-    private final AliOssUtil aliOssUtil;
     private final FileService fileService;
     
     @Override

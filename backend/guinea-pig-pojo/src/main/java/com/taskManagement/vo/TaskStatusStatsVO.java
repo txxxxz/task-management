@@ -33,6 +33,11 @@ public class TaskStatusStatsVO {
      * 已完成任务数量
      */
     private Integer completed;
+
+    /**
+     * 已取消任务数量
+     */
+    private Integer cancelled;
     
     /**
      * 总任务数量
@@ -44,13 +49,5 @@ public class TaskStatusStatsVO {
      */
     private Double completionRate;
     
-    /**
-     * 项目ID
-     */
-    private Long projectId;
     
-    /**
-     * 项目名称
-     */
-    private String projectName;
 } 

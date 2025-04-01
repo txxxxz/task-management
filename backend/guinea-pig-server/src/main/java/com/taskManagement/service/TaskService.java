@@ -2,8 +2,6 @@ package com.taskManagement.service;
 
 import com.taskManagement.dto.TaskAttachmentDTO;
 import com.taskManagement.dto.TaskDTO;
-import com.taskManagement.entity.Task;
-import com.taskManagement.vo.UserVO;
 import com.taskManagement.vo.TaskVO;
 import org.springframework.web.multipart.MultipartFile;
 

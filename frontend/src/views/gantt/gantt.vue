@@ -1,18 +1,18 @@
 <template>
   <div class="container">
 
+    <div class="gantt-title" style="text-align: center; color: #5B8FF9;">
+      <h2>Task Gantt Chart</h2>
+    </div>
+
     <!-- 甘特图区域 -->
     <div class="gantt-container">
       <div class="gantt-header">
-        <div class="gantt-controls">
-          <el-button-group>
-            <el-button @click="previousWeek">
-              <el-icon><ArrowLeft /></el-icon> Previous Week
-            </el-button>
-            <el-button @click="nextWeek">
-              Next Week <el-icon><ArrowRight /></el-icon>
-            </el-button>
-          </el-button-group>
+        <!-- 靠左展示 -->
+        <div class="gantt-controls" style="text-align: left;">
+          <el-button type="primary" @click="fetchTasks" >
+            <el-icon><Refresh /></el-icon> 刷新
+          </el-button>
         </div>
       </div>
       
@@ -27,6 +27,9 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { Search, Refresh, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import Gantt from 'frappe-gantt'
 import dayjs from 'dayjs'
+import { ElMessage } from 'element-plus'
+import { getTaskList } from '@/api/task'
+import type { TaskDetail } from '@/types/task'
 
 // 计算当前一周的开始（周一）和结束（周日）日期
 const weekStart = computed(() => {
@@ -38,8 +41,32 @@ const weekEnd = computed(() => {
 
 // 更新甘特图的时间范围
 const updateGanttTimeRange = () => {
-  if (ganttChart) {
-    ganttChart.change_view_mode('Day', weekStart.value.toDate(), weekEnd.value.toDate())
+  if (!ganttChart) {
+    console.warn('甘特图尚未初始化，无法更新时间范围')
+    return
+  }
+  
+  try {
+    // 获取有效的开始和结束日期
+    const startDate = weekStart.value.toDate()
+    const endDate = weekEnd.value.toDate()
+    
+    // 确保日期有效
+    if (!isValidDate(startDate) || !isValidDate(endDate)) {
+      console.error('甘特图日期范围无效:', startDate, endDate)
+      ElMessage.error('日期范围错误，无法更新甘特图')
+      return
+    }
+    
+    ganttChart.change_view_mode('Day', startDate, endDate)
+    
+    // 更新后延迟处理表头
+    setTimeout(() => {
+      customizeHeader()
+    }, 0)
+  } catch (error) {
+    console.error('更新甘特图时间范围失败:', error)
+    ElMessage.error('更新甘特图时间范围失败')
   }
 }
 
@@ -70,210 +97,393 @@ const filterForm = reactive({
   tags: []
 })
 
-const priorityOptions = [
-  { label: 'Low', value: 'low' },
-  { label: 'Medium', value: 'medium' },
-  { label: 'High', value: 'high' },
-  { label: 'Critical', value: 'critical' }
-]
+// 优先级映射
+const PRIORITY_MAP = {
+  1: 'low',
+  2: 'medium',
+  3: 'high',
+  4: 'urgent'
+} as const
 
-const statusOptions = [
-  { label: 'Pending', value: 'pending' },
-  { label: 'In Progress', value: 'in-progress' },
-  { label: 'Completed', value: 'completed' },
-  { label: 'Cancelled', value: 'cancelled' }
-]
-
-const memberOptions = [
-  { label: 'Member 1', value: 1 },
-  { label: 'Member 2', value: 2 },
-  { label: 'Member 3', value: 3 }
-]
-
-const tagOptions = [
-  { label: 'Bug', value: 'bug' },
-  { label: 'Feature', value: 'feature' },
-  { label: 'Optimization', value: 'optimization' }
-]
-
-/* ---------------------------
-   甘特图数据和配置
---------------------------- */
-const tasks = ref([
-  {
-    id: 'Task1',
-    name: 'Frontend Project Refactoring Plan',
-    start: dayjs().toDate(),
-    end: dayjs().add(4, 'day').toDate(),
-    progress: 20,
-    priority: 'high',
-    tags: ['Architecture', 'Refactoring']
-  },
-  {
-    id: 'Task2',
-    name: 'Backend Interface Optimization',
-    start: dayjs().add(3, 'day').toDate(),
-    end: dayjs().add(7, 'day').toDate(),
-    progress: 60,
-    priority: 'medium',
-    tags: ['Backend', 'Performance Optimization']
-  },
-  {
-    id: 'Task3',
-    name: 'User Feedback System Implementation',
-    start: dayjs().add(5, 'day').toDate(),
-    end: dayjs().add(8, 'day').toDate(),
-    progress: 0,
-    priority: 'low',
-    tags: ['Feature', 'User Experience']
-  },
-  {
-    id: 'Task4',
-    name: 'Security Vulnerability Fix',
-    start: dayjs().add(1, 'day').toDate(),
-    end: dayjs().add(2, 'day').toDate(),
-    progress: 100,
-    priority: 'critical',
-    tags: ['Security', 'Vulnerability Fix']
-  }
-])
-
-/* ---------------------------
-   事件处理方法
---------------------------- */
-const handleSearch = () => {
-  console.log('Search conditions:', filterForm)
-}
-
-const handleReset = () => {
-  filterForm.number = ''
-  filterForm.name = ''
-  filterForm.priority = ''
-  filterForm.status = ''
-  filterForm.createDateRange = []
-  filterForm.dueDateRange = []
-  filterForm.members = []
-  filterForm.tags = []
-}
+// 状态映射
+const STATUS_MAP = {
+  0: 'pending',
+  1: 'in-progress',
+  2: 'completed',
+  3: 'cancelled'
+} as const
 
 /* ---------------------------
    自定义任务详情弹窗样式
 --------------------------- */
 const customPopupHtml = (task: any) => {
   const priorityMap: Record<string, string> = {
-    urgent: 'Critical',
-    high: 'High',
-    medium: 'Medium',
-    low: 'Low'
+    'urgent': '紧急',
+    'high': '高',
+    'medium': '中',
+    'low': '低'
   }
-  const priorityText = priorityMap[task.priority] || 'Unknown'
+  
+  const statusMap: Record<string, string> = {
+    'pending': '待处理',
+    'in-progress': '进行中',
+    'completed': '已完成',
+    'cancelled': '已取消'
+  }
+  
+  const priorityText = priorityMap[task.priority] || '未知'
+  const statusText = statusMap[task.status] || '未知'
   const progressText = `${task.progress || 0}%`
   const startDate = dayjs(task.start).format('YYYY-MM-DD HH:mm:ss')
   const endDate = dayjs(task.end).format('YYYY-MM-DD HH:mm:ss')
+  const description = task.description || '暂无描述'
+
+  // 根据不同优先级设置颜色
+  const priorityColors: Record<string, string> = {
+    'urgent': '#F56C6C',
+    'high': '#FAAD14',
+    'medium': '#5B8FF9',
+    'low': '#36CFC9'
+  }
+  const priorityColor = priorityColors[task.priority] || '#5B8FF9'
 
   return `
-    <div class="popup-container">
-      <h4 class="task-title">${task.name}</h4>
-      <p><strong>Start Date:</strong> ${startDate}</p>
-      <p><strong>End Date:</strong> ${endDate}</p>
-      <p><strong>Priority:</strong> ${priorityText}</p>
-      <p><strong>Progress:</strong> ${progressText}</p>
+    <div class="popup-container" style="border-top-color: ${priorityColor}">
+      <h4 class="task-title" style="color: ${priorityColor}">${task.name}</h4>
+      <p><strong style="color: ${priorityColor}">优先级:</strong> ${priorityText}</p>
+      <p><strong style="color: ${priorityColor}">状态:</strong> ${statusText}</p>
+      <p><strong style="color: ${priorityColor}">进度:</strong> ${progressText}</p>
+      <p><strong style="color: ${priorityColor}">开始时间:</strong> ${startDate}</p>
+      <p><strong style="color: ${priorityColor}">截止时间:</strong> ${endDate}</p>
+      <p><strong style="color: ${priorityColor}">描述:</strong> ${description}</p>
     </div>
   `
 }
 
 /* ---------------------------
-   初始化甘特图
+   任务数据和甘特图相关
 --------------------------- */
+const tasks = ref<TaskDetail[]>([])
 const ganttContainer = ref(null)
 let ganttChart: any = null
 
-const initGantt = () => {
-  if (!ganttContainer.value) return
+// 验证日期是否有效
+const isValidDate = (date: any): boolean => {
+  return date instanceof Date && !isNaN(date.getTime())
+}
 
-  const ganttTasks = tasks.value.map(task => ({
-    id: task.id,
-    name: task.name,
-    start: task.start,
-    end: task.end,
-    progress: task.progress,
-    dependencies: '',
-    custom_class: `priority-${task.priority}`,
-    priority: task.priority
-  }))
+// 从后端获取任务列表
+const fetchTasks = async () => {
+  try {
+    const response = await getTaskList()
+    console.log('API返回数据:', response)
+    
+    // 根据控制台输出，API返回格式为：
+    // { code: 1, data: { items: [...], total: 数量 } }
+    
+    if (response && response.data) {
+      let taskItems: TaskDetail[] = []
+      
+      // 判断返回数据结构
+      const responseData = response.data
+      
+      if (responseData.code === 1 && responseData.data && Array.isArray(responseData.data.items)) {
+        // 标准API格式: { code: 1, data: { items: [...] } }
+        taskItems = responseData.data.items || []
+      } else if (responseData.items && Array.isArray(responseData.items)) {
+        // 直接包含items的对象: { items: [...] }
+        taskItems = responseData.items
+      } else if (Array.isArray(responseData)) {
+        // 直接返回数组形式
+        taskItems = responseData
+      } else {
+        console.error('无法识别的任务数据格式:', responseData)
+        ElMessage.error('任务数据格式不符合预期')
+        taskItems = []
+      }
+      
+      tasks.value = taskItems
+      console.log('解析后的任务数据:', tasks.value)
+      
+      if (ganttChart && tasks.value.length > 0) {
+        // 如果甘特图已经初始化且有数据，则更新数据
+        updateGanttChart()
+      } else if (tasks.value.length > 0) {
+        // 如果有任务数据，则初始化甘特图
+        initGantt()
+      } else {
+        console.warn('没有任务数据可显示')
+        ElMessage.warning('没有任务数据可显示')
+      }
+    } else {
+      console.error('API返回数据格式错误')
+      ElMessage.error('获取任务数据失败')
+    }
+  } catch (error) {
+    console.error('获取任务列表失败:', error)
+    ElMessage.error('获取任务列表失败')
+  }
+}
 
-  ganttChart = new Gantt(ganttContainer.value, ganttTasks, {
-    header_height: 60,
-    column_width: 120,
-    step: 24,
-    view_modes: ['Day'],
-    bar_height: 40,
-    bar_corner_radius: 3,
-    arrow_curve: 5,
-    padding: 18,
-    view_mode: 'Day',
-    date_format: 'YYYY-MM-DD HH:mm:ss',
-    custom_popup_html: customPopupHtml,
-    language: 'zh',
-    start_date: weekStart.value.toDate(),
-    end_date: weekEnd.value.toDate(),
-    on_click: (task: any) => {
-      console.log('Task clicked:', task)
-    },
-    on_date_change: (task: any, start: string, end: string) => {
-      console.log('Date changed:', task, start, end)
-    },
-    on_progress_change: (task: any, progress: number) => {
-      console.log('Progress changed:', task, progress)
-    },
-    on_view_change: (mode: string) => {
-      console.log('View changed:', mode)
-      setTimeout(() => {
-        customizeHeader()
-      }, 0)
+// 将任务数据转换为甘特图所需格式
+const convertTasksToGanttFormat = () => {
+  if (!tasks.value || !Array.isArray(tasks.value)) {
+    console.error('任务数据格式错误:', tasks.value)
+    return []
+  }
+  
+  // 保证开始日期和结束日期都是有效日期
+  const defaultStartDate = new Date()
+  const defaultEndDate = dayjs(defaultStartDate).add(1, 'day').toDate()
+  
+  return tasks.value.map(task => {
+    // 后端返回的实际数据结构:
+    // { id, name, description, projectId, status, priority, startTime, deadline }
+    
+    // 确保有效的ID
+    const id = String(task.id || '')
+    
+    // 任务名称
+    const name = task.name || `任务 #${task.id || ''}`
+    
+    // 使用任务的实际开始时间和截止时间
+    let startTime: Date
+    let endTime: Date
+    
+    // 尝试解析startTime
+    if (task.startTime) {
+      startTime = new Date(task.startTime)
+      if (!isValidDate(startTime)) {
+        console.warn(`任务 #${id} 的开始时间无效:`, task.startTime)
+        startTime = defaultStartDate
+      }
+    } else {
+      startTime = defaultStartDate
+    }
+    
+    // 尝试解析deadline
+    if (task.deadline) {
+      endTime = new Date(task.deadline)
+      if (!isValidDate(endTime)) {
+        console.warn(`任务 #${id} 的截止时间无效:`, task.deadline)
+        endTime = defaultEndDate
+      }
+    } else {
+      endTime = defaultEndDate
+    }
+    
+    // 如果开始时间晚于结束时间，使用默认结束时间
+    if (startTime > endTime) {
+      console.warn(`任务 #${id} 的开始时间晚于截止时间，使用默认截止时间`)
+      endTime = dayjs(startTime).add(1, 'day').toDate()
+    }
+    
+    // 计算任务进度
+    let progress = 0
+    if (task.status === 2) { // 已完成
+      progress = 100
+    } else if (task.status === 1) { // 进行中
+      progress = 50
+    }
+    
+    // 确定状态 - 基于状态区分任务
+    let statusValue = 'pending'
+    if (typeof task.status === 'number') {
+      if (task.status === 0) statusValue = 'pending'
+      else if (task.status === 1) statusValue = 'in-progress'
+      else if (task.status === 2) statusValue = 'completed'
+      else if (task.status === 3) statusValue = 'cancelled'
+    }
+    
+    // 确定优先级 - 使用推荐的色系
+    let priorityClass = 'medium'
+    if (typeof task.priority === 'number') {
+      if (task.priority === 1) priorityClass = 'low'
+      else if (task.priority === 2) priorityClass = 'medium'
+      else if (task.priority === 3) priorityClass = 'high'
+      else if (task.priority === 4) priorityClass = 'urgent'
+    }
+    
+    return {
+      id: id,
+      name: name,
+      description: task.description || '',
+      projectId: task.projectId, // 保留项目ID信息用于内部逻辑
+      start: startTime,
+      end: endTime,
+      progress: progress,
+      dependencies: '',
+      custom_class: `priority-${priorityClass} status-${statusValue}`, // 同时使用优先级和状态类
+      priority: priorityClass,
+      status: statusValue
     }
   })
+}
 
-  setTimeout(() => {
-    customizeHeader()
-  }, 0)
+// 更新甘特图数据
+const updateGanttChart = () => {
+  if (!ganttChart) {
+    console.warn('甘特图尚未初始化，无法更新')
+    initGantt() // 尝试初始化
+    return
+  }
+  
+  try {
+    const ganttTasks = convertTasksToGanttFormat()
+    
+    // 确保有任务数据
+    if (!ganttTasks || ganttTasks.length === 0) {
+      console.warn('没有可显示的任务数据')
+      return
+    }
+    
+    ganttChart.refresh(ganttTasks)
+    
+    setTimeout(() => {
+      customizeHeader()
+    }, 0)
+  } catch (error) {
+    console.error('更新甘特图失败:', error)
+    ElMessage.error('更新甘特图失败')
+  }
+}
+
+// 初始化甘特图
+const initGantt = () => {
+  if (!ganttContainer.value) return
+  
+  try {
+    const ganttTasks = convertTasksToGanttFormat()
+    
+    // 确保有任务数据
+    if (!ganttTasks || ganttTasks.length === 0) {
+      console.warn('没有可显示的任务数据')
+      return
+    }
+    
+    // 确保所有任务都有有效的开始和结束日期
+    const validTasks = ganttTasks.filter(task => 
+      isValidDate(task.start) && 
+      isValidDate(task.end)
+    )
+    
+    if (validTasks.length === 0) {
+      console.error('没有包含有效日期的任务')
+      ElMessage.error('任务日期格式错误，无法显示甘特图')
+      return
+    }
+    
+    // 获取有效的开始和结束日期
+    const startDate = weekStart.value.toDate()
+    const endDate = weekEnd.value.toDate()
+    
+    // 确保日期有效
+    if (!isValidDate(startDate) || !isValidDate(endDate)) {
+      console.error('甘特图日期范围无效:', startDate, endDate)
+      ElMessage.error('日期范围错误，无法显示甘特图')
+      return
+    }
+    
+    ganttChart = new Gantt(ganttContainer.value, validTasks, {
+      header_height: 60,
+      column_width: 120,
+      step: 24,
+      view_modes: ['Day', 'Week', 'Month'],
+      bar_height: 40,
+      bar_corner_radius: 3,
+      arrow_curve: 5,
+      padding: 18,
+      view_mode: 'Day',
+      date_format: 'YYYY-MM-DD HH:mm:ss',
+      custom_popup_html: customPopupHtml,
+      language: 'zh',
+      start_date: startDate,
+      end_date: endDate,
+      on_click: (task: any) => {
+        console.log('任务点击:', task)
+      },
+      on_date_change: (task: any, start: string, end: string) => {
+        console.log('日期变更:', task, start, end)
+      },
+      on_progress_change: (task: any, progress: number) => {
+        console.log('进度变更:', task, progress)
+      },
+      on_view_change: (mode: string) => {
+        console.log('视图变更:', mode)
+        setTimeout(() => {
+          customizeHeader()
+        }, 0)
+      }
+    })
+
+    setTimeout(() => {
+      customizeHeader()
+    }, 0)
+  } catch (error) {
+    console.error('初始化甘特图失败:', error)
+    ElMessage.error('初始化甘特图失败')
+  }
 }
 
 // 自定义更新表头，将每个 header cell 修改为两行显示：星期和日期
 const customizeHeader = () => {
-  const headerCells = document.querySelectorAll('.gantt .grid-header .grid-header-cell')
-  headerCells.forEach((cell: Element) => {
-    const dateText = (cell as HTMLElement).innerText.trim()
-    const dateObj = dayjs(dateText)
-    if (dateObj.isValid()) {
-      const weekday = getWeekdayLabel(dateObj)
-      const formattedDate = dateObj.format('MM-DD');
-      (cell as HTMLElement).innerHTML = `
-        <div class="date-header">
-          <div class="weekday">${weekday}</div>
-          <div class="date">${formattedDate}</div>
-        </div>
-      `
+  try {
+    const headerCells = document.querySelectorAll('.gantt .grid-header .grid-header-cell')
+    if (!headerCells || headerCells.length === 0) {
+      console.warn('未找到甘特图表头元素')
+      return
     }
-  })
+    
+    headerCells.forEach((cell: Element) => {
+      if (!cell) return
+      
+      const cellElement = cell as HTMLElement
+      const dateText = cellElement.innerText ? cellElement.innerText.trim() : ''
+      
+      if (!dateText) {
+        console.warn('表头单元格文本为空')
+        return
+      }
+      
+      try {
+        const dateObj = dayjs(dateText)
+        if (dateObj.isValid()) {
+          const weekday = getWeekdayLabel(dateObj)
+          const formattedDate = dateObj.format('MM-DD')
+          cellElement.innerHTML = `
+            <div class="date-header">
+              <div class="weekday">${weekday}</div>
+              <div class="date">${formattedDate}</div>
+            </div>
+          `
+        } else {
+          console.warn('无效的日期文本:', dateText)
+        }
+      } catch (error) {
+        console.error('处理表头日期时出错:', error)
+      }
+    })
+  } catch (error) {
+    console.error('自定义表头处理失败:', error)
+  }
 }
 
 // 获取星期几
 const getWeekdayLabel = (dateObj: dayjs.Dayjs) => {
   const weekDayMap: Record<number, string> = {
-    0: 'Sunday',
-    1: 'Monday',
-    2: 'Tuesday',
-    3: 'Wednesday',
-    4: 'Thursday',
-    5: 'Friday',
-    6: 'Saturday'
+    0: '周日',
+    1: '周一',
+    2: '周二',
+    3: '周三',
+    4: '周四',
+    5: '周五',
+    6: '周六'
   }
   return weekDayMap[dateObj.day()] || ''
 }
 
 onMounted(() => {
-  initGantt()
+  fetchTasks() // 组件挂载后获取任务数据
 })
 
 watch([currentDate], () => {
@@ -289,46 +499,15 @@ watch([currentDate], () => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* 筛选区域样式 */
-.filter-section {
-  margin-bottom: 24px;
-  padding: 24px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.filter-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.filter-row {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.filter-item {
-  flex: 1;
-  min-width: 240px;
-}
-
-.filter-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.el-button {
-  margin-left: 12px;
+.gantt-title h2 {
+  margin-bottom: 20px;
+  color: #5B8FF9;
+  font-weight: 500;
 }
 
 /* 甘特图区域样式 */
 .gantt-container {
-  margin-top: 24px;
+  margin-top: 16px;
   padding: 20px;
   background: #fff;
   border-radius: 8px;
@@ -357,22 +536,60 @@ watch([currentDate], () => {
   fill-opacity: 0.8;
 }
 
+/* 优先级相关样式 - 应用推荐的颜色系统 */
 .gantt .bar.priority-urgent {
-  fill: #F56C6C;
+  fill: #F56C6C; /* 紧急 - 深红色 */
 }
 
 .gantt .bar.priority-high {
-  fill: #E6A23C;
+  fill: #FAAD14; /* 高 - 阿里系黄色 */
 }
 
 .gantt .bar.priority-medium {
-  fill: #409EFF;
+  fill: #5B8FF9; /* 中 - AntV蓝色 */
 }
 
 .gantt .bar.priority-low {
-  fill: #67C23A;
+  fill: #36CFC9; /* 低 - 绿色+青蓝 */
 }
 
+/* 状态修饰 */
+.gantt .bar.status-completed {
+  fill-opacity: 0.9;
+  stroke: #67C23A;
+  stroke-width: 1px;
+}
+
+.gantt .bar.status-in-progress {
+  fill-opacity: 0.9;
+}
+
+.gantt .bar.status-pending {
+  fill-opacity: 0.7;
+}
+
+.gantt .bar.status-cancelled {
+  fill-opacity: 0.4;
+  stroke: #909399;
+  stroke-width: 1px;
+  stroke-dasharray: 4;
+}
+
+/* 修改进度条颜色为系统蓝色 */
+.gantt .bar-progress {
+  fill: #5B8FF9 !important; /* 使用系统标准蓝色 */
+}
+
+/* 鼠标悬停时进度条颜色 */
+.gantt .bar-wrapper:hover .bar-progress {
+  fill: #4a7fe0 !important; /* 稍深一点的蓝色 */
+}
+
+.gantt .bar-wrapper.active .bar-progress {
+  fill: #4a7fe0 !important; /* 稍深一点的蓝色 */
+}
+
+/* 表头样式 */
 .gantt .date-header {
   text-align: center;
   line-height: 1.4;
@@ -380,12 +597,12 @@ watch([currentDate], () => {
 
 .gantt .date-header .weekday {
   font-weight: bold;
-  color: #606266;
+  color: #5B8FF9;
 }
 
 .gantt .date-header .date {
   font-size: 12px;
-  color: #909399;
+  color: #8c9fba;
 }
 
 /* 弹窗样式 */
@@ -395,12 +612,14 @@ watch([currentDate], () => {
   border-radius: 4px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   min-width: 200px;
+  border-top: 3px solid #5B8FF9;
 }
 
 .popup-container .task-title {
   margin: 0 0 8px 0;
   font-size: 16px;
-  color: #303133;
+  color: #5B8FF9;
+  font-weight: 500;
 }
 
 .popup-container p {
@@ -410,16 +629,12 @@ watch([currentDate], () => {
 }
 
 .popup-container p strong {
-  color: #303133;
+  color: #5B8FF9;
   margin-right: 8px;
 }
 
 /* 响应式布局 */
 @media screen and (max-width: 768px) {
-  .filter-item {
-    min-width: 100%;
-  }
-  
   .gantt-chart {
     height: 300px;
   }
