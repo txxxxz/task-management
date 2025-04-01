@@ -4,7 +4,7 @@
     <div class="back-button">
       <el-button @click="handleBack">
         <el-icon><Back /></el-icon>
-        返回
+        Back
       </el-button>
     </div>
 
@@ -12,7 +12,7 @@
     <el-loading
       v-model:loading="loading"
       :lock="true"
-      text="加载中..."
+      text="Loading..."
       background="rgba(255, 255, 255, 0.7)"
     />
 
@@ -30,19 +30,19 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>任务详情</h2>
+          <h2>Task Details</h2>
           <div class="header-actions">
             <el-button type="primary" plain @click="handleSave" v-if="isLeader" :loading="saveLoading">
               <el-icon><Check /></el-icon>
-              保存修改
+              Save
             </el-button>
             <el-button type="info" plain @click="refreshTaskTags">
               <el-icon><Refresh /></el-icon>
-              刷新修改
+              Refresh
             </el-button>
             <el-button type="danger" plain @click="handleDelete" v-if="isLeader">
               <el-icon><Delete /></el-icon>
-              删除任务
+              Delete
             </el-button>
           </div>
         </div>
@@ -51,12 +51,12 @@
       <el-form :model="taskForm" label-width="100px">
         <el-row :gutter="20">
           <el-col :xs="24" :sm="8" :md="8" :lg="8">
-            <el-form-item label="任务编号">
+            <el-form-item label="Task Number">
               <el-input v-model="taskForm.number" disabled />
             </el-form-item>
           </el-col>
           <el-col :xs="12" :sm="8" :md="8" :lg="8">
-            <el-form-item label="优先级">
+            <el-form-item label="Priority">
               <template v-if="isLeader">
                 <el-select v-model="taskForm.priority" style="width: 100%">
                   <el-option
@@ -75,13 +75,13 @@
             </el-form-item>
           </el-col>
           <el-col :xs="12" :sm="8" :md="8" :lg="8">
-            <el-form-item label="状态">
+            <el-form-item label="Status">
               <template v-if="isLeader">
                 <el-select v-model="taskForm.status" style="width: 100%">
-                  <el-option label="待处理" value="PENDING" />
-                  <el-option label="进行中" value="IN_PROGRESS" />
-                  <el-option label="已完成" value="COMPLETED" />
-                  <el-option label="已取消" value="CANCELLED" />
+                  <el-option label="Pending" value="PENDING" />
+                  <el-option label="In Progress" value="IN_PROGRESS" />
+                  <el-option label="Completed" value="COMPLETED" />
+                  <el-option label="Cancelled" value="CANCELLED" />
                 </el-select>
               </template>
               <template v-else>
@@ -95,20 +95,20 @@
 
         <el-row :gutter="20">
           <el-col :xs="24" :sm="12" :md="12" :lg="12">
-            <el-form-item label="任务名称">
+            <el-form-item label="Task Name">
               <el-input 
                 v-model="taskForm.name" 
                 :disabled="!isLeader"
-                placeholder="请输入任务名称"
+                placeholder="Please enter the task name"
               />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12" :md="12" :lg="12">
-            <el-form-item label="所属项目">
+            <el-form-item label="Project">
               <el-input 
                 v-model="taskForm.projectName" 
                 disabled
-                placeholder="未选择项目"
+                placeholder="No project selected"
               />
             </el-form-item>
           </el-col>
@@ -116,12 +116,12 @@
 
         <el-row :gutter="20">
           <el-col :xs="24" :sm="8" :md="8" :lg="8">
-            <el-form-item label="创建时间">
+            <el-form-item label="Create Time">
               <el-input v-model="taskForm.createTime" disabled />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="8" :md="8" :lg="8">
-            <el-form-item label="开始时间">
+            <el-form-item label="Start Time">
               <el-date-picker
                 v-model="taskForm.startTime as string | Date"
                 type="datetime"
@@ -131,7 +131,7 @@
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="8" :md="8" :lg="8">
-            <el-form-item label="截止时间">
+            <el-form-item label="Due Time">
               <el-date-picker
                 v-model="taskForm.dueTime as string | Date"
                 type="datetime"
@@ -143,7 +143,7 @@
         </el-row>
 
         
-        <el-form-item label="任务成员">
+        <el-form-item label="Task Members">
           <el-select
             v-model="taskForm.members"
             multiple
@@ -164,7 +164,7 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="任务标签">
+        <el-form-item label="Task Tags">
           <el-select
             v-model="taskForm.tags"
             multiple
@@ -196,13 +196,13 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="任务描述">
+        <el-form-item label="Task Description">
           <el-input
             v-model="taskForm.description"
             type="textarea"
             :rows="4"
             :disabled="!isLeader"
-            placeholder="请输入任务描述"
+            placeholder="Please enter the task description"
           />
         </el-form-item>
       </el-form>
@@ -212,38 +212,34 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>任务文件</h2>
+          <h2>Task Files</h2>
           <div class="header-actions">
             <el-button type="primary" @click="handleUpload">
               <el-icon><Upload /></el-icon>
-              上传文件
-            </el-button>
-            <el-button @click="handleBatchUpload">
-              <el-icon><Document /></el-icon>
-              批量导入
+              Upload Files
             </el-button>
           </div>
         </div>
       </template>
 
       <el-table :data="fileList" style="width: 100%">
-        <el-table-column prop="name" label="文件名" min-width="200" />
-        <el-table-column prop="uploader" label="上传者" width="120" />
-        <el-table-column prop="uploadTime" label="上传时间" width="160" />
-        <el-table-column prop="size" label="大小" width="100">
+        <el-table-column prop="name" label="File Name" min-width="200" />
+        <el-table-column prop="uploader" label="Uploader" width="120" />
+        <el-table-column prop="uploadTime" label="Upload Time" width="160" />
+        <el-table-column prop="size" label="Size" width="100">
           <template #default="{ row }">
             {{ formatFileSize(row.size) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="Actions" width="200" align="center">
           <template #default="{ row }">
             <el-button-group>
-              <el-tooltip content="查看文件" placement="top">
+              <el-tooltip content="View File" placement="top">
                 <el-button type="primary" link @click="handleViewFile(row)">
                   <el-icon><View /></el-icon>
                 </el-button>
               </el-tooltip>
-              <el-tooltip content="删除文件" placement="top">
+              <el-tooltip content="Delete File" placement="top">
                 <el-button 
                   type="danger" 
                   link 
@@ -261,7 +257,7 @@
       <!-- 文件上传对话框 -->
       <el-dialog
         v-model="uploadDialogVisible"
-        title="上传文件"
+        title="Upload Files"
         width="500px"
       >
         <el-upload
@@ -274,19 +270,19 @@
         >
           <el-icon class="el-icon--upload"><upload-filled /></el-icon>
           <div class="el-upload__text">
-            拖拽文件到此处，或<em>点击上传</em>
+            Drag and drop files here, or <em>click to upload</em>
           </div>
           <template #tip>
             <div class="el-upload__tip">
-              支持任意文件格式，单个文件不超过100MB
+              Support any file format, each file is not more than 100MB
             </div>
           </template>
         </el-upload>
         <template #footer>
           <span class="dialog-footer">
-            <el-button @click="uploadDialogVisible = false">取消</el-button>
+            <el-button @click="uploadDialogVisible = false">Cancel</el-button>
             <el-button type="primary" @click="handleManualUpload" :loading="uploadLoading">
-              开始上传
+              Start Upload
             </el-button>
           </span>
         </template>
@@ -297,11 +293,11 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>评论 ({{ comments.length > 0 ? getTotalCommentCount() : 0 }})</h2>
+          <h2>Comments ({{ comments.length > 0 ? getTotalCommentCount() : 0 }})</h2>
           <div class="header-actions">
             <el-button size="small" @click="fetchComments">
               <el-icon><Refresh /></el-icon>
-              刷新评论
+              Refresh Comments
             </el-button>
           </div>
         </div>
@@ -311,7 +307,7 @@
         <!-- 评论列表 -->
         <div class="comments-list">
           <template v-if="comments.length === 0">
-            <el-empty description="暂无评论" />
+            <el-empty description="No comments yet" />
           </template>
           <template v-else>
             <comment-tree
@@ -329,18 +325,18 @@
         <!-- 评论输入框 -->
         <div class="comment-input">
           <div v-if="replyToComment" class="reply-info">
-            回复给：{{ replyToComment.createUserName }}
-            <el-button type="text" @click="cancelReply">取消回复</el-button>
+            Reply to: {{ replyToComment.createUserName }}
+            <el-button type="text" @click="cancelReply">Cancel Reply</el-button>
           </div>
           <el-input
             v-model="newComment.content"
             type="textarea"
             :rows="3"
-            :placeholder="replyToComment ? `回复 ${replyToComment.createUserName}...` : '写下你的评论...'"
+            :placeholder="replyToComment ? `Reply to ${replyToComment.createUserName}...` : 'Write your comment...'"
           />
           <div class="comment-buttons">
             <el-button type="primary" @click="handleAddComment" :loading="commentLoading">
-              {{ replyToComment ? '回复' : '发表评论' }}
+              {{ replyToComment ? 'Reply' : 'Add Comment' }}
             </el-button>
           </div>
         </div>
@@ -419,17 +415,17 @@ const PRIORITY_MAP_REVERSE = {
 } as const;
 
 const STATUS_MAP = {
-  PENDING: 1,
-  IN_PROGRESS: 2,
-  REVIEW: 3,
-  COMPLETED: 4
+  PENDING: 0,
+  IN_PROGRESS: 1,
+  COMPLETED: 2,
+  CANCELLED: 3
 } as const;
 
 const STATUS_MAP_REVERSE = {
-  1: 'PENDING',
-  2: 'IN_PROGRESS',
-  3: 'REVIEW',
-  4: 'COMPLETED'
+  0: 'PENDING',
+  1: 'IN_PROGRESS',
+  2: 'COMPLETED',
+  3: 'CANCELLED'
 } as const;
 
 const STATUS_LABELS = {
@@ -554,10 +550,10 @@ const fileList = ref<TaskFile[]>([])
 
 // 优先级选项
 const priorityOptions = [
-  { label: '紧急', value: 'CRITICAL' },
-  { label: '高', value: 'HIGH' },
-  { label: '中', value: 'MEDIUM' },
-  { label: '低', value: 'LOW' }
+  { label: 'Critical', value: 'CRITICAL' },
+  { label: 'High', value: 'HIGH' },
+  { label: 'Medium', value: 'MEDIUM' },
+  { label: 'Low', value: 'LOW' }
 ]
 
 // 获取优先级标签类型
@@ -803,7 +799,7 @@ const handleSave = async () => {
       startTime,
       deadline,
       priority: PRIORITY_MAP[taskForm.priority] || 2,
-      status: STATUS_MAP[taskForm.status] || 1,
+      status: STATUS_MAP[taskForm.status as keyof typeof STATUS_MAP] || 1,
       members: taskForm.members,
       tagIds
     };

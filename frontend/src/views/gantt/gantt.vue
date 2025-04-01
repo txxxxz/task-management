@@ -118,10 +118,10 @@ const STATUS_MAP = {
 --------------------------- */
 const customPopupHtml = (task: any) => {
   const priorityMap: Record<string, string> = {
-    'urgent': '紧急',
-    'high': '高',
-    'medium': '中',
-    'low': '低'
+    'urgent': 'Critical',
+    'high': 'High',
+    'medium': 'Medium',
+    'low': 'Low'
   }
   
   const statusMap: Record<string, string> = {

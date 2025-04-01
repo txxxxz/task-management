@@ -19,23 +19,23 @@
         >
           <!-- 基本信息分组 -->
           <div class="form-group">
-            <div class="group-title">基本信息</div>
+            <div class="group-title">Basic Info</div>
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="任务名称" prop="name" required>
+                <el-form-item label="Task Name" prop="name" required>
                   <el-input 
                     v-model="taskForm.name" 
-                    placeholder="请输入任务名称"
+                    placeholder="Please enter the task name"
                     maxlength="50"
                     show-word-limit
                   />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="优先级" prop="priority" required>
+                <el-form-item label="Priority" prop="priority" required>
                   <el-select
                     v-model="taskForm.priority"
-                    placeholder="请选择优先级"
+                    placeholder="Please select the priority"
                     style="width: 100%"
                   >
                     <el-option
@@ -51,16 +51,16 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="所属项目" prop="projectId" required>
+                <el-form-item label="Project" prop="projectId" required>
                   <el-select
                     v-model="taskForm.projectId"
-                    placeholder="请选择所属项目"
+                    placeholder="Please select the project"
                     style="width: 100%"
                     filterable
                     remote
                     :remote-method="searchProjects"
                     :loading="projectsLoading"
-                    loading-text="加载中..."
+                    loading-text="Loading..."
                     :reserve-keyword="true"
                     default-first-option
                     clearable
@@ -76,17 +76,17 @@
                     />
                     <template #empty>
                       <div class="empty-projects">
-                        <p>未找到项目，请尝试其他关键词</p>
+                        <p>No projects found, please try another keyword</p>
                       </div>
                     </template>
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="状态" prop="status" required>
+                <el-form-item label="Status" prop="status" required>
                   <el-select
                     v-model="taskForm.status"
-                    placeholder="请选择任务状态"
+                    placeholder="Please select the status"
                     style="width: 100%"
                   >
                     <el-option
@@ -103,25 +103,25 @@
 
           <!-- 时间设置分组 -->
           <div class="form-group">
-            <div class="group-title">时间设置</div>
+            <div class="group-title">Time Setting</div>
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="开始时间" prop="startTime">
+                <el-form-item label="Start Time" prop="startTime">
                   <el-date-picker
                     v-model="taskForm.startTime"
                     type="datetime"
-                    placeholder="请选择开始时间"
+                    placeholder="Please select the start time"
                     style="width: 100%"
                     value-format="YYYY-MM-DDTHH:mm:ss"
                   />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="截止时间" prop="dueTime" required>
+                <el-form-item label="Due Time" prop="dueTime" required>
                   <el-date-picker
                     v-model="taskForm.dueTime"
                     type="datetime"
-                    placeholder="请选择截止时间"
+                    placeholder="Please select the due time"
                     style="width: 100%"
                     value-format="YYYY-MM-DDTHH:mm:ss"
                     :disabled-date="disabledDueDate"
@@ -133,15 +133,15 @@
 
           <!-- 标签分组 -->
           <div class="form-group">
-            <div class="group-title">标签</div>
-            <el-form-item label="标签" prop="tags">
+            <div class="group-title">Tags</div>
+            <el-form-item label="Tags" prop="tags">
               <el-select
                 v-model="taskForm.tags"
                 multiple
                 filterable
                 remote
                 reserve-keyword
-                placeholder="请选择或输入标签"
+                placeholder="Please select or enter the tags"
                 :remote-method="searchTagsLocal"
                 :loading="tagsLoading"
                 style="width: 100%"
@@ -175,13 +175,13 @@
 
           <!-- 任务描述分组 -->
           <div class="form-group">
-            <div class="group-title">任务描述</div>
+            <div class="group-title">Task Description</div>
             <el-form-item prop="description">
               <el-input
                 v-model="taskForm.description"
                 type="textarea"
                 :rows="4"
-                placeholder="请描述任务详情"
+                placeholder="Please describe the task details"
                 maxlength="500"
                 show-word-limit
               />
@@ -190,7 +190,7 @@
 
           <!-- 任务成员分组 -->
           <div class="form-group">
-            <div class="group-title">任务成员</div>
+            <div class="group-title">Task Members</div>
             <el-form-item prop="members" required>
               <el-select
                 v-model="taskForm.members"
@@ -198,9 +198,9 @@
                 filterable
                 remote
                 :remote-method="searchMembers"
-                placeholder="请选择任务成员"
+                placeholder="Please select the task members"
                 style="width: 100%"
-                loading-text="加载中..."
+                loading-text="Loading..."
                 :loading="membersLoading"
                 :reserve-keyword="true"
                 default-first-option
@@ -247,12 +247,12 @@
           >
             <el-icon class="el-icon--upload"><upload-filled /></el-icon>
             <div class="el-upload__text">
-              点击或拖拽文件到此处上传
-              <em>支持同时上传多个文件</em>
+              Click or drag files here to upload
+              <em>Support uploading multiple files at the same time</em>
             </div>
             <template #tip>
               <div class="el-upload__tip">
-                支持任意类型文件，每个文件不超过50MB
+                Support any type of file, each file is not more than 50MB
               </div>
             </template>
           </el-upload>
@@ -275,7 +275,7 @@
                   @click="removeFile(index)"
                   :icon="Delete"
                 >
-                  删除
+                  Delete
                 </el-button>
               </div>
             </div>
@@ -289,43 +289,43 @@
           <div class="confirm-icon">
             <el-icon :size="64" color="#409EFF"><InfoFilled /></el-icon>
           </div>
-          <h2>确认{{ isEdit ? '更新' : '创建' }}任务</h2>
+          <h2>Confirm {{ isEdit ? 'Update' : 'Create' }} Task</h2>
           <p class="confirm-desc">
-            请确认以下信息无误，点击"提交"按钮{{ isEdit ? '更新' : '创建' }}任务。
+            Please confirm the following information is correct, and click "Submit" to {{ isEdit ? 'update' : 'create' }} the task.
           </p>
           
           <div class="task-summary">
-            <el-descriptions title="任务信息" :column="2" border>
-              <el-descriptions-item label="任务名称">{{ taskForm.name }}</el-descriptions-item>
-              <el-descriptions-item label="优先级">
+            <el-descriptions title="Task Information" :column="2" border>
+              <el-descriptions-item label="Task Name">{{ taskForm.name }}</el-descriptions-item>
+              <el-descriptions-item label="Priority">
                 {{ getPriorityLabel(taskForm.priority) }}
               </el-descriptions-item>
-              <el-descriptions-item label="所属项目">
+              <el-descriptions-item label="Project">
                 {{ getProjectLabel(taskForm.projectId) }}
               </el-descriptions-item>
-              <el-descriptions-item label="任务状态">
+              <el-descriptions-item label="Status">
                 {{ getStatusLabel(taskForm.status) }}
               </el-descriptions-item>
-              <el-descriptions-item label="开始时间">{{ taskForm.startTime || '未设置' }}</el-descriptions-item>
-              <el-descriptions-item label="截止时间">{{ taskForm.dueTime }}</el-descriptions-item>
-              <el-descriptions-item label="标签">
+              <el-descriptions-item label="Start Time">{{ taskForm.startTime || 'Not set' }}</el-descriptions-item>
+              <el-descriptions-item label="Due Time">{{ taskForm.dueTime }}</el-descriptions-item>
+              <el-descriptions-item label="Tags">
                 {{ formatTagsDisplay }}
               </el-descriptions-item>
-              <el-descriptions-item label="任务成员">
+              <el-descriptions-item label="Task Members">
                 {{ taskForm.members.join(', ') || '无' }}
               </el-descriptions-item>
-              <el-descriptions-item label="附件数量">
-                {{ taskForm.attachments.length }}个文件
+              <el-descriptions-item label="Attachments">
+                {{ taskForm.attachments.length }} files
               </el-descriptions-item>
-              <el-descriptions-item label="任务描述" :span="2">
-                {{ taskForm.description || '无' }}
+              <el-descriptions-item label="Task Description" :span="2">
+                {{ taskForm.description || 'No description' }}
               </el-descriptions-item>
             </el-descriptions>
           </div>
           
           <div class="action-buttons">
-            <el-button @click="currentStep = 1">返回修改</el-button>
-            <el-button type="primary" @click="handleSubmit" :loading="loading">提交</el-button>
+            <el-button @click="currentStep = 1">Back to Modify</el-button>
+            <el-button type="primary" @click="handleSubmit" :loading="loading">Submit</el-button>
           </div>
         </div>
       </template>
@@ -340,7 +340,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import { CircleCheckFilled, UploadFilled, Delete, Document, User, InfoFilled, PriceTag } from '@element-plus/icons-vue'
 import { createTask, getTaskDetail, updateTask } from '../../api/task'
-import { getProjectList } from '../../api/project'
+import { getAllProjects } from '../../api/project'
 import { getAllUsers } from '../../api/user'
 import { getTagList, createTag, searchTags, getAllTags } from '@/api/tag'
 import type { Tag, TagListResponse } from '@/types/tag'
@@ -393,10 +393,10 @@ const memberSearchKeyword = ref('')
 
 // 优先级选项
 const priorityOptions = [
-  { value: 1, label: '低' },
-  { value: 2, label: '中' },
-  { value: 3, label: '高' },
-  { value: 4, label: '紧急' }
+  { value: 1, label: 'Low' },
+  { value: 2, label: 'Medium' },
+  { value: 3, label: 'High' },
+  { value: 4, label: 'Critical' }
 ]
 
 // 状态选项
@@ -419,23 +419,23 @@ const memberOptions = ref<{ value: string, label: string, avatar?: string }[]>([
 // 表单校验规则
 const formRules = {
   name: [
-    { required: true, message: '请输入任务名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '长度在2到50个字符之间', trigger: 'blur' }
+    { required: true, message: 'Please enter the task name', trigger: 'blur' },
+    { min: 2, max: 50, message: 'Length must be between 2 and 50 characters', trigger: 'blur' }
   ],
   priority: [
-    { required: true, message: '请选择优先级', trigger: 'change' }
+    { required: true, message: 'Please select the priority', trigger: 'change' }
   ],
   status: [
-    { required: true, message: '请选择任务状态', trigger: 'change' }
+    { required: true, message: 'Please select the task status', trigger: 'change' }
   ],
   projectId: [
-    { required: true, message: '请选择所属项目', trigger: 'change' }
+    { required: true, message: 'Please select the project', trigger: 'change' }
   ],
   dueTime: [
-    { required: true, message: '请选择截止时间', trigger: 'change' }
+    { required: true, message: 'Please select the due time', trigger: 'change' }
   ],
   members: [
-    { required: true, message: '请至少选择一名成员', trigger: 'change' }
+    { required: true, message: 'Please select at least one member', trigger: 'change' }
   ]
 }
 
@@ -443,14 +443,17 @@ const formRules = {
 const fetchProjects = async (keyword = '') => {
   projectsLoading.value = true
   try {
-    const params = {
-      keyword: keyword,
-      page: 1,
-      pageSize: 50
-    }
-    const response = await getProjectList(params)
+    const response = await getAllProjects()
     if (response.data && (response.data.code === 1 || response.data.code === 0 || response.data.code === 200)) {
-      const projects = response.data.data.items
+      let projects = response.data.data || [];
+      
+      // 如果有关键字，进行本地过滤
+      if (keyword) {
+        projects = projects.filter((project: Project) => 
+          project.name.toLowerCase().includes(keyword.toLowerCase())
+        );
+      }
+      
       projectOptions.value = projects.map((project: Project) => ({
         value: project.id.toString(),
         label: project.name
@@ -710,19 +713,19 @@ const handleSubmit = async () => {
     if (taskId) {
       // 更新任务
       await updateTask(taskId, submitData)
-      ElMessage.success('更新成功')
+      ElMessage.success('Update successfully')
       // 更新成功后跳转到任务列表
       router.push('/list')
     } else {
       // 创建任务
       await createTask(submitData)
-      ElMessage.success('创建成功')
+      ElMessage.success('Create successfully')
       // 创建成功后跳转到任务列表
       router.push('/list')
     }
   } catch (error: any) {
-    console.error('操作失败:', error)
-    ElMessage.error(error.message || '操作失败')
+    console.error('Operation failed:', error)
+    ElMessage.error(error.message || 'Operation failed')
   } finally {
     loading.value = false
   }
@@ -753,7 +756,7 @@ const processTags = async (tags: (string)[], projectId?: string): Promise<string
               color: tagColor,
               projectId
             });
-            console.log('创建新标签响应:', response);
+            console.log('Create new tag response:', response);
             
             if (response.data && response.data.data && response.data.data.id) {
               processedTags.push(response.data.data.id);
@@ -784,7 +787,7 @@ const processTags = async (tags: (string)[], projectId?: string): Promise<string
               }
             }
           } catch (error) {
-            console.error('创建标签失败:', error);
+            console.error('Create tag failed:', error);
           }
         }
       } else {
@@ -794,7 +797,7 @@ const processTags = async (tags: (string)[], projectId?: string): Promise<string
     }
   }
   
-  console.log('处理后的标签IDs:', processedTags);
+  console.log('Processed tag IDs:', processedTags);
   return processedTags
 }
 

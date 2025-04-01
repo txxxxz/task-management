@@ -218,23 +218,23 @@ const form = reactive({
 // 表单验证规则
 const rules: FormRules = {
   username: [
-    { required: true, message: '请输入姓名', trigger: 'blur' },
-    { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the name', trigger: 'blur' },
+    { min: 2, max: 20, message: 'Length between 2 and 20 characters', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+    { required: true, message: 'Please enter the email', trigger: 'blur' },
+    { type: 'email', message: 'Please enter the correct email address', trigger: 'blur' }
   ],
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    { required: true, message: 'Please enter the phone number', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: 'Please enter the correct phone number', trigger: 'blur' }
   ],
   role: [
-    { required: true, message: '请选择角色', trigger: 'change' }
+    { required: true, message: 'Please select the role', trigger: 'change' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the password', trigger: 'blur' },
+    { min: 6, max: 20, message: 'Length between 6 and 20 characters', trigger: 'blur' }
   ]
 }
 

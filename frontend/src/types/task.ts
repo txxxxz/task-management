@@ -35,6 +35,7 @@ export interface TaskDetail {
   projectId: string
   projectName?: string
   attachments?: string[]
+  commentCount?: number // 评论数量
 }
 
 // 任务文件接口

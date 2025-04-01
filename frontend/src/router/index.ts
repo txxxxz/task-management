@@ -93,15 +93,6 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
-        path: 'projects',
-        name: 'Projects',
-        component: () => import('@/views/project/index.vue'),
-        meta: {
-          title: 'Project Management',
-          requiresAuth: true
-        }
-      },
-      {
         path: 'task/create',
         name: 'TaskCreate',
         component: () => import('@/views/task/form.vue'),
@@ -245,7 +236,7 @@ router.beforeEach((to, from, next) => {
     
     // 检查是否需要 leader 权限
     if (to.meta.requiresLeader && userStore.userInfo?.role !== 1) {
-      ElMessage.warning('You do not have permission to access this page')
+      //ElMessage.warning('You do not have permission to access this page')
       next('/dashboard')
       return
     }

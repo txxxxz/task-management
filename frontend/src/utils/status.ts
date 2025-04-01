@@ -16,10 +16,10 @@ export function getStatusType(status: ProjectStatus): 'success' | 'warning' | 'i
 // 获取项目状态文本
 export function getStatusText(status: ProjectStatus): string {
   const statusMap = {
-    0: '筹备中',
-    1: '进行中',
-    2: '已完成',
-    3: '已归档'
+    0: 'In preparation',
+    1: 'In progress',
+    2: 'Completed',
+    3: 'Archived'
   }
   return statusMap[status]
 }
@@ -38,10 +38,10 @@ export function getPriorityType(priority: ProjectPriority): 'success' | 'warning
 // 获取优先级文本
 export function getPriorityText(priority: ProjectPriority): string {
   const priorityMap = {
-    1: '低',
-    2: '中',
-    3: '高',
-    4: '紧急'
+    1: 'Low',
+    2: 'Medium',
+    3: 'High',
+    4: 'Urgent'
   }
   return priorityMap[priority]
 }
@@ -49,19 +49,19 @@ export function getPriorityText(priority: ProjectPriority): string {
 // 获取优先级选项
 export function getPriorityOptions() {
   return [
-    { value: 1, label: '低' },
-    { value: 2, label: '中' },
-    { value: 3, label: '高' },
-    { value: 4, label: '紧急' }
+    { value: 1, label: 'Low' },
+    { value: 2, label: 'Medium' },
+    { value: 3, label: 'High' },
+    { value: 4, label: 'Critical' }
   ]
 }
 
 // 获取状态选项
 export function getStatusOptions() {
   return [
-    { value: 0, label: '筹备中' },
-    { value: 1, label: '进行中' },
-    { value: 2, label: '已完成' },
-    { value: 3, label: '已归档' }
+    { value: 0, label: 'In preparation' },
+    { value: 1, label: 'In progress' },
+    { value: 2, label: 'Completed' },
+    { value: 3, label: 'Archived' }
   ]
 } 

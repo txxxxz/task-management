@@ -4,7 +4,7 @@
     <div class="back-button">
       <el-button @click="handleBack">
         <el-icon><Back /></el-icon>
-        返回
+        Back
       </el-button>
     </div>
 
@@ -12,7 +12,7 @@
     <el-loading
       v-model:loading="loading"
       :lock="true"
-      text="加载中..."
+      text="Loading..."
       background="rgba(255, 255, 255, 0.7)"
     />
 
@@ -30,15 +30,15 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>项目详情</h2>
+          <h2>Project Details</h2>
           <div class="header-actions">
             <el-button type="primary" plain @click="handleSave" v-if="isLeader" :loading="saveLoading">
               <el-icon><Check /></el-icon>
-              保存修改
+              Save Changes
             </el-button>
             <el-button type="danger" plain @click="handleDelete" v-if="isLeader">
               <el-icon><Delete /></el-icon>
-              删除项目
+              Delete Project
             </el-button>
           </div>
         </div>
@@ -47,12 +47,12 @@
       <el-form :model="projectForm" label-width="100px">
         <el-row :gutter="20">
           <el-col :xs="24" :sm="8" :md="8" :lg="8">
-            <el-form-item label="项目编号">
+            <el-form-item label="Project Number">
               <el-input v-model="projectForm.id" disabled />
             </el-form-item>
           </el-col>
           <el-col :xs="12" :sm="8" :md="8" :lg="8">
-            <el-form-item label="优先级">
+            <el-form-item label="Priority">
               <template v-if="isLeader">
                 <el-select v-model="projectForm.priority" style="width: 100%">
                   <el-option
@@ -71,13 +71,13 @@
             </el-form-item>
           </el-col>
           <el-col :xs="12" :sm="8" :md="8" :lg="8">
-            <el-form-item label="状态">
+            <el-form-item label="Status">
               <template v-if="isLeader">
                 <el-select v-model="projectForm.status" style="width: 100%">
-                  <el-option label="筹备中" value="IN_PREPARATION" />
-                  <el-option label="进行中" value="IN_PROGRESS" />
-                  <el-option label="已完成" value="COMPLETED" />
-                  <el-option label="已归档" value="ARCHIVED" />
+                  <el-option label="In preparation" value="IN_PREPARATION" />
+                  <el-option label="In progress" value="IN_PROGRESS" />
+                  <el-option label="Completed" value="COMPLETED" />
+                  <el-option label="Archived" value="ARCHIVED" />
                 </el-select>
               </template>
               <template v-else>
@@ -89,22 +89,22 @@
           </el-col>
         </el-row>
 
-        <el-form-item label="项目名称">
+        <el-form-item label="Project Name">
           <el-input 
             v-model="projectForm.name" 
             :disabled="!isLeader"
-            placeholder="请输入项目名称"
+            placeholder="Please enter the project name"
           />
         </el-form-item>
 
         <el-row :gutter="20">
           <el-col :xs="24" :sm="12" :md="8" :lg="8">
-            <el-form-item label="创建时间">
+            <el-form-item label="Create Time">
               <el-input v-model="projectForm.createTime" disabled />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12" :md="8" :lg="8">
-            <el-form-item label="开始日期">
+            <el-form-item label="Start Time">
               <el-date-picker
                 v-model="projectForm.startTime"
                 type="datetime"
@@ -115,7 +115,7 @@
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12" :md="8" :lg="8">
-            <el-form-item label="截止日期">
+            <el-form-item label="End Time">
               <el-date-picker
                 v-model="projectForm.endTime"
                 type="datetime"
@@ -127,15 +127,15 @@
           </el-col>
         </el-row>
 
-        <el-form-item label="项目负责人">
+        <el-form-item label="Project Leader">
           <el-input 
             v-model="projectForm.creatorName" 
             disabled
-            placeholder="项目负责人"
+            placeholder="Project Leader"
           />
         </el-form-item>
         
-        <el-form-item label="项目成员">
+        <el-form-item label="Project Members">
           <template v-if="isLeader">
             <el-select
               v-model="projectForm.members"
@@ -168,13 +168,13 @@
           </template>
         </el-form-item>
 
-        <el-form-item label="项目详情">
+        <el-form-item label="Project Description">
           <el-input
             v-model="projectForm.description"
             type="textarea"
             :rows="4"
             :disabled="!isLeader"
-            placeholder="请输入项目详情"
+            placeholder="Please enter the project description"
           />
         </el-form-item>
       </el-form>
@@ -184,39 +184,39 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>项目文件</h2>
+          <h2>Project Files</h2>
           <div class="header-actions">
             <el-button type="primary" @click="handleUpload">
               <el-icon><Upload /></el-icon>
-              上传文件
+              Upload Files
             </el-button>
           </div>
         </div>
       </template>
 
       <el-table :data="fileList" style="width: 100%">
-        <el-table-column prop="name" label="文件名" min-width="200" />
-        <el-table-column prop="uploader" label="上传者" width="120" />
-        <el-table-column prop="uploadTime" label="上传时间" width="160" />
-        <el-table-column prop="size" label="大小" width="100">
+        <el-table-column prop="name" label="File Name" min-width="200" />
+        <el-table-column prop="uploader" label="Uploader" width="120" />
+        <el-table-column prop="uploadTime" label="Upload Time" width="160" />
+        <el-table-column prop="size" label="Size" width="100">
           <template #default="{ row }">
             {{ formatFileSize(row.size) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="Actions" width="200" align="center">
           <template #default="{ row }">
             <el-button-group>
-              <el-tooltip content="查看文件" placement="top">
+              <el-tooltip content="View File" placement="top">
                 <el-button type="primary" link @click="handleViewFile(row)">
                   <el-icon><View /></el-icon>
                 </el-button>
               </el-tooltip>
-              <el-tooltip content="下载文件" placement="top">
+              <el-tooltip content="Download File" placement="top">
                 <el-button type="primary" link @click="handleDownloadFile(row)">
                   <el-icon><Download /></el-icon>
                 </el-button>
               </el-tooltip>
-              <el-tooltip content="删除文件" placement="top">
+              <el-tooltip content="Delete File" placement="top">
                 <el-button 
                   type="danger" 
                   link 
@@ -234,7 +234,7 @@
       <!-- 文件上传对话框 -->
       <el-dialog
         v-model="uploadDialogVisible"
-        title="上传文件"
+        title="Upload Files"
         width="500px"
       >
         <el-upload
@@ -247,11 +247,11 @@
         >
           <el-icon class="el-icon--upload"><upload-filled /></el-icon>
           <div class="el-upload__text">
-            拖拽文件到此处，或<em>点击上传</em>
+            Drag and drop files here, or <em>click to upload</em>
           </div>
           <template #tip>
             <div class="el-upload__tip">
-              支持任意文件格式，单个文件不超过100MB
+              Support any file format, each file is not more than 100MB
             </div>
           </template>
         </el-upload>
@@ -259,7 +259,7 @@
           <span class="dialog-footer">
             <el-button @click="uploadDialogVisible = false">取消</el-button>
             <el-button type="primary" @click="handleManualUpload" :loading="uploadLoading">
-              开始上传
+              Start Upload
             </el-button>
           </span>
         </template>
@@ -270,44 +270,44 @@
     <el-card class="detail-card">
       <template #header>
         <div class="card-header">
-          <h2>任务列表</h2>
+          <h2>Task List</h2>
           <div class="header-actions">
             <el-button type="primary" @click="handleAddTask">
               <el-icon><Plus /></el-icon>
-              新增任务
+              Add Task
             </el-button>
           </div>
         </div>
       </template>
 
       <el-table :data="taskList" style="width: 100%">
-        <el-table-column type="index" label="序号" width="70" align="center" />
-        <el-table-column prop="name" label="任务名称" min-width="180" />
-        <el-table-column label="任务状态" width="120" align="center">
+        <el-table-column type="index" label="Number" width="70" align="center" />
+        <el-table-column prop="name" label="Task Name" min-width="180" />
+        <el-table-column label="Task Status" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="getTaskStatusType(row.status)">
               {{ getTaskStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="优先级" width="100" align="center">
+        <el-table-column label="Priority" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="getTaskPriorityType(row.priority)">
               {{ getTaskPriorityLabel(row.priority) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="startTime" label="开始时间" width="160" />
-        <el-table-column prop="deadline" label="截止时间" width="160" />
-        <el-table-column label="操作" width="160" align="center">
+        <el-table-column prop="startTime" label="Start Time" width="160" />
+        <el-table-column prop="deadline" label="End Time" width="160" />
+        <el-table-column label="Actions" width="160" align="center">
           <template #default="{ row }">
             <el-button-group>
-              <el-tooltip content="查看任务" placement="top">
+              <el-tooltip content="View Task" placement="top">
                 <el-button type="primary" link @click="handleViewTask(row)">
                   <el-icon><View /></el-icon>
                 </el-button>
               </el-tooltip>
-              <el-tooltip content="删除任务" placement="top">
+              <el-tooltip content="Delete Task" placement="top">
                 <el-button 
                   type="danger" 
                   link 
@@ -325,10 +325,10 @@
       <!-- 任务为空时显示 -->
       <el-empty 
         v-if="taskList.length === 0" 
-        description="暂无任务" 
+        description="No tasks yet" 
         :image-size="100"
       >
-        <el-button type="primary" @click="handleAddTask">添加任务</el-button>
+        <el-button type="primary" @click="handleAddTask">Add Task</el-button>
       </el-empty>
     </el-card>
   </div>
@@ -398,17 +398,17 @@ const STATUS_MAP = {
 };
 
 const STATUS_MAP_REVERSE = {
-  0: '筹备中',
-  1: '进行中',
-  2: '已完成',
-  3: '已归档'
+  0: 'In preparation',
+  1: 'In progress',
+  2: 'Completed',
+  3: 'Archived'
 };
 //0-筹备中，1-进行中，2-已完成，3-已归档
 const STATUS_LABELS = {
-  IN_PREPARATION: '筹备中',
-  IN_PROGRESS: '进行中',
-  COMPLETED: '已完成',
-  ARCHIVED: '已归档'
+  IN_PREPARATION: 'In preparation',
+  IN_PROGRESS: 'In progress',
+  COMPLETED: 'Completed',
+  ARCHIVED: 'Archived'
 };
 
 const PRIORITY_TYPES = {
@@ -499,10 +499,10 @@ const uploadFiles = ref<File[]>([])
 
 // 优先级选项
 const priorityOptions = [
-  { label: '紧急', value: 'CRITICAL' },
-  { label: '高', value: 'HIGH' },
-  { label: '中', value: 'MEDIUM' },
-  { label: '低', value: 'LOW' }
+  { label: 'Critical', value: 'CRITICAL' },
+  { label: 'High', value: 'HIGH' },
+  { label: 'Medium', value: 'MEDIUM' },
+  { label: 'Low', value: 'LOW' }
 ]
 
 // 任务列表 - 从后端获取
@@ -871,10 +871,10 @@ const TASK_STATUS_TYPES = {
 }
 
 const TASK_PRIORITY_LABELS = {
-  1: '低',
-  2: '中',
-  3: '高',
-  4: '紧急'
+  1: 'Low',
+  2: 'Medium',
+  3: 'High',
+  4: 'Critical'
 }
 
 const TASK_PRIORITY_TYPES = {

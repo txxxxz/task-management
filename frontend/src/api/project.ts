@@ -11,6 +11,9 @@ export function getAllProjects() {
   })
 }
 
+// 为兼容性提供getProjectList作为getAllProjects的别名
+export const getProjectList = getAllProjects;
+
 // 获取项目详情
 export const getProjectDetail = (id: number) => {
   return request({

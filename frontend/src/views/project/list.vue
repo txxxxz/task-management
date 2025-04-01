@@ -379,10 +379,10 @@ const statusOptions = [
 
 // 优先级选项
 const priorityOptions = [
-  { label: '紧急', value: 4 },
-  { label: '高', value: 3 },
-  { label: '中', value: 2 },
-  { label: '低', value: 1 }
+  { label: 'Critical', value: 4 },
+  { label: 'High', value: 3 },
+  { label: 'Medium', value: 2 },
+  { label: 'Low', value: 1 }
 ]
 
 // 修复类型定义

@@ -8,7 +8,7 @@
         <el-tab-pane label="In progress" name="in-process" />
         <el-tab-pane label="Completed" name="completed" />
       </el-tabs>
-      <div class="header-right">
+      <div class="header-right" >
         <el-select
           v-model="selectedProject"
           placeholder="Select project"
@@ -20,15 +20,9 @@
             v-for="project in projectList"
             :key="project.id"
             :label="project.name"
-            :value="project.id"
+            :value="String(project.id)"
           />
         </el-select>
-        <el-input
-          v-model="searchText"
-          placeholder="Search tasks..."
-          class="search-input"
-          :prefix-icon="Search"
-        />
         <el-button v-if="isLeader" type="primary" @click="handleCreateTask">
           <el-icon><Plus /></el-icon> Create task
         </el-button>
@@ -56,28 +50,29 @@
             v-for="task in pendingTasks" 
             :key="task.id" 
             class="task-card" 
-            :data-priority="task.priority"
+            :data-priority="getPriorityName(task.priority)"
             @click="handleTaskClick(task)"
           >
             <template #header>
               <div class="card-header">
                 <div class="header-main">
-                  <span class="task-title">{{ task.title }}</span>
+                  <span class="task-title">{{ task.title || task.name }}</span>
                   <el-tag :type="getPriorityType(task.priority)" size="small">
-                    {{ task.priority }}
+                    {{ getPriorityName(task.priority) }}
                   </el-tag>
                 </div>
                 <div class="project-info">
                   <el-tag size="small" effect="plain" class="project-tag">
                     <el-icon><Folder /></el-icon>
-                    {{ task.projectName }}
+                    {{ task.projectName || '未知项目' }}
                   </el-tag>
                 </div>
               </div>
             </template>
             <div class="card-content">
-              <p>创建时间: {{ task.createTime }}</p>
-              <p>截止时间: {{ task.dueTime }}</p>
+              <p>create time: {{ task.createTime }}</p>
+              <p>start time: {{ task.startTime }}</p>
+              <p>due time: {{ task.deadline || task.dueTime }}</p>
               <div class="tags-container">
                 <el-tag v-for="tag in task.tags" :key="tag" size="small" class="mx-1">
                   {{ tag }}
@@ -111,12 +106,12 @@
                 />
               </div>
               <div class="task-actions">
-                <el-button type="primary" size="small" @click="handleProcess(task)">
+                <el-button type="primary" size="small" @click.stop="handleProcess(task)">
                   Go to process
                 </el-button>
-                <el-button type="primary" plain size="small" @click="handleComments(task)">
+                <el-button type="primary" plain size="small" @click.stop="handleComments(task)">
                   <el-icon><ChatLineRound /></el-icon>
-                  <span>Comments({{ task.comments }})</span>
+                  <span>Comments({{ getTaskCommentCount(task) }})</span>
                 </el-button>
               </div>
             </div>
@@ -135,29 +130,29 @@
             v-for="task in inProcessTasks" 
             :key="task.id" 
             class="task-card"
-            :data-priority="task.priority"
+            :data-priority="getPriorityName(task.priority)"
             @click="handleTaskClick(task)"
           >
             <template #header>
               <div class="card-header">
                 <div class="header-main">
-                  <span class="task-title">{{ task.title }}</span>
+                  <span class="task-title">{{ task.title || task.name }}</span>
                   <el-tag :type="getPriorityType(task.priority)" size="small">
-                    {{ task.priority }}
+                    {{ getPriorityName(task.priority) }}
                   </el-tag>
                 </div>
                 <div class="project-info">
                   <el-tag size="small" effect="plain" class="project-tag">
                     <el-icon><Folder /></el-icon>
-                    {{ task.projectName }}
+                    {{ task.projectName || '未知项目' }}
                   </el-tag>
                 </div>
               </div>
             </template>
             <div class="task-info">
-              <p><span class="label">创建时间:</span> {{ task.createTime }}</p>
-              <p><span class="label">截止时间:</span> {{ task.dueTime }}</p>
-              <p v-if="isLeader"><span class="label">负责人:</span> {{ task.leader }}</p>
+              <p><span class="label">create time:</span> {{ task.createTime }}</p>
+              <p><span class="label">start time:</span> {{ task.startTime }}</p>
+              <p><span class="label">due time:</span> {{ task.deadline || task.dueTime }}</p>
             </div>
             <div class="task-tags">
               <el-tag
@@ -198,12 +193,12 @@
               />
             </div>
             <div class="task-actions">
-              <el-button type="primary" size="small" @click="handleFinish(task)">
+              <el-button type="primary" size="small" @click.stop="handleFinish(task)">
                 Complete
               </el-button>
-              <el-button type="primary" plain size="small" @click="handleComments(task)">
+              <el-button type="primary" plain size="small" @click.stop="handleComments(task)">
                 <el-icon><ChatLineRound /></el-icon>
-                <span>Comments({{ task.comments }})</span>
+                <span>Comments({{ getTaskCommentCount(task) }})</span>
               </el-button>
             </div>
           </el-card>
@@ -221,29 +216,29 @@
             v-for="task in completedTasks" 
             :key="task.id" 
             class="task-card"
-            :data-priority="task.priority"
+            :data-priority="getPriorityName(task.priority)"
             @click="handleTaskClick(task)"
           >
             <template #header>
               <div class="card-header">
                 <div class="header-main">
-                  <span class="task-title">{{ task.title }}</span>
+                  <span class="task-title">{{ task.title || task.name }}</span>
                   <el-tag :type="getPriorityType(task.priority)" size="small">
-                    {{ task.priority }}
+                    {{ getPriorityName(task.priority) }}
                   </el-tag>
                 </div>
                 <div class="project-info">
                   <el-tag size="small" effect="plain" class="project-tag">
                     <el-icon><Folder /></el-icon>
-                    {{ task.projectName }}
+                    {{ task.projectName || '未知项目' }}
                   </el-tag>
                 </div>
               </div>
             </template>
             <div class="task-info">
-              <p><span class="label">创建时间:</span> {{ task.createTime }}</p>
-              <p><span class="label">截止时间:</span> {{ task.dueTime }}</p>
-              <p v-if="isLeader"><span class="label">负责人:</span> {{ task.leader }}</p>
+              <p><span class="label">create time:</span> {{ task.createTime }}</p>
+              <p><span class="label">start time:</span> {{ task.startTime }}</p>
+              <p><span class="label">due time:</span> {{ task.deadline || task.dueTime }}</p>
             </div>
             <div class="task-tags">
               <el-tag
@@ -280,7 +275,7 @@
               </el-button>
               <el-button type="primary" plain size="small" @click.stop="handleComments(task)">
                 <el-icon><ChatLineRound /></el-icon>
-                <span>Comments({{ task.comments }})</span>
+                <span>Comments({{ getTaskCommentCount(task) }})</span>
               </el-button>
             </div>
           </el-card>
@@ -291,13 +286,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Search, Plus, Check, ChatLineRound, View, Folder } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../../stores/user'
 import { useRouter } from 'vue-router'
-import { getProjectList } from '../../api/project'
-import type { Project } from '../../types/task'
+import { getAllProjects } from '../../api/project'
+import { getTaskList, getProjectTasks, updateTask, getTaskComments } from '../../api/task'
+import type { TaskDetail, Project } from '../../types/task'
 import dayjs from 'dayjs'
 
 const userStore = useUserStore()
@@ -316,204 +312,309 @@ const searchText = ref('')
 const projectList = ref<Project[]>([])
 const selectedProject = ref('')
 
+// 任务数据
+const tasks = ref<TaskDetail[]>([])
+const loading = ref(false)
+
 // 获取项目列表
 const fetchProjects = async () => {
   try {
-    const { data } = await getProjectList()
-    projectList.value = data.data.items
+    const res = await getAllProjects()
+    if (res && res.data) {
+      let tempProjectList: Project[] = [];
+      
+      // 根据实际API响应结构调整
+      if (res.data.code === 1 && res.data.data) {
+        if (Array.isArray(res.data.data)) {
+          tempProjectList = res.data.data;
+        } else if (res.data.data.items && Array.isArray(res.data.data.items)) {
+          tempProjectList = res.data.data.items;
+        }
+      } else if (Array.isArray(res.data)) {
+        tempProjectList = res.data;
+      } else if (res.data.items && Array.isArray(res.data.items)) {
+        tempProjectList = res.data.items;
+      } else {
+        console.error('项目数据格式不符合预期:', res.data)
+        tempProjectList = [];
+      }
+      
+      // 确保tempProjectList是数组后再调用map
+      if (Array.isArray(tempProjectList)) {
+        // 处理项目列表，确保ID为字符串
+        const processedProjects = tempProjectList.map(project => ({
+          ...project,
+          id: String(project.id) // 确保id是字符串
+        }));
+        
+        // 使用类型断言避免TypeScript错误
+        projectList.value = processedProjects as any;
+      } else {
+        console.error('项目列表不是数组:', tempProjectList);
+        projectList.value = [];
+      }
+      
+      console.log('获取到的项目列表:', projectList.value)
+    }
   } catch (error) {
     console.error('获取项目列表失败:', error)
+    ElMessage.error('获取项目列表失败')
   }
+}
+
+// 获取任务列表
+const fetchTasks = async () => {
+  loading.value = true
+  try {
+    let taskData: TaskDetail[] = []
+    
+    if (selectedProject.value) {
+      // 获取特定项目的任务
+      const res = await getProjectTasks(selectedProject.value, {
+        keyword: searchText.value || undefined
+      })
+      console.log('项目任务API响应:', res)
+      
+      if (res && res.data) {
+        // 项目任务API直接返回{total, items}格式
+        taskData = res.data.items || []
+      }
+    } else {
+      // 获取所有任务
+      const res = await getTaskList({
+        keyword: searchText.value || undefined
+      })
+      console.log('所有任务API响应:', res)
+      
+      if (res && res.data) {
+        // 处理不同的响应格式
+        if (res.data.code === 1 && res.data.data && res.data.data.items) {
+          taskData = res.data.data.items
+        } else if (res.data.items) {
+          taskData = res.data.items
+        } else if (Array.isArray(res.data)) {
+          taskData = res.data
+        } else {
+          console.error('任务数据格式不符合预期:', res.data)
+        }
+      }
+    }
+    
+    // 确保任务数据是数组
+    tasks.value = Array.isArray(taskData) ? taskData : []
+    
+    // 为任务补充项目名称
+    enrichTasksWithProjectNames();
+    
+    console.log('处理后的任务数据:', tasks.value)
+    
+    // 获取每个任务的评论数量
+    fetchCommentCounts()
+  } catch (error) {
+    console.error('获取任务列表失败:', error)
+    ElMessage.error('获取任务列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 根据projectId为任务补充项目名称
+const enrichTasksWithProjectNames = () => {
+  // 创建项目ID到项目名称的映射
+  const projectMap = new Map<string, string>();
+  projectList.value.forEach(project => {
+    projectMap.set(String(project.id), project.name);
+  });
+  
+  // 为每个任务补充项目名称
+  tasks.value.forEach(task => {
+    if (task.projectId && (!task.projectName || task.projectName === '')) {
+      const projectName = projectMap.get(String(task.projectId));
+      if (projectName) {
+        task.projectName = projectName;
+      } else {
+        task.projectName = '未知项目';
+      }
+    }
+  });
+}
+
+// 获取所有任务的评论数量
+const commentCounts = ref<Record<string, number>>({})
+
+const fetchCommentCounts = async () => {
+  // 对于每个没有commentCount字段的任务，使用缓存的评论数量
+  for (const task of tasks.value) {
+    if (task.commentCount === undefined && commentCounts.value[task.id] === undefined) {
+      // 如果任务数据中已有评论列表，直接使用其长度
+      if (task.comments && Array.isArray(task.comments)) {
+        commentCounts.value[task.id] = task.comments.length;
+      } else {
+        // 没有评论数据时默认为0
+        commentCounts.value[task.id] = 0;
+      }
+    }
+  }
+}
+
+// 获取任务评论数量
+const getTaskCommentCount = (task: TaskDetail): number => {
+  // 直接使用任务数据中的commentCount字段
+  if (task.commentCount !== undefined) {
+    return task.commentCount;
+  }
+  
+  // 如果有评论数组，使用数组长度
+  if (task.comments && Array.isArray(task.comments)) {
+    return task.comments.length;
+  }
+  
+  // 如果有缓存的评论数量，返回缓存的数量
+  if (commentCounts.value[task.id] !== undefined) {
+    return commentCounts.value[task.id];
+  }
+  
+  // 默认返回0
+  return 0;
 }
 
 // 处理项目选择变更
-const handleProjectChange = (projectId: string) => {
-  // 根据选中的项目过滤任务
-  if (projectId) {
-    tasks.value = tasks.value.filter(task => task.projectId === projectId)
-  } else {
-    // 重置为所有任务
-    initData()
-  }
+const handleProjectChange = () => {
+  fetchTasks()
 }
 
-// 模拟任务数据
-const tasks = ref([
-  {
-    id: 1,
-    title: 'Frontend project refactoring plan',
-    createTime: '2024-01-15 09:00:00',
-    dueTime: '2024-02-15 18:00:00',
-    priority: 'HIGH',
-    status: 'pending',
-    tags: ['Architecture', 'Refactoring', 'Frontend'],
-    members: ['Tom', 'John'],
-    comments: 5,
-    leader: 'Tom',
-    description: 'Refactor the existing frontend project to improve code quality and performance',
-    projectId: '1',
-    projectName: 'Frontend Refactoring Project'
-  }
-])
-
-// 初始化数据
-const initData = () => {
-  tasks.value = [
-    {
-      id: 1,
-      title: 'Frontend project refactoring plan',
-      createTime: '2024-01-15 09:00:00',
-      dueTime: '2024-02-15 18:00:00',
-      priority: 'HIGH',
-      status: 'pending',
-      tags: ['Architecture', 'Refactoring', 'Frontend'],
-      members: ['Tom', 'John'],
-      comments: 5,
-      leader: 'Tom',
-      description: 'Refactor the existing frontend project to improve code quality and performance',
-      projectId: '1',
-      projectName: 'Frontend Refactoring Project'
-    },
-    {
-      id: 2,
-      title: 'Backend interface optimization',
-      createTime: '2024-01-16 10:30:00',
-      dueTime: '2024-01-30 18:00:00',
-      priority: 'MEDIUM',
-      status: 'in-process',
-      tags: ['Backend', 'Performance optimization'],
-      members: ['Amy', 'Jack'],
-      comments: 3,
-      leader: 'Tom',
-      description: 'Optimize the existing backend interfaces to improve response speed',
-      projectId: '2',
-      projectName: 'Backend Optimization Project'
-    },
-    {
-      id: 3,
-      title: 'User feedback system implementation',
-      createTime: '2024-01-10 14:00:00',
-      dueTime: '2024-01-20 18:00:00',
-      priority: 'LOW',
-      status: 'completed',
-      tags: ['Function', 'User experience'],
-      members: ['Sarah', 'Mike'],
-      comments: 8,
-      leader: 'Tom',
-      description: 'Implement the user feedback collection and processing system',
-      projectId: '3',
-      projectName: 'User Feedback System'
-    }
-  ]
-}
+// 监听搜索文本变化
+watch(searchText, () => {
+  fetchTasks()
+})
 
 // 在组件挂载时初始化数据
-onMounted(() => {
-  initData()
-  fetchProjects()
+onMounted(async () => {
+  await fetchProjects() // 先获取项目列表
+  fetchTasks()          // 再获取任务列表
 })
 
 // 按状态分组的任务列表
 const pendingTasks = computed(() => {
-  return tasks.value.filter(task => task.status === 'pending')
+  return tasks.value.filter(task => task.status === 0)
 })
 
 const inProcessTasks = computed(() => {
-  return tasks.value.filter(task => task.status === 'in-process')
+  return tasks.value.filter(task => task.status === 1)
 })
 
 const completedTasks = computed(() => {
-  return tasks.value.filter(task => task.status === 'completed')
+  return tasks.value.filter(task => task.status === 2)
 })
 
+// 获取优先级名称
+const getPriorityName = (priority: number): string => {
+  const priorities = {
+    1: 'LOW',
+    2: 'MEDIUM',
+    3: 'HIGH',
+    4: 'CRITICAL'
+  }
+  return priorities[priority as keyof typeof priorities] || 'MEDIUM'
+}
+
 // 获取优先级对应的标签类型
-const getPriorityType = (priority: string): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+const getPriorityType = (priority: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
   const types = {
-    'CRITICAL': 'danger',
-    'HIGH': 'warning',
-    'MEDIUM': 'primary',
-    'LOW': 'info'
+    4: 'danger',   // CRITICAL
+    3: 'warning',  // HIGH
+    2: 'primary',  // MEDIUM
+    1: 'info'      // LOW
   } as const
   return types[priority as keyof typeof types] || 'info'
 }
 
 // 处理任务操作
-const handleFinish = (task: any) => {
-  task.status = 'completed'
-  ElMessage.success('Task completed')
-}
-
-const handleCheck = (task: any) => {
-  ElMessage('View task details')
-}
-
-const handleComments = (task: any) => {
-  ElMessage('View task comments')
-}
-
-const handleAddMember = (task: any) => {
-  ElMessage('Add member feature under development')
-}
-
-const handleRemoveMember = (task: any, member: string) => {
-  const index = task.members.indexOf(member)
-  if (index !== -1) {
-    task.members.splice(index, 1)
-    ElMessage.success('Member removed')
+const handleFinish = async (task: TaskDetail) => {
+  try {
+    await ElMessageBox.confirm('确认将任务标记为已完成？', '提示', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    await updateTask(task.id.toString(), { status: 2 })
+    task.status = 2
+    ElMessage.success('任务已完成')
+    fetchTasks() // 重新获取最新数据
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('更新任务状态失败:', error)
+      ElMessage.error('操作失败')
+    }
   }
 }
 
-const handleCreateTask = () => {
-  ElMessageBox.prompt('Please enter the task title', 'New task', {
-    confirmButtonText: 'Confirm',
-    cancelButtonText: 'Cancel',
-    inputPattern: /\S+/,
-    inputErrorMessage: 'Title cannot be empty'
-  }).then(({ value }) => {
-    const newTask = {
-      id: tasks.value.length + 1,
-      title: value,
-      createTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-      dueTime: dayjs().add(7, 'day').format('YYYY-MM-DD HH:mm:ss'),
-      priority: 'MEDIUM',
-      status: 'pending',
-      tags: [],
-      members: [],
-      comments: 0,
-      leader: userStore.userInfo?.username || 'Not assigned',
-      description: '',
-      projectId: '',
-      projectName: ''
-    }
-    tasks.value.push(newTask)
-    ElMessage.success('Task created successfully')
-  })
-}
-
-const handleNavigateToCreate = () => {
-  router.push('/table/create')
-}
-
-const handleTaskClick = (task: any) => {
-  router.push('/detail/' + task.id)
-}
-
-const handleProcess = (task: any) => {
+const handleCheck = (task: TaskDetail) => {
   router.push(`/detail/${task.id}`)
 }
 
-const handleComplete = async (task: any) => {
+const handleComments = (task: TaskDetail) => {
+  router.push(`/detail/${task.id}?tab=comments`)
+}
+
+const handleAddMember = (task: TaskDetail) => {
+  // 使用tab查询参数导航到任务详情页
+  router.push(`/detail/${task.id}?tab=members`);
+}
+
+const handleRemoveMember = (task: TaskDetail, member: string) => {
+  ElMessageBox.confirm(`确认将 ${member} 从任务中移除？`, '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    const index = task.members.indexOf(member)
+    if (index !== -1) {
+      const updatedMembers = [...task.members]
+      updatedMembers.splice(index, 1)
+      
+      try {
+        await updateTask(task.id.toString(), { members: updatedMembers })
+        task.members = updatedMembers
+        ElMessage.success('成员已移除')
+        fetchTasks() // 重新获取最新数据
+      } catch (error) {
+        console.error('移除成员失败:', error)
+        ElMessage.error('操作失败')
+      }
+    }
+  }).catch(() => {})
+}
+
+const handleCreateTask = () => {
+  router.push('/task/create')
+}
+
+const handleNavigateToCreate = () => {
+  router.push('/task/create')
+}
+
+const handleTaskClick = (task: TaskDetail) => {
+  router.push(`/detail/${task.id}`)
+}
+
+const handleProcess = async (task: TaskDetail) => {
   try {
-    await ElMessageBox.confirm('Confirm to mark the task as completed?', 'Tips', {
-      confirmButtonText: 'Confirm',
-      cancelButtonText: 'Cancel',
+    await ElMessageBox.confirm('确认将任务标记为进行中？', '提示', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
       type: 'warning'
     })
-    task.status = 'completed'
-    ElMessage.success('Task completed')
+    
+    await updateTask(task.id.toString(), { status: 1 })
+    task.status = 1
+    ElMessage.success('任务已开始处理')
+    fetchTasks() // 重新获取最新数据
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('Operation failed')
+      console.error('更新任务状态失败:', error)
+      ElMessage.error('操作失败')
     }
   }
 }

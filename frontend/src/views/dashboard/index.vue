@@ -108,7 +108,7 @@ const router = useRouter()
 // 任务状态数据
 const taskStatus = ref([
   {
-    label: '待处理',
+    label: 'Pending',
     status: 'Pending',
     count: 0,
     icon: 'Clock',
@@ -116,7 +116,7 @@ const taskStatus = ref([
     statusCode: 0
   },
   {
-    label: '进行中',
+    label: 'In progress',
     status: 'In progress',
     count: 0,
     icon: 'Loading',
@@ -124,7 +124,7 @@ const taskStatus = ref([
     statusCode: 1
   },
   {
-    label: '今日到期',
+    label: 'Today expired',
     status: 'Today expired',
     count: 0,
     icon: 'Document',
@@ -132,7 +132,7 @@ const taskStatus = ref([
     statusCode: 'expired'
   },
   {
-    label: '已完成',
+    label: 'Completed',
     status: 'Completed',
     count: 0,
     icon: 'Check',
@@ -158,7 +158,7 @@ const taskTrendOption = ref<TaskTrendChartOption>({
       
       // 构建提示框内容
       let tooltipContent = `${fullDate}<br/>`;
-      tooltipContent += `总任务数: ${totalTasks}<br/>`;
+      tooltipContent += `Total tasks: ${totalTasks}<br/>`;
       
       // 添加各状态的任务数量
       params.forEach((param: any) => {
@@ -291,11 +291,11 @@ const fetchUserTaskStats = async () => {
       console.log('更新后的任务状态:', taskStatus.value)
     } else {
       console.error('任务统计数据返回错误:', response.data)
-      ElMessage.error('获取任务统计信息失败')
+      ElMessage.error('Get Task Status Stats Failed')
     }
   } catch (error) {
     console.error('获取任务统计信息失败:', error)
-    ElMessage.error('获取任务统计信息失败')
+    ElMessage.error('Get Task Status Stats Failed')
   }
 }
 
@@ -385,21 +385,21 @@ const fetchTaskTrendData = async () => {
         taskTrendOption.value.fullDates = fullDates;
       } else {
         console.error('任务趋势数据不是数组:', statsArray)
-        ElMessage.error('任务趋势数据格式错误')
+        ElMessage.error('Task Trend Data Format Error')
         
         // 设置空数据
         resetTrendChartData()
       }
     } else {
       console.error('任务趋势数据返回错误:', response.data)
-      ElMessage.error('获取任务趋势数据失败')
+      ElMessage.error('Get Task Trend Data Failed')
       
       // 设置空数据
       resetTrendChartData()
     }
   } catch (error) {
     console.error('获取任务趋势数据失败:', error)
-    ElMessage.error('获取任务趋势数据失败')
+    ElMessage.error('Get Task Trend Data Failed')
     
     // 设置空数据
     resetTrendChartData()
@@ -451,11 +451,11 @@ const fetchPriorityDistribution = async () => {
       priorityOption.value.series[0].data = pieChartData
     } else {
       console.error('获取优先级分布数据失败:', response.data)
-      ElMessage.error('获取优先级分布数据失败')
+      ElMessage.error('Get Priority Distribution Data Failed')
     }
   } catch (error) {
     console.error('获取优先级分布数据失败:', error)
-    ElMessage.error('获取优先级分布数据失败')
+    ElMessage.error('Get Priority Distribution Data Failed')
     // 重置图表数据
     priorityOption.value.series[0].data = []
   }

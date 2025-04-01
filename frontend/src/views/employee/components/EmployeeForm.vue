@@ -6,17 +6,17 @@
     label-width="80px"
     class="employee-form"
   >
-    <el-form-item label="姓名" prop="name">
-      <el-input v-model="form.name" placeholder="请输入姓名" />
+    <el-form-item label="Name" prop="name">
+      <el-input v-model="form.name" placeholder="Please enter the name" />
     </el-form-item>
-    <el-form-item label="邮箱" prop="email">
-      <el-input v-model="form.email" placeholder="请输入邮箱" />
+    <el-form-item label="Email" prop="email">
+      <el-input v-model="form.email" placeholder="Please enter the email" />
     </el-form-item>
-    <el-form-item label="手机号" prop="phone">
-      <el-input v-model="form.phone" placeholder="请输入手机号" />
+    <el-form-item label="Phone" prop="phone">
+      <el-input v-model="form.phone" placeholder="Please enter the phone number" />
     </el-form-item>
-    <el-form-item label="角色" prop="role">
-      <el-select v-model="form.role" placeholder="请选择角色">
+    <el-form-item label="Role" prop="role">
+      <el-select v-model="form.role" placeholder="Please select the role">
         <el-option label="Admin" value="Admin" />
         <el-option label="Leader" value="Leader" />
         <el-option label="Member" value="Member" />
