@@ -51,20 +51,20 @@ export const menuItems = [
     roles: ['1', '0'] // 1: leader, 0: member
   },
   {
-    title: '创建标签',
+    title: 'Create Tag',
     icon: Plus,
     path: '/tag/create',
     roles: ['1'] // 只有 leader 可见
   },
   {
-    title: '标签列表',
+    title: 'Tag List',
     icon: PriceTag,
     path: '/tag/list',
     roles: ['1', '0'] // 1: leader, 0: member
   },
   
   {
-    title: '员工管理',
+    title: 'Employee Management',
     icon: UserFilled,
     path: '/employee',
     roles: ['2'] // 只有 admin 可见

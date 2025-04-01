@@ -78,6 +78,17 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { getCurrentUserTaskStats, getTaskStatusStatsByDay, getTaskPriorityDistribution } from '@/api/task'
 
+// 自定义图表选项类型，包含fullDates字段
+interface TaskTrendChartOption {
+  tooltip: any;
+  legend: any;
+  grid: any;
+  xAxis: any;
+  yAxis: any;
+  series: any[];
+  fullDates?: string[]; // 完整日期数据，用于tooltip显示
+}
+
 use([
   CanvasRenderer,
   LineChart,
@@ -131,26 +142,58 @@ const taskStatus = ref([
 ])
 
 // 任务趋势图表配置
-const taskTrendOption = ref({
+const taskTrendOption = ref<TaskTrendChartOption>({
   tooltip: {
-    trigger: 'axis'
+    trigger: 'axis',
+    formatter: function(params: any) {
+      // 获取当前悬浮点的日期（X轴值对应的日期）
+      const dayIndex = params[0].dataIndex;
+      const fullDate = taskTrendOption.value.fullDates?.[dayIndex] || params[0].axisValue;
+      
+      // 计算任务总数
+      let totalTasks = 0;
+      params.forEach((param: any) => {
+        totalTasks += param.value;
+      });
+      
+      // 构建提示框内容
+      let tooltipContent = `${fullDate}<br/>`;
+      tooltipContent += `总任务数: ${totalTasks}<br/>`;
+      
+      // 添加各状态的任务数量
+      params.forEach((param: any) => {
+        tooltipContent += `${param.seriesName}: ${param.value}<br/>`;
+      });
+      
+      return tooltipContent;
+    }
   },
   legend: {
     data: ['Pending', 'In progress', 'Completed']
   },
   grid: {
-    left: '3%',
+    left: '5%',
     right: '4%',
-    bottom: '3%',
+    bottom: '10%',
+    top: '15%',
     containLabel: true
   },
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: [] as string[]
+    data: [] as string[],
+    name: 'Day of Week',
+    nameLocation: 'middle',
+    nameGap: 30
   },
   yAxis: {
-    type: 'value'
+    type: 'value',
+    name: 'Number of Tasks',
+    nameLocation: 'middle',
+    nameGap: 45,
+    axisLabel: {
+      margin: 10
+    }
   },
   series: [
     {
@@ -168,7 +211,8 @@ const taskTrendOption = ref({
       type: 'line',
       data: [] as number[]
     }
-  ]
+  ],
+  fullDates: []
 })
 
 // 优先级分布图表配置
@@ -272,24 +316,73 @@ const fetchTaskTrendData = async () => {
       const statsArray = response.data.data
       // 检查stats是否为数组
       if (Array.isArray(statsArray)) {
-        const days: string[] = []
-        const pendingData: number[] = []
-        const inProgressData: number[] = []
-        const completedData: number[] = []
+        // 星期顺序映射（从周一开始）
+        const weekOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
         
-        // 手动处理每个数据项
+        // 创建一个映射来存储每个星期对应的数据
+        const dataMap: Record<string, {pending: number, inProgress: number, completed: number}> = {};
+        
+        // 处理每个数据项
         statsArray.forEach((item: any) => {
-          days.push(item.day || '')
-          pendingData.push(Number(item.pending) || 0)
-          inProgressData.push(Number(item.inProgress) || 0)
-          completedData.push(Number(item.completed) || 0)
-        })
+          const weekDay = item.day || '';
+          
+          dataMap[weekDay] = {
+            pending: Number(item.pending) || 0,
+            inProgress: Number(item.inProgress) || 0,
+            completed: Number(item.completed) || 0
+          };
+        });
+        
+        // 计算当前周的起始日期（周一）
+        const now = new Date();
+        const todayDay = now.getDay(); // 0是周日，1是周一，...
+        const mondayOffset = todayDay === 0 ? -6 : 1 - todayDay; // 计算到最近的周一的偏移量
+        
+        // 考虑weekOffset的影响
+        const weekStartDate = new Date(now);
+        weekStartDate.setDate(now.getDate() + mondayOffset + (currentWeekOffset.value * 7));
+        
+        // 根据星期顺序排序数据
+        const sortedDays: string[] = [];
+        const pendingData: number[] = [];
+        const inProgressData: number[] = [];
+        const completedData: number[] = [];
+        const fullDates: string[] = [];
+        
+        // 按照固定的星期顺序提取数据
+        weekOrder.forEach((weekDay, index) => {
+          sortedDays.push(weekDay);
+          
+          // 计算当前日期
+          const currentDate = new Date(weekStartDate);
+          currentDate.setDate(weekStartDate.getDate() + index);
+          
+          // 格式化为YYYY-MM-DD
+          const year = currentDate.getFullYear();
+          const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+          const day = String(currentDate.getDate()).padStart(2, '0');
+          const formattedDate = `${year}-${month}-${day}`;
+          
+          fullDates.push(formattedDate);
+          
+          if (dataMap[weekDay]) {
+            pendingData.push(dataMap[weekDay].pending);
+            inProgressData.push(dataMap[weekDay].inProgress);
+            completedData.push(dataMap[weekDay].completed);
+          } else {
+            // 如果没有数据，设置为0
+            pendingData.push(0);
+            inProgressData.push(0);
+            completedData.push(0);
+          }
+        });
         
         // 更新图表数据
-        taskTrendOption.value.xAxis.data = days
-        taskTrendOption.value.series[0].data = pendingData
-        taskTrendOption.value.series[1].data = inProgressData
-        taskTrendOption.value.series[2].data = completedData
+        taskTrendOption.value.xAxis.data = sortedDays;
+        taskTrendOption.value.series[0].data = pendingData;
+        taskTrendOption.value.series[1].data = inProgressData;
+        taskTrendOption.value.series[2].data = completedData;
+        taskTrendOption.value.fullDates = fullDates;
       } else {
         console.error('任务趋势数据不是数组:', statsArray)
         ElMessage.error('任务趋势数据格式错误')
@@ -319,6 +412,7 @@ const resetTrendChartData = () => {
   taskTrendOption.value.series.forEach(series => {
     series.data = []
   })
+  taskTrendOption.value.fullDates = []
 }
 
 // 获取任务优先级分布数据
@@ -434,7 +528,7 @@ onMounted(async () => {
 }
 
 .chart-container {
-  height: 300px;
+  height: 350px;
 }
 
 .card-header {
