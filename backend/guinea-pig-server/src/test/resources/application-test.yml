@@ -1,0 +1,83 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+  sql:
+    init:
+      schema-locations: classpath:schema-h2.sql
+      data-locations:
+      mode: always
+  main:
+    allow-bean-definition-overriding: true
+    allow-circular-references: true
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+# MyBatis-Plus配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.taskManagement.entity
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# JWT配置
+jwt:
+  # 用户端
+  user-secret-key: taskmanagement123456
+  user-ttl: 7200000
+  # 管理端
+  admin-secret-key: taskmanagement654321
+  admin-ttl: 7200000
+  # 令牌黑名单缓存的统一前缀
+  token-black-key: "token:black:"
+  token-key: "Authorization"
+  token-prefix: "Bearer "
+
+# OSS配置（测试环境使用Mock，不需要真实配置）
+guineapig:
+  alioss:
+    access-key-id: test_access_key
+    access-key-secret: test_access_secret
+    bucket-name: test-bucket
+    endpoint: oss-cn-beijing.aliyuncs.com
+    url-prefix: http://test-bucket.oss-cn-beijing.aliyuncs.com
+
+aliyun:
+  oss:
+    access-key-id: test_access_key
+    access-key-secret: test_access_secret
+    bucket-name: test-bucket
+    url-prefix: http://test-bucket.oss-cn-beijing.aliyuncs.com
+    region: oss-cn-beijing
+    endpoint: oss-cn-beijing.aliyuncs.com
+    encryption-key: test_encryption_key
+
+# 文件上传配置
+file:
+  upload:
+    path: ./upload-test
+    max-size: 10
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.taskManagement: DEBUG
+    org.springframework.test: INFO
+    org.mybatis: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n' 

@@ -168,6 +168,16 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public ProjectVO createProject(ProjectDTO projectDTO) {
+        // 检查项目名称唯一性
+        if (StringUtils.isNotBlank(projectDTO.getName())) {
+            LambdaQueryWrapper<Project> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Project::getName, projectDTO.getName());
+            List<Project> existingProjects = projectMapper.selectList(queryWrapper);
+            if (!existingProjects.isEmpty()) {
+                throw new BusinessException("项目名称 '" + projectDTO.getName() + "' 已存在");
+            }
+        }
+        
         // 创建项目实体
         Project project = new Project();
         BeanUtils.copyProperties(projectDTO, project);
@@ -311,9 +321,14 @@ public class ProjectServiceImpl implements ProjectService {
         }
         
         // 删除项目成员关系
-        LambdaQueryWrapper<ProjectMember> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ProjectMember::getProjectId, id);
-        projectMemberMapper.delete(queryWrapper);
+        LambdaQueryWrapper<ProjectMember> memberQueryWrapper = new LambdaQueryWrapper<>();
+        memberQueryWrapper.eq(ProjectMember::getProjectId, id);
+        projectMemberMapper.delete(memberQueryWrapper);
+        
+        // 删除项目附件
+        LambdaQueryWrapper<ProjectAttachment> attachmentQueryWrapper = new LambdaQueryWrapper<>();
+        attachmentQueryWrapper.eq(ProjectAttachment::getProjectId, id);
+        projectAttachmentMapper.delete(attachmentQueryWrapper);
         
         // 删除项目
         projectMapper.deleteById(id);

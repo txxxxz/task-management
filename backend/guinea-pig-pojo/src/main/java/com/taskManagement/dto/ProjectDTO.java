@@ -5,6 +5,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,6 +14,7 @@ public class ProjectDTO {
     private Long id;
     
     @NotBlank(message = "Project name cannot be empty")
+    @Size(max = 50, message = "Project name cannot exceed 50 characters")
     private String name;
     
     private String description;
