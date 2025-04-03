@@ -1,7 +1,7 @@
 -- 任务表
 CREATE TABLE IF NOT EXISTS `tb_task` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `title` varchar(200) NOT NULL COMMENT '任务标题',
+    `name` varchar(200) NOT NULL COMMENT '任务标题',
     `description` text COMMENT '任务描述',
     `project_id` bigint(20) NOT NULL COMMENT '所属项目ID',
     `status` tinyint(4) NOT NULL DEFAULT 0 COMMENT '任务状态：0-待处理，1-进行中，2-已完成，3-已取消',
@@ -9,8 +9,6 @@ CREATE TABLE IF NOT EXISTS `tb_task` (
     `start_time` datetime DEFAULT NULL COMMENT '开始时间',
     `deadline` datetime DEFAULT NULL COMMENT '截止时间',
     `completed_time` datetime DEFAULT NULL COMMENT '实际完成时间',
-    `estimated_hours` double DEFAULT NULL COMMENT '预计工时（小时）',
-    `actual_hours` double DEFAULT NULL COMMENT '实际工时（小时）',
     `comment_count` int(11) NOT NULL DEFAULT 0 COMMENT '评论数量',
     `attachment_count` int(11) NOT NULL DEFAULT 0 COMMENT '附件数量',
     `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

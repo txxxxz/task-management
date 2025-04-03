@@ -1,5 +1,6 @@
 package com.taskManagement.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("tb_task")
 public class Task extends BaseEntity {
+    @TableField("name")
     private String name;
     private String description;
     private Long projectId;

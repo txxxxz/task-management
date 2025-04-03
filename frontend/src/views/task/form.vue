@@ -112,7 +112,7 @@
                     type="datetime"
                     placeholder="Please select the start time"
                     style="width: 100%"
-                    value-format="YYYY-MM-DDTHH:mm:ss"
+                    value-format="YYYY-MM-DD HH:mm:ss"
                   />
                 </el-form-item>
               </el-col>
@@ -123,7 +123,7 @@
                     type="datetime"
                     placeholder="Please select the due time"
                     style="width: 100%"
-                    value-format="YYYY-MM-DDTHH:mm:ss"
+                    value-format="YYYY-MM-DD HH:mm:ss"
                     :disabled-date="disabledDueDate"
                   />
                 </el-form-item>
@@ -447,8 +447,19 @@ const fetchProjects = async (keyword = '') => {
     if (response.data && (response.data.code === 1 || response.data.code === 0 || response.data.code === 200)) {
       let projects = response.data.data || [];
       
+      // 确保projects是一个数组，检查是否有items属性
+      if (projects && typeof projects === 'object' && 'items' in projects) {
+        projects = projects.items || [];
+      }
+      
+      // 如果依然不是数组，则将其转换为空数组
+      if (!Array.isArray(projects)) {
+        console.warn('获取到的项目数据不是数组:', projects);
+        projects = [];
+      }
+      
       // 如果有关键字，进行本地过滤
-      if (keyword) {
+      if (keyword && projects.length > 0) {
         projects = projects.filter((project: Project) => 
           project.name.toLowerCase().includes(keyword.toLowerCase())
         );

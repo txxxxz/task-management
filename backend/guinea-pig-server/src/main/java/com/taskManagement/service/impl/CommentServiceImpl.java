@@ -10,6 +10,7 @@ import com.taskManagement.mapper.CommentMapper;
 import com.taskManagement.mapper.TaskMapper;
 import com.taskManagement.mapper.UserMapper;
 import com.taskManagement.service.CommentService;
+import com.taskManagement.service.NotificationService;
 import com.taskManagement.context.BaseContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -36,6 +37,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     
     @Autowired
     private UserMapper userMapper;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     /**
      * 根据任务ID获取评论列表，并构建评论树结构
@@ -184,10 +188,44 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         task.setCommentCount(task.getCommentCount() + 1);
         taskMapper.updateById(task);
         
+        // 处理评论中的@用户通知
+        processCommentMentions(comment);
+        
         // 转换为DTO并返回
         CommentDTO resultDTO = convertToDTO(comment);
         log.info("返回评论DTO: {}", resultDTO);
         return resultDTO;
+    }
+
+    /**
+     * 处理评论中的@用户并发送通知
+     * @param comment 评论
+     */
+    private void processCommentMentions(Comment comment) {
+        // 从评论内容中提取@的用户名
+        List<String> mentionedUsernames = notificationService.extractMentionedUsers(comment.getContent());
+        if (mentionedUsernames.isEmpty()) {
+            return;
+        }
+        
+        // 获取当前用户信息
+        Long currentUserId = comment.getCreateUser();
+        User currentUser = userMapper.selectById(currentUserId);
+        String currentUsername = currentUser != null ? currentUser.getUsername() : "用户" + currentUserId;
+        
+        // 获取任务信息
+        Task task = taskMapper.selectById(comment.getTaskId());
+        String taskName = task != null ? task.getName() : "未知任务";
+        
+        // 查找被@用户的ID并发送通知
+        for (String username : mentionedUsernames) {
+            User user = userMapper.getByUsername(username);
+            if (user != null && !user.getId().equals(currentUserId)) { // 不通知自己
+                String content = currentUsername + " 在任务 [" + taskName + "] 的评论中@了你";
+                notificationService.createCommentMentionNotification(comment.getId(), content, user.getId());
+                log.info("已发送评论@通知给用户 {}", username);
+            }
+        }
     }
 
     /**

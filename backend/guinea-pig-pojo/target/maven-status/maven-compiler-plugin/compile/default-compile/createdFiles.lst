@@ -1,4 +1,5 @@
 com/taskManagement/dto/UserRegisterDTO.class
+com/taskManagement/dto/NotificationDTO.class
 com/taskManagement/dto/UserLoginDTO.class
 com/taskManagement/dto/PasswordChangeDTO.class
 com/taskManagement/vo/PageResult.class
@@ -21,6 +22,7 @@ com/taskManagement/vo/ProjectVO.class
 com/taskManagement/dto/TagDTO.class
 com/taskManagement/dto/TaskAttachmentDTO.class
 com/taskManagement/dto/UserUpdateDTO.class
+com/taskManagement/entity/Notification.class
 com/taskManagement/vo/AttachmentVO.class
 com/taskManagement/dto/ProjectAttachmentDTO.class
 com/taskManagement/vo/UserVO.class

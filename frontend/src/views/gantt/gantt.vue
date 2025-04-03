@@ -11,7 +11,7 @@
         <!-- 靠左展示 -->
         <div class="gantt-controls" style="text-align: left;">
           <el-button type="primary" @click="fetchTasks" >
-            <el-icon><Refresh /></el-icon> 刷新
+            <el-icon><Refresh /></el-icon> Refresh
           </el-button>
         </div>
       </div>
@@ -33,10 +33,12 @@ import type { TaskDetail } from '@/types/task'
 
 // 计算当前一周的开始（周一）和结束（周日）日期
 const weekStart = computed(() => {
-  return currentDate.value.startOf('week').add(1, 'day')  // 周一
+  // 从当天开始往前找到最近的周一
+  return dayjs().startOf('day').subtract((dayjs().day() === 0 ? 6 : dayjs().day() - 1), 'day')
 })
 const weekEnd = computed(() => {
-  return weekStart.value.add(6, 'day')  // 周日
+  // 从当天开始往后找到最近的周日
+  return weekStart.value.add(6, 'day')
 })
 
 // 更新甘特图的时间范围
@@ -125,10 +127,10 @@ const customPopupHtml = (task: any) => {
   }
   
   const statusMap: Record<string, string> = {
-    'pending': '待处理',
-    'in-progress': '进行中',
-    'completed': '已完成',
-    'cancelled': '已取消'
+    'pending': 'Pending',
+    'in-progress': 'In Progress',
+    'completed': 'Completed',
+    'cancelled': 'Cancelled'
   }
   
   const priorityText = priorityMap[task.priority] || '未知'
@@ -434,6 +436,9 @@ const customizeHeader = () => {
       return
     }
     
+    // 获取今天的日期，用于高亮显示
+    const today = dayjs().format('YYYY-MM-DD')
+    
     headerCells.forEach((cell: Element) => {
       if (!cell) return
       
@@ -456,6 +461,26 @@ const customizeHeader = () => {
               <div class="date">${formattedDate}</div>
             </div>
           `
+          
+          // 如果是当天，添加高亮类
+          if (dateObj.format('YYYY-MM-DD') === today) {
+            // 找到对应的列并添加高亮样式
+            const columnIndex = Array.from(headerCells).indexOf(cell)
+            if (columnIndex !== -1) {
+              // 给甘特图中对应的时间列添加高亮样式
+              const columns = document.querySelectorAll('.gantt .grid-row .grid-cell')
+              const columnsPerRow = headerCells.length
+              
+              for (let i = 0; i < columns.length; i++) {
+                if (i % columnsPerRow === columnIndex) {
+                  (columns[i] as HTMLElement).classList.add('today-highlight')
+                }
+              }
+              
+              // 同时高亮表头单元格
+              cellElement.classList.add('today-highlight')
+            }
+          }
         } else {
           console.warn('无效的日期文本:', dateText)
         }
@@ -471,13 +496,13 @@ const customizeHeader = () => {
 // 获取星期几
 const getWeekdayLabel = (dateObj: dayjs.Dayjs) => {
   const weekDayMap: Record<number, string> = {
-    0: '周日',
-    1: '周一',
-    2: '周二',
-    3: '周三',
-    4: '周四',
-    5: '周五',
-    6: '周六'
+    0: 'Sun',
+    1: 'Mon',
+    2: 'Tue',
+    3: 'Wed',
+    4: 'Thu',
+    5: 'Fri',
+    6: 'Sat'
   }
   return weekDayMap[dateObj.day()] || ''
 }
@@ -603,6 +628,12 @@ watch([currentDate], () => {
 .gantt .date-header .date {
   font-size: 12px;
   color: #8c9fba;
+}
+
+/* 今日高亮样式 */
+.gantt .today-highlight {
+  background-color: #e6f7ff !important; /* 浅蓝色背景 */
+  border-left: 2px solid #1890ff !important; /* 左侧添加蓝色边框 */
 }
 
 /* 弹窗样式 */

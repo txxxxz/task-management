@@ -25,7 +25,7 @@ export const getProjectDetail = (id: number) => {
 // 创建项目
 export function createProject(data: any) {
   return request({
-    url: '/projects',
+    url: '/api/projects',
     method: 'post',
     data
   })
@@ -34,7 +34,7 @@ export function createProject(data: any) {
 // 更新项目
 export function updateProject(projectId: string, data: any) {
   return request({
-    url: `/projects/${projectId}`,
+    url: `/api/projects/${projectId}`,
     method: 'put',
     data
   })
@@ -43,7 +43,7 @@ export function updateProject(projectId: string, data: any) {
 // 删除项目
 export function deleteProject(projectId: string) {
   return request({
-    url: `/projects/${projectId}`,
+    url: `/api/projects/${projectId}`,
     method: 'delete'
   })
 }

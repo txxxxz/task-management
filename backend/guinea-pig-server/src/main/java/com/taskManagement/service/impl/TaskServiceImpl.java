@@ -19,6 +19,7 @@ import com.taskManagement.mapper.UserMapper;
 import com.taskManagement.service.TaskService;
 import com.taskManagement.service.TaskTagService;
 import com.taskManagement.service.FileService;
+import com.taskManagement.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +64,9 @@ public class TaskServiceImpl implements TaskService {
     
     @Autowired
     private FileService fileService;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     /**
      * 创建任务
@@ -246,74 +250,145 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskDTO updateTask(Long id, TaskDTO taskDTO) {
-        log.info("更新任务: id={}, task={}", id, taskDTO);
+        // 获取当前登录用户ID
+        Long userId = BaseContext.getCurrentId();
+        if (userId == null) {
+            throw new BusinessException("用户未登录");
+        }
         
-        // 1. 检查任务是否存在
+        // 检查任务是否存在
         Task task = taskMapper.selectById(id);
         if (task == null) {
             throw new BusinessException("任务不存在");
         }
         
-        // 2. 检查是否有权限修改
-        Long currentUserId = BaseContext.getCurrentId();
-        if (!task.getCreateUser().equals(currentUserId)) {
-            throw new BusinessException("没有权限修改该任务");
+        // 检查用户是否有权限更新任务 - 简单检查，用户需要是任务创建者或任务成员
+        checkUserCanUpdateTask(userId, task);
+        
+        // 保存任务原始状态，用于后续通知
+        Integer oldStatus = task.getStatus();
+        
+        // 更新任务基本信息
+        BeanUtils.copyProperties(taskDTO, task, "id", "createTime", "createUser", "commentCount");
+        
+        // 添加更新者信息
+        task.setUpdateUser(userId);
+        task.setUpdateTime(LocalDateTime.now());
+        
+        // 如果状态变为已完成，设置完成时间
+        if (task.getStatus() != null && task.getStatus() == 2) {
+            task.setCompletedTime(LocalDateTime.now());
         }
         
-        try {
-            // 3. 更新任务
-            taskDTO.setId(id);
-            Task updateTask = new Task();
-            BeanUtils.copyProperties(taskDTO, updateTask);
-            
-            updateTask.setUpdateUser(currentUserId);
-            updateTask.setUpdateTime(LocalDateTime.now());
-            
-            // 4. 持久化更新
-            taskMapper.updateById(updateTask);
-            log.info("任务基本信息更新成功，ID: {}", id);
-            
-            // 5. 处理标签关联
-            if (taskDTO.getTagIds() != null) {
-                try {
-                    log.info("开始更新任务标签关联，任务ID: {}, 标签IDs: {}", id, taskDTO.getTagIds());
-                    boolean success = taskTagService.updateTaskTags(id, taskDTO.getTagIds());
-                    log.info("更新任务标签关联结果: {}", success ? "成功" : "失败");
-                } catch (Exception e) {
-                    log.error("更新任务标签关联失败: {}", e.getMessage(), e);
-                    // 不抛出异常，继续处理其他部分
-                }
+        // 更新任务
+        taskMapper.updateById(task);
+        
+        // 如果任务状态发生变化，发送通知给任务成员
+        if (oldStatus != null && task.getStatus() != null && !oldStatus.equals(task.getStatus())) {
+            sendTaskStatusUpdateNotifications(task, oldStatus);
+        }
+        
+        // 查询更新后的完整任务信息
+        return getTaskDetail(task.getId());
+    }
+    
+    /**
+     * 检查用户是否有权限更新任务
+     * @param userId 用户ID
+     * @param task 任务对象
+     */
+    private void checkUserCanUpdateTask(Long userId, Task task) {
+        // 任务创建者可以更新
+        if (task.getCreateUser().equals(userId)) {
+            return;
+        }
+        
+        // 任务成员也可以更新
+        LambdaQueryWrapper<TaskMember> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(TaskMember::getTaskId, task.getId())
+                   .eq(TaskMember::getUserId, userId);
+        Long count = taskMemberMapper.selectCount(queryWrapper);
+        
+        if (count == 0) {
+            throw new BusinessException("您没有权限更新此任务");
+        }
+    }
+
+    /**
+     * 发送任务状态更新通知
+     * @param task 任务对象
+     * @param oldStatus 原状态
+     */
+    private void sendTaskStatusUpdateNotifications(Task task, Integer oldStatus) {
+        // 从数据库获取最新的完整任务信息，确保有所有字段
+        Task freshTask = taskMapper.selectById(task.getId());
+        if (freshTask == null) {
+            log.error("无法获取任务信息，任务ID: {}", task.getId());
+            return;
+        }
+        
+        // 添加更详细的日志
+        log.info("获取到的任务信息: id={}, name={}, 原始任务对象: {}", freshTask.getId(), freshTask.getName(), freshTask);
+        
+        // 获取当前用户信息
+        Long currentUserId = BaseContext.getCurrentId();
+        User currentUser = userMapper.selectById(currentUserId);
+        String currentUsername = currentUser != null ? currentUser.getUsername() : "用户" + currentUserId;
+        
+        // 获取任务新状态描述
+        String newStatusDesc = getStatusDescription(freshTask.getStatus());
+        
+        // 确保任务名称不为空 - 使用已更新的任务对象的name属性
+        // 先尝试使用传入的task对象的name
+        String taskName = task.getName();
+        log.info("从原始任务对象获取的名称: {}", taskName);
+        
+        // 如果为空，再尝试使用freshTask的name
+        if (taskName == null || taskName.trim().isEmpty()) {
+            taskName = freshTask.getName();
+            log.info("从fresh任务对象获取的名称: {}", taskName);
+        }
+        
+        // 如果还是为空，使用默认名称
+        if (taskName == null || taskName.trim().isEmpty() || "null".equals(taskName) || "undefined".equals(taskName)) {
+            taskName = "未命名任务 #" + freshTask.getId();
+            log.info("任务名称为空或无效，使用默认名称: {}", taskName);
+        }
+        
+        // 组装通知内容
+        String content = currentUsername + " 将任务 [" + taskName + "] 的状态更新为 " + newStatusDesc;
+        log.info("生成的通知内容: {}", content);
+        
+        // 获取任务成员，并发送通知
+        List<TaskMember> members = taskMemberMapper.selectList(
+                new LambdaQueryWrapper<TaskMember>()
+                        .eq(TaskMember::getTaskId, freshTask.getId()));
+        
+        for (TaskMember member : members) {
+            if (!member.getUserId().equals(currentUserId)) { // 不通知自己
+                notificationService.createTaskUpdateNotification(freshTask.getId(), content, member.getUserId());
+                log.info("已发送任务状态更新通知给用户ID: {}", member.getUserId());
             }
-            
-            // 6. 处理成员关联
-            if (taskDTO.getMembers() != null) {
-                try {
-                    log.info("开始更新任务成员关联，任务ID: {}, 成员: {}", id, taskDTO.getMembers());
-                    
-                    // 先删除原有成员关联
-                    LambdaQueryWrapper<TaskMember> memberQueryWrapper = new LambdaQueryWrapper<>();
-                    memberQueryWrapper.eq(TaskMember::getTaskId, id);
-                    int deletedCount = taskMemberMapper.delete(memberQueryWrapper);
-                    log.info("删除任务原有成员关联 {} 条", deletedCount);
-                    
-                    // 添加新成员关联
-                    if (!taskDTO.getMembers().isEmpty()) {
-                        int addedCount = batchAddTaskMembers(id, taskDTO.getMembers());
-                        log.info("添加新成员关联 {} 条", addedCount);
-                    }
-                } catch (Exception e) {
-                    log.error("更新任务成员关联失败: {}", e.getMessage(), e);
-                    // 不抛出异常，继续处理其他部分
-                }
-            }
-            
-            // 7. 返回更新后的DTO
-            TaskDTO resultDTO = getTaskDetail(id);
-            
-            return resultDTO;
-        } catch (Exception e) {
-            log.error("更新任务失败: {}", e.getMessage(), e);
-            throw new BusinessException("更新任务失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取任务状态描述
+     * @param status 状态代码
+     * @return 状态描述
+     */
+    private String getStatusDescription(Integer status) {
+        switch (status) {
+            case 0:
+                return "待处理";
+            case 1:
+                return "进行中";
+            case 2:
+                return "已完成";
+            case 3:
+                return "已取消";
+            default:
+                return "未知状态";
         }
     }
 

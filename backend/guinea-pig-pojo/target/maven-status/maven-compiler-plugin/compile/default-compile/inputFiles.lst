@@ -1,3 +1,4 @@
+/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/entity/Notification.java
 /Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/dto/CommentDTO.java
 /Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/dto/TaskStatusStatsDTO.java
 /Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/dto/UserRegisterDTO.java
@@ -11,6 +12,7 @@
 /Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/vo/TagVO.java
 /Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/dto/ProjectDTO.java
 /Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/vo/TaskVO.java
+/Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/dto/NotificationDTO.java
 /Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/vo/ProjectVO.java
 /Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/vo/PageResult.java
 /Users/txxxxz/Desktop/斗转星移/final project/task-management/backend/guinea-pig-pojo/src/main/java/com/taskManagement/entity/Project.java

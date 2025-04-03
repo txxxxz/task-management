@@ -13,6 +13,9 @@ import './styles/frappe-gantt-custom.scss'
 // 导入自定义的gantt样式覆盖
 import './styles/gantt-overrides.scss'
 
+// 导入通知store
+import { useNotificationStore } from '@/stores/notification'
+
 const app = createApp(App)
 
 // 注册 Element Plus 图标
@@ -24,3 +27,7 @@ app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
 app.mount('#app')
+
+// 预加载通知数量
+const notificationStore = useNotificationStore()
+notificationStore.getUnreadCount()

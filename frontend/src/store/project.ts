@@ -11,7 +11,7 @@ export const useProjectStore = defineStore('project', () => {
 
   const fetchProjects = async () => {
     try {
-      const data = await projectApi.getProjects()
+      const data = await projectApi.getAllProjects()
       projects.value = data
       return true
     } catch (error) {

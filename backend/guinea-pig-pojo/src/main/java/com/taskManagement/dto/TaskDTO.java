@@ -52,6 +52,8 @@ public class TaskDTO {
     private List<Long> memberIds;  // 任务成员ID列表
     private List<Long> tagIds;     // 标签ID列表
     private List<String> members; // 添加任务成员列表字段
+    
+    private List<String> attachments; // 任务附件URL列表
 
 
 } 

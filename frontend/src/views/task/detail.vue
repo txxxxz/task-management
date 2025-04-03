@@ -127,6 +127,7 @@
                 type="datetime"
                 :disabled="!isLeader"
                 style="width: 100%"
+                value-format="YYYY-MM-DD HH:mm:ss"
               />
             </el-form-item>
           </el-col>
@@ -137,6 +138,7 @@
                 type="datetime"
                 :disabled="!isLeader"
                 style="width: 100%"
+                value-format="YYYY-MM-DD HH:mm:ss"
               />
             </el-form-item>
           </el-col>

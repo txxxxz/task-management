@@ -13,7 +13,7 @@
           v-model="searchKeyword"
           class="search-input"
         />
-        <el-button icon="Bell" circle />
+        <NotificationDropdown />
         <el-dropdown @command="handleCommand">
           <el-avatar 
             :size="40"
@@ -66,6 +66,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox } from 'element-plus'
 import { menuItems } from '@/config/menu'
+import NotificationDropdown from '@/components/NotificationDropdown.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
