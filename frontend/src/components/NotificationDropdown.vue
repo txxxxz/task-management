@@ -11,14 +11,14 @@
     
     <el-drawer
       v-model="drawerVisible"
-      title="通知中心"
+      title="Notification Center"
       size="350px"
       :destroy-on-close="false"
     >
       <div class="notification-actions">
-        <span>{{ unreadCount }} 条未读</span>
+        <span>{{ unreadCount }} Unread</span>
         <el-button type="primary" link @click="handleMarkAllAsRead">
-          全部标记为已读
+          Mark All as Read
         </el-button>
       </div>
       
@@ -29,7 +29,7 @@
       </div>
       
       <div v-else-if="notifications.length === 0" class="notification-empty">
-        <el-empty description="暂无通知" />
+        <el-empty description="No Notifications" />
       </div>
       
       <el-scrollbar height="calc(100vh - 200px)">
@@ -37,7 +37,7 @@
           <div class="notification-item-header">
             <div class="notification-type">
               <el-tag size="small" :type="item.type === 'task_update' ? 'primary' : 'success'">
-                {{ item.type === 'task_update' ? '任务更新' : '评论提及' }}
+                {{ item.type === 'task_update' ? 'Task Update' : 'Comment Mention' }}
               </el-tag>
             </div>
             <div class="notification-time">
@@ -56,7 +56,7 @@
               link 
               @click="handleMarkAsRead(item.id)"
             >
-              标记为已读
+              Mark as Read
             </el-button>
             <el-button 
               v-if="item.type === 'task_update'" 
@@ -64,7 +64,7 @@
               link 
               @click="goToTask(item.relatedId)"
             >
-              查看任务
+              View Task
             </el-button>
             <el-button 
               v-else-if="item.type === 'comment_mention'" 
@@ -72,7 +72,7 @@
               link 
               @click="goToComment(item.relatedId)"
             >
-              查看评论
+              View Comment
             </el-button>
           </div>
         </div>
@@ -130,10 +130,10 @@ const handlePageChange = (page: number) => {
 const handleMarkAsRead = async (notificationId: number) => {
   try {
     await notificationStore.markAsRead(notificationId)
-    ElMessage.success('标记已读成功')
+    ElMessage.success('Marked as read successfully')
   } catch (error) {
-    console.error('标记已读失败:', error)
-    ElMessage.error('标记已读失败，请重试')
+    console.error('Failed to mark as read:', error)
+    ElMessage.error('Failed to mark as read, please try again')
   }
 }
 
@@ -141,16 +141,16 @@ const handleMarkAsRead = async (notificationId: number) => {
 const handleMarkAllAsRead = async () => {
   try {
     await notificationStore.markAllAsRead()
-    ElMessage.success('所有通知已标记为已读')
+    ElMessage.success('All notifications marked as read')
   } catch (error) {
-    console.error('全部标记已读失败:', error)
-    ElMessage.error('操作失败，请重试')
+    console.error('Failed to mark all as read:', error)
+    ElMessage.error('Operation failed, please try again')
   }
 }
 
 // 跳转到任务详情
 const goToTask = (taskId: number) => {
-  router.push(`/task/${taskId}`)
+  router.push(`/detail/${taskId}`)
   drawerVisible.value = false
 }
 
@@ -170,7 +170,7 @@ const formatTime = (time: string) => {
   if (date.isSame(now, 'day')) {
     return date.format('HH:mm')
   } else if (date.isSame(now.subtract(1, 'day'), 'day')) {
-    return '昨天 ' + date.format('HH:mm')
+    return 'Yesterday ' + date.format('HH:mm')
   } else if (date.isAfter(now.subtract(7, 'day'))) {
     return date.format('dddd HH:mm')
   } else {
@@ -205,20 +205,26 @@ onUnmounted(() => {
 const formatNotificationContent = (content: string): string => {
   if (!content) return '';
   
-  // 替换 [null] 为 [未命名任务]
-  content = content.replace(/\[null\]/g, '[未命名任务]');
+  // 替换 [null] 为 [Unnamed Task]
+  content = content.replace(/\[null\]/g, '[Unnamed Task]');
   
   // 检查是否是任务更新通知并提取任务ID
   if (content.includes('任务') && content.includes('状态更新为')) {
+    // 将中文通知转为英文格式
+    content = content.replace(/任务\s*\[(.*?)\]\s*状态更新为\s*(.*)/, 'Task [$1] status updated to $2');
+    
     // 尝试提取方括号内的任何内容
     const bracketPattern = /\[(.*?)\]/g;
     return content.replace(bracketPattern, (match, taskNameInBracket) => {
       if (!taskNameInBracket || taskNameInBracket === 'null' || taskNameInBracket === 'undefined') {
-        return '[未命名任务]';
+        return '[Unnamed Task]';
       }
       return match; // 保持原样
     });
   }
+  
+  // 将其他中文通知内容替换为英文
+  content = content.replace(/用户\s*\[(.*?)\]\s*在任务\s*\[(.*?)\]\s*中提到了你/, 'User [$1] mentioned you in task [$2]');
   
   return content;
 }

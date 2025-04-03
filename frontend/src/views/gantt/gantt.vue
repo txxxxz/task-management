@@ -375,9 +375,11 @@ const initGantt = () => {
       return
     }
     
-    // 获取有效的开始和结束日期
-    const startDate = weekStart.value.toDate()
-    const endDate = weekEnd.value.toDate()
+    // 获取今天的日期
+    const today = dayjs().startOf('day')
+    // 确保显示当前日期，计算合适的开始和结束日期
+    const startDate = today.subtract(1, 'day').toDate()
+    const endDate = today.add(5, 'day').toDate()
     
     // 确保日期有效
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
@@ -455,15 +457,20 @@ const customizeHeader = () => {
         if (dateObj.isValid()) {
           const weekday = getWeekdayLabel(dateObj)
           const formattedDate = dateObj.format('MM-DD')
+          
+          // 如果是当天，添加特殊标记
+          const isToday = dateObj.format('YYYY-MM-DD') === today
+          const todayMark = isToday ? '<span class="today-mark">今天</span>' : ''
+          
           cellElement.innerHTML = `
             <div class="date-header">
-              <div class="weekday">${weekday}</div>
+              <div class="weekday">${weekday} ${todayMark}</div>
               <div class="date">${formattedDate}</div>
             </div>
           `
           
           // 如果是当天，添加高亮类
-          if (dateObj.format('YYYY-MM-DD') === today) {
+          if (isToday) {
             // 找到对应的列并添加高亮样式
             const columnIndex = Array.from(headerCells).indexOf(cell)
             if (columnIndex !== -1) {
@@ -630,10 +637,21 @@ watch([currentDate], () => {
   color: #8c9fba;
 }
 
+.gantt .date-header .today-mark {
+  display: inline-block;
+  padding: 0 4px;
+  background-color: #67C23A;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
 /* 今日高亮样式 */
 .gantt .today-highlight {
-  background-color: #e6f7ff !important; /* 浅蓝色背景 */
-  border-left: 2px solid #1890ff !important; /* 左侧添加蓝色边框 */
+  background-color: #f0f9ec !important; /* 改为浅绿色背景 */
+  border-left: 3px solid #67C23A !important; /* 改为绿色并加粗边框 */
+  border-right: 3px solid #67C23A !important; /* 右侧也加边框 */
 }
 
 /* 弹窗样式 */

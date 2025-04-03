@@ -6,7 +6,7 @@
         :src="comment.createUserAvatar" 
         @error="handleAvatarError"
       >
-        {{ comment.createUserName ? comment.createUserName.charAt(0).toUpperCase() : '用' }}
+        {{ comment.createUserName ? comment.createUserName.charAt(0).toUpperCase() : 'U' }}
       </el-avatar>
       <span class="username">{{ comment.createUserName }}</span>
       <span class="time">{{ formatTime(comment.createTime) }}</span>
@@ -19,12 +19,12 @@
         {{ comment.content }}
       </div>
       <div class="comment-actions">
-        <el-button type="text" @click="handleReply(comment)">回复</el-button>
+        <el-button type="text" @click="handleReply(comment)">Reply</el-button>
         <el-button 
           v-if="canDelete(comment)" 
           type="text" 
           @click="handleDelete(comment)"
-        >删除</el-button>
+        >Delete</el-button>
       </div>
     </div>
     
@@ -93,7 +93,7 @@ export default defineComponent({
     // 获取该评论回复对象的用户名
     const replyToUsername = computed(() => {
       if (props.comment.parentId) {
-        return props.replyMap[props.comment.parentId] || `用户${props.comment.parentId}`;
+        return props.replyMap[props.comment.parentId] || `User${props.comment.parentId}`;
       }
       return '';
     });
@@ -108,7 +108,7 @@ export default defineComponent({
       try {
         return dayjs(time).fromNow();
       } catch (e) {
-        return time || '未知时间';
+        return time || 'Unknown time';
       }
     };
 

@@ -3,7 +3,7 @@
     <el-card class="tag-form-card">
       <template #header>
         <div class="card-header">
-          <h2>{{ isEdit ? '编辑标签' : '创建标签' }}</h2>
+          <h2>{{ isEdit ? 'Edit Tag' : 'Create Tag' }}</h2>
         </div>
       </template>
       
@@ -17,34 +17,34 @@
       >
         <!-- 基本信息 -->
         <div class="form-group">
-          <div class="group-title">基本信息</div>
+          <div class="group-title">Basic Information</div>
           
-          <el-form-item label="标签名称" prop="name" required>
+          <el-form-item label="Tag Name" prop="name" required>
             <el-input 
               v-model="tagForm.name" 
-              placeholder="请输入标签名称"
+              placeholder="Please enter tag name"
               maxlength="30"
               show-word-limit
             />
           </el-form-item>
           
-          <el-form-item label="标签颜色" prop="color" required>
+          <el-form-item label="Tag Color" prop="color" required>
             <div class="color-picker-wrapper">
               <el-color-picker v-model="tagForm.color" show-alpha />
               <div class="color-preview" :style="{ backgroundColor: tagForm.color || '#409EFF' }">
                 <span class="color-text" :style="{ color: getContrastColor(tagForm.color || '#409EFF') }">
-                  {{ tagForm.name || '预览文本' }}
+                  {{ tagForm.name || 'Preview Text' }}
                 </span>
               </div>
             </div>
           </el-form-item>
           
-          <el-form-item label="描述" prop="description">
+          <el-form-item label="Description" prop="description">
             <el-input
               v-model="tagForm.description"
               type="textarea"
               :rows="3"
-              placeholder="请描述标签用途（选填）"
+              placeholder="Please describe tag purpose (optional)"
               maxlength="200"
               show-word-limit
             />
@@ -53,7 +53,7 @@
         
         <!-- 预设颜色 -->
         <div class="form-group">
-          <div class="group-title">预设颜色</div>
+          <div class="group-title">Preset Colors</div>
           <div class="preset-colors">
             <div 
               v-for="(color, index) in presetColors" 
@@ -68,9 +68,9 @@
         
         <!-- 按钮区域 -->
         <div class="form-actions">
-          <el-button @click="handleCancel">取消</el-button>
+          <el-button @click="handleCancel">Cancel</el-button>
           <el-button type="primary" @click="handleSubmit" :loading="loading">
-            {{ isEdit ? '更新' : '创建' }}
+            {{ isEdit ? 'Update' : 'Create' }}
           </el-button>
         </div>
       </el-form>
@@ -106,53 +106,53 @@ const tagForm = reactive<Partial<Tag>>({
 
 // 预设颜色
 const presetColors = [
-  // 蓝色系
-  '#1976D2', // 靛蓝
-  '#2196F3', // 天蓝
-  '#03A9F4', // 浅蓝
-  '#00BCD4', // 青色
-  '#009688', // 墨绿
-  '#4CAF50', // 绿色
+  // Blue series
+  '#1976D2', // Indigo
+  '#2196F3', // Sky Blue
+  '#03A9F4', // Light Blue
+  '#00BCD4', // Cyan
+  '#009688', // Teal
+  '#4CAF50', // Green
   
-  // 绿色系
-  '#8BC34A', // 浅绿
-  '#CDDC39', // 黄绿
-  '#FFEB3B', // 黄色
-  '#FFC107', // 琥珀
-  '#FF9800', // 橙色
-  '#FF5722', // 深橙
+  // Green series
+  '#8BC34A', // Light Green
+  '#CDDC39', // Yellow Green
+  '#FFEB3B', // Yellow
+  '#FFC107', // Amber
+  '#FF9800', // Orange
+  '#FF5722', // Deep Orange
   
-  // 红色系
-  '#F44336', // 红色
-  '#E91E63', // 粉红
-  '#9C27B0', // 紫色
-  '#673AB7', // 深紫
-  '#3F51B5', // 靛青
-  '#607D8B', // 蓝灰
+  // Red series
+  '#F44336', // Red
+  '#E91E63', // Pink
+  '#9C27B0', // Purple
+  '#673AB7', // Deep Purple
+  '#3F51B5', // Indigo
+  '#607D8B', // Blue Grey
   
-  // 莫兰迪色系
-  '#D8B5A5', // 莫兰迪粉
-  '#B3A59D', // 莫兰迪灰
-  '#BFD0C9', // 莫兰迪绿
-  '#C8D0BE', // 莫兰迪浅绿
-  '#EADCD1', // 莫兰迪米色
-  '#AAB0AF', // 莫兰迪深灰
+  // Morandi series
+  '#D8B5A5', // Morandi Pink
+  '#B3A59D', // Morandi Grey
+  '#BFD0C9', // Morandi Green
+  '#C8D0BE', // Morandi Light Green
+  '#EADCD1', // Morandi Beige
+  '#AAB0AF', // Morandi Deep Grey
   
-  // 其他色调
-  '#795548', // 棕色
-  '#9E9E9E', // 灰色
-  '#455A64', // 深蓝灰
-  '#212121', // 近黑色
+  // Other tones
+  '#795548', // Brown
+  '#9E9E9E', // Grey
+  '#455A64', // Deep Blue Grey
+  '#212121', // Near Black
 ]
 
 // 表单校验规则
 const formRules = {
   name: [
-    { required: true, message: '请输入标签名称', trigger: 'blur' },
-    { min: 1, max: 30, message: '长度在1到30个字符之间', trigger: 'blur' }
+    { required: true, message: 'Please enter tag name', trigger: 'blur' },
+    { min: 1, max: 30, message: 'Length between 1 to 30 characters', trigger: 'blur' }
   ],
   color: [
-    { required: true, message: '请选择标签颜色', trigger: 'change' }
+    { required: true, message: 'Please select tag color', trigger: 'change' }
   ]
 }
 
@@ -168,16 +168,16 @@ const fetchTagDetail = async (tagId: string) => {
         tagForm.color = tagData.color
         tagForm.description = tagData.description
       } else {
-        ElMessage.error('获取标签详情失败')
+        ElMessage.error('Failed to get tag details')
         router.back()
       }
     } else {
-      ElMessage.error('获取标签详情失败')
+      ElMessage.error('Failed to get tag details')
       router.back()
     }
   } catch (error) {
-    console.error('获取标签详情失败:', error)
-    ElMessage.error('获取标签详情失败')
+    console.error('Failed to get tag details:', error)
+    ElMessage.error('Failed to get tag details')
     router.back()
   } finally {
     loading.value = false
@@ -240,18 +240,18 @@ const handleSubmit = async () => {
       // 更新标签
       const tagId = route.params.id as string
       await updateTag(Number(tagId), submitData)
-      ElMessage.success('更新标签成功')
+      ElMessage.success('Updated tag successfully')
     } else {
       // 创建标签
       await createTag(submitData)
-      ElMessage.success('创建标签成功')
+      ElMessage.success('Created tag successfully')
     }
     
     // 返回标签列表
     router.push('/tag/list')
   } catch (error: any) {
-    console.error('操作失败:', error)
-    ElMessage.error(error.message || '操作失败')
+    console.error('Operation failed:', error)
+    ElMessage.error(error.message || 'Operation failed')
   } finally {
     loading.value = false
   }
@@ -265,7 +265,7 @@ const handleCancel = () => {
 onMounted(async () => {
   // 检查用户权限
   if (userStore.userInfo?.role !== 1) {
-    ElMessage.error('只有项目负责人才能创建或编辑标签')
+    ElMessage.error('Only project leaders can create or edit tags')
     router.push('/tag/list')
     return
   }

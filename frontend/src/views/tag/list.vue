@@ -1,54 +1,54 @@
 <template>
   <div class="tag-list-container">
-    <!-- 搜索筛选区域 -->
+    <!-- Search and filter area -->
     <div class="filter-section">
       <el-form :model="filterForm" class="filter-form">
         <div class="filter-row">
           <div class="filter-item">
-            <el-form-item label="标签名称">
-              <el-input v-model="filterForm.name" placeholder="请输入标签名称" clearable />
+            <el-form-item label="Tag Name">
+              <el-input v-model="filterForm.name" placeholder="Enter tag name" clearable />
             </el-form-item>
           </div>
           <div class="filter-item">
-            <el-form-item label="创建日期">
+            <el-form-item label="Creation Date">
               <el-date-picker
                 v-model="filterForm.createDateRange"
                 type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
+                range-separator="to"
+                start-placeholder="Start date"
+                end-placeholder="End date"
                 value-format="YYYY-MM-DD"
               />
             </el-form-item>
           </div>
         </div>
-        <!-- 查询和重置按钮 -->
+        <!-- Query and reset buttons -->
         <div class="filter-buttons">
           <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon> 搜索
+            <el-icon><Search /></el-icon> Search
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon> 重置
+            <el-icon><Refresh /></el-icon> Reset
           </el-button>
         </div>
       </el-form>
     </div>
 
-    <!-- 操作按钮区域 -->
+    <!-- Operation buttons area -->
     <div class="operation-section">
       <div class="left-buttons">
         <el-button type="primary" @click="handleNewTag" v-if="userStore.userInfo?.role === 1">
-          <el-icon><Plus /></el-icon> 新建标签
+          <el-icon><Plus /></el-icon> New Tag
         </el-button>
       </div>
       <div class="right-buttons">
         <el-button @click="handleDownload">
-          <el-icon><Download /></el-icon> 导出
+          <el-icon><Download /></el-icon> Export
         </el-button>
       </div>
     </div>
 
-    <!-- 表格区域 -->
+    <!-- Table area -->
     <el-table
       :data="tagList"
       style="width: 100%"
@@ -56,8 +56,8 @@
       stripe
       v-loading="loading"
     >
-      <el-table-column prop="id" label="标签ID" width="120" />
-      <el-table-column prop="name" label="标签名称" min-width="150">
+      <el-table-column prop="id" label="Tag ID" width="120" />
+      <el-table-column prop="name" label="Tag Name" min-width="150">
         <template #default="{ row }">
           <div class="tag-name-cell">
             <el-tag :style="{ backgroundColor: row.color, color: getContrastColor(row.color) }">
@@ -66,17 +66,17 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="标签颜色" width="120">
+      <el-table-column label="Tag Color" width="120">
         <template #default="{ row }">
           <div class="color-preview" :style="{ backgroundColor: row.color }" />
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="180">
+      <el-table-column prop="createTime" label="Creation Time" width="180">
         <template #default="{ row }">
           {{ formatDate(row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column label="Actions" width="150" fixed="right">
         <template #default="{ row }">
           <el-button
             type="primary"
@@ -84,7 +84,7 @@
             @click="handleEdit(row)"
             v-if="userStore.userInfo?.role === 1"
           >
-            编辑
+            Edit
           </el-button>
           <el-button
             type="danger"
@@ -92,13 +92,13 @@
             @click="handleDelete(row)"
             v-if="userStore.userInfo?.role === 1"
           >
-            删除
+            Delete
           </el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <!-- 分页 -->
+    <!-- Pagination -->
     <div class="pagination-section">
       <el-pagination
         v-model:current-page="currentPage"
@@ -170,8 +170,8 @@ const fetchTagList = async () => {
       total.value = data.total || 0
     }
   } catch (error) {
-    console.error('获取标签列表失败', error)
-    ElMessage.error('获取标签列表失败，请稍后重试')
+    console.error('Failed to get tag list', error)
+    ElMessage.error('Failed to get tag list, please try again later')
   } finally {
     loading.value = false
   }
@@ -200,7 +200,7 @@ const getContrastColor = (hexColor: string) => {
 
 // 格式化日期
 const formatDate = (date: string | undefined): string => {
-  if (!date) return '未设置'
+  if (!date) return 'Not set'
   return formatDateUtil(date)
 }
 
@@ -230,29 +230,29 @@ const handleEdit = (row: Tag) => {
 
 const handleDelete = (row: Tag) => {
   ElMessageBox.confirm(
-    `确定要删除标签 "${row.name}" 吗？`,
-    '删除确认',
+    `Are you sure you want to delete the tag "${row.name}"?`,
+    'Delete Confirmation',
     {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
       type: 'warning'
     }
   ).then(async () => {
     try {
       await deleteTag(Number(row.id))
-      ElMessage.success('删除成功')
-      fetchTagList() // 刷新列表
+      ElMessage.success('Deleted successfully')
+      fetchTagList() // Refresh list
     } catch (error) {
-      console.error('删除标签失败', error)
-      ElMessage.error('删除标签失败，请稍后重试')
+      console.error('Failed to delete tag', error)
+      ElMessage.error('Failed to delete tag, please try again later')
     }
   }).catch(() => {
-    // 用户取消删除
+    // User cancelled deletion
   })
 }
 
 const handleDownload = () => {
-  ElMessage.info('导出功能即将上线')
+  ElMessage.info('Export feature coming soon')
 }
 
 const handleSizeChange = (val: number) => {

@@ -116,15 +116,15 @@
 
           <!-- 项目成员分组 -->
           <div class="form-group">
-            <div class="group-title">项目成员</div>
+            <div class="group-title">Project Members</div>
             <el-form-item prop="members">
               <el-select
                 v-model="projectForm.members"
                 multiple
                 filterable
-                placeholder="请选择项目成员"
+                placeholder="Please select project members"
                 style="width: 100%"
-                loading-text="加载中..."
+                loading-text="Loading..."
                 :loading="membersLoading"
                 :reserve-keyword="true"
                 default-first-option
@@ -146,7 +146,7 @@
                 </el-option>
                 <template #empty>
                   <div class="empty-members">
-                    <p>未找到成员，请尝试其他关键词</p>
+                    <p>No members found, please try other keywords</p>
                   </div>
                 </template>
               </el-select>
@@ -213,37 +213,37 @@
           <div class="confirm-icon">
             <el-icon :size="64" color="#409EFF"><InfoFilled /></el-icon>
           </div>
-          <h2>确认{{ isEdit ? '更新' : '创建' }}项目</h2>
+          <h2>Confirm {{ isEdit ? 'Update' : 'Create' }} Project</h2>
           <p class="confirm-desc">
-            请确认以下信息无误，点击"提交"按钮{{ isEdit ? '更新' : '创建' }}项目。
+            Please confirm that the following information is correct, click the "Submit" button to {{ isEdit ? 'update' : 'create' }} the project.
           </p>
           
           <div class="project-summary">
-            <el-descriptions title="项目信息" :column="2" border>
-              <el-descriptions-item label="项目名称">{{ projectForm.name }}</el-descriptions-item>
-              <el-descriptions-item label="优先级">
+            <el-descriptions title="Project Information" :column="2" border>
+              <el-descriptions-item label="Project Name">{{ projectForm.name }}</el-descriptions-item>
+              <el-descriptions-item label="Priority">
                 {{ getPriorityLabel(projectForm.priority) }}
               </el-descriptions-item>
-              <el-descriptions-item label="项目状态">
+              <el-descriptions-item label="Project Status">
                 {{ getStatusLabel(projectForm.status) }}
               </el-descriptions-item>
-              <el-descriptions-item label="开始时间">{{ projectForm.startTime }}</el-descriptions-item>
-              <el-descriptions-item label="结束时间">{{ projectForm.endTime }}</el-descriptions-item>
-              <el-descriptions-item label="项目成员">
-                {{ projectForm.members.join(', ') || '无' }}
+              <el-descriptions-item label="Start Time">{{ projectForm.startTime }}</el-descriptions-item>
+              <el-descriptions-item label="End Time">{{ projectForm.endTime }}</el-descriptions-item>
+              <el-descriptions-item label="Project Members">
+                {{ projectForm.members.join(', ') || 'None' }}
               </el-descriptions-item>
-              <el-descriptions-item label="附件数量">
-                {{ projectForm.attachments.length }}个文件
+              <el-descriptions-item label="Attachments">
+                {{ projectForm.attachments.length }} files
               </el-descriptions-item>
-              <el-descriptions-item label="项目描述" :span="2">
-                {{ projectForm.description || '无' }}
+              <el-descriptions-item label="Project Description" :span="2">
+                {{ projectForm.description || 'None' }}
               </el-descriptions-item>
             </el-descriptions>
           </div>
           
           <div class="action-buttons">
-            <el-button @click="currentStep = 1">返回修改</el-button>
-            <el-button type="primary" @click="handleSubmit" :loading="loading">提交</el-button>
+            <el-button @click="currentStep = 1">Back to Edit</el-button>
+            <el-button type="primary" @click="handleSubmit" :loading="loading">Submit</el-button>
           </div>
         </div>
       </template>
@@ -314,17 +314,17 @@ const searchMembers = async (query: string) => {
   
   membersLoading.value = true
   try {
-    console.log('搜索成员，关键词:', query)
+    console.log('Searching members, keyword:', query)
     const response = await getAllUsers({
       keyword: query,
-      role: '0,1', // 只查询角色为0和1的用户
+      role: '0,1', // Only query users with role 0 and 1
       page: 1,
       pageSize: 20
     })
     
-    console.log('搜索成员响应:', response)
-    console.log('code类型:', typeof response.data.code, '值:', response.data.code)
-    console.log('数据结构:', response.data.data)
+    console.log('Search members response:', response)
+    console.log('Code type:', typeof response.data.code, 'value:', response.data.code)
+    console.log('Data structure:', response.data.data)
     
     // 正确处理响应结构
     if (response && response.data && response.data.code === 1 && response.data.data) {
@@ -332,21 +332,21 @@ const searchMembers = async (query: string) => {
       if (Array.isArray(items)) {
         memberOptions.value = items.map(user => ({
           value: user.username,
-          label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+          label: `${user.username} (${user.role === 0 ? 'Member' : 'Leader'})`,
           avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
         }))
       } else {
         memberOptions.value = []
-        console.warn('返回的items不是数组:', items)
+        console.warn('Returned items is not an array:', items)
       }
     } else {
       memberOptions.value = []
-      console.warn('API响应格式不符合预期:', response)
+      console.warn('API response format does not match expectation:', response)
     }
   } catch (error) {
     memberOptions.value = []
-    ElMessage.error('搜索用户失败')
-    console.error('搜索用户失败:', error)
+    ElMessage.error('Failed to search users')
+    console.error('Failed to search users:', error)
   } finally {
     membersLoading.value = false
   }
@@ -356,16 +356,16 @@ const searchMembers = async (query: string) => {
 const fetchUsers = async () => {
   membersLoading.value = true
   try {
-    console.log('获取所有用户')
+    console.log('Getting all users')
     const response = await getAllUsers({
-      role: '0,1', // 只查询角色为0和1的用户
+      role: '0,1', // Only query users with role 0 and 1
       page: 1,
       pageSize: 20
     })
     
-    console.log('获取用户响应:', response)
-    console.log('code类型:', typeof response.data.code, '值:', response.data.code)
-    console.log('数据结构:', response.data.data)
+    console.log('Get users response:', response)
+    console.log('Code type:', typeof response.data.code, 'value:', response.data.code)
+    console.log('Data structure:', response.data.data)
     
     // 正确处理响应结构
     if (response && response.data && response.data.code === 1 && response.data.data) {
@@ -373,21 +373,21 @@ const fetchUsers = async () => {
       if (Array.isArray(items)) {
         memberOptions.value = items.map(user => ({
           value: user.username,
-          label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+          label: `${user.username} (${user.role === 0 ? 'Member' : 'Leader'})`,
           avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
         }))
       } else {
         memberOptions.value = []
-        console.warn('返回的items不是数组:', items)
+        console.warn('Returned items is not an array:', items)
       }
     } else {
       memberOptions.value = []
-      console.warn('API响应格式不符合预期:', response)
+      console.warn('API response format does not match expectation:', response)
     }
   } catch (error) {
     memberOptions.value = []
-    ElMessage.error('获取用户列表失败')
-    console.error('获取用户列表失败:', error)
+    ElMessage.error('Failed to get user list')
+    console.error('Failed to get user list:', error)
   } finally {
     membersLoading.value = false
   }
@@ -418,7 +418,7 @@ const disabledEndDate = (time: Date) => {
 
 // 处理文件变更
 const handleFileChange = (file: any) => {
-  console.log('文件变更:', file)
+  console.log('File change:', file)
   // 确保文件对象包含raw属性（原始文件对象）
   if (file.raw) {
     // 如果已经有raw属性，使用它
@@ -454,7 +454,7 @@ const handleNext = async () => {
       // 验证成功后，进入第二步
       // 不需要手动增加步骤，StepForm 组件会自动处理
     } catch (error) {
-      ElMessage.error('请完成必填信息')
+      ElMessage.error('Please complete the required information')
       return
     }
   } else if (currentStep.value === 1) {
@@ -464,7 +464,7 @@ const handleNext = async () => {
       
       // 如果有文件，先上传文件
       if (projectForm.attachments.length > 0) {
-        console.log('准备上传文件，数量:', projectForm.attachments.length)
+        console.log('Preparing to upload files, count:', projectForm.attachments.length)
         
         // 确保获取原始文件对象
         const files = projectForm.attachments.map(item => {
@@ -472,30 +472,30 @@ const handleNext = async () => {
             // 如果是字符串（URL），跳过
             return null;
           }
-          console.log('处理文件:', item.name, item)
+          console.log('Processing file:', item.name, item)
           return item.raw || item
         }).filter(Boolean) as File[]; // 过滤掉 null 值并断言为 File[]
         
-        console.log('处理后的文件对象:', files)
+        console.log('Processed file objects:', files)
         
         try {
           const { data } = await batchUploadProjectFiles(files)
-          console.log('文件上传响应:', data)
+          console.log('File upload response:', data)
           
           if (data.code === 0 || data.code === 1 || data.code === 200) {
             // 上传成功，保存文件URL
             const fileUrls = data.data;
             // 将原始文件对象替换为上传后的URL
             projectForm.attachments = fileUrls;
-            console.log('文件上传成功，URLs:', projectForm.attachments)
+            console.log('File upload successful, URLs:', projectForm.attachments)
           } else {
-            ElMessage.error(data.message || '文件上传失败')
+            ElMessage.error(data.message || 'File upload failed')
             return
           }
         } catch (uploadError: any) {
-          console.error('文件上传请求失败:', uploadError)
-          console.error('错误详情:', uploadError.response?.data || uploadError.message)
-          ElMessage.error(`文件上传失败: ${uploadError.response?.data?.message || uploadError.message}`)
+          console.error('File upload request failed:', uploadError)
+          console.error('Error details:', uploadError.response?.data || uploadError.message)
+          ElMessage.error(`File upload failed: ${uploadError.response?.data?.message || uploadError.message}`)
           return
         }
       }
@@ -503,8 +503,8 @@ const handleNext = async () => {
       // 文件上传成功后，进入第三步（确认页面）
       // 不需要手动增加步骤，StepForm 组件会自动处理
     } catch (error: any) {
-      console.error('文件上传失败:', error)
-      ElMessage.error(error.message || '文件上传失败')
+      console.error('File upload failed:', error)
+      ElMessage.error(error.message || 'File upload failed')
       return
     } finally {
       loading.value = false
@@ -534,34 +534,34 @@ const handleSubmit = async () => {
         : []
     }
     
-    console.log('准备提交的数据:', submitData)
+    console.log('Preparing to submit data:', submitData)
     
     const projectId = Number(route.params.id)
     
     if (projectId) {
       // 更新项目
-      const { data } = await updateProject(projectId, submitData)
+      const { data } = await updateProject(projectId.toString(), submitData)
       if (data.code === 0 || data.code === 1 || data.code === 200) {
-        ElMessage.success('更新成功')
+        ElMessage.success('Update successful')
         // 更新成功后跳转到项目列表
         router.push('/project/list')
       } else {
-        ElMessage.error(data.message || '更新失败')
+        ElMessage.error(data.message || 'Update failed')
       }
     } else {
       // 创建项目
       const { data } = await createProject(submitData)
       if (data.code === 0 || data.code === 1 || data.code === 200) {
-        ElMessage.success('创建成功')
+        ElMessage.success('Create successful')
         // 创建成功后跳转到项目列表
         router.push('/project/list')
       } else {
-        ElMessage.error(data.message || '创建失败')
+        ElMessage.error(data.message || 'Create failed')
       }
     }
   } catch (error: any) {
-    console.error('操作失败:', error)
-    ElMessage.error(error.message || '操作失败')
+    console.error('Operation failed:', error)
+    ElMessage.error(error.message || 'Operation failed')
   } finally {
     loading.value = false
   }
@@ -571,14 +571,14 @@ const handleSubmit = async () => {
 const getPriorityLabel = (priority: number) => {
   const options = getPriorityOptions()
   const option = options.find(opt => opt.value === priority)
-  return option ? option.label : '未知'
+  return option ? option.label : 'Unknown'
 }
 
 // 获取状态标签
 const getStatusLabel = (status: number) => {
   const options = getStatusOptions()
   const option = options.find(opt => opt.value === status)
-  return option ? option.label : '未知'
+  return option ? option.label : 'Unknown'
 }
 
 // 查看项目
@@ -625,7 +625,7 @@ const fetchProjectDetail = async (projectId: number) => {
             projectForm.members = membersResponse.data.data;
           }
         } catch (error) {
-          console.error('获取项目成员失败:', error);
+          console.error('Failed to get project members:', error);
           projectForm.members = [];
         }
       }
@@ -633,17 +633,17 @@ const fetchProjectDetail = async (projectId: number) => {
       projectForm.attachments = projectData.attachments || [];
       // 如果 attachments 是字符串数组，确保它们被正确处理
       if (Array.isArray(projectForm.attachments) && projectForm.attachments.length > 0) {
-        console.log('项目附件:', projectForm.attachments);
+        console.log('Project attachments:', projectForm.attachments);
       }
       projectForm.status = projectData.status;
       projectForm.priority = projectData.priority;
     } else {
-      ElMessage.error(data.message || '获取项目详情失败');
+      ElMessage.error(data.message || 'Failed to get project details');
       router.back();
     }
   } catch (error) {
-    console.error('获取项目详情失败:', error);
-    ElMessage.error('获取项目详情失败');
+    console.error('Failed to get project details:', error);
+    ElMessage.error('Failed to get project details');
     router.back();
   } finally {
     loading.value = false;
@@ -665,7 +665,7 @@ const formatFileSize = (size: number) => {
 // 文件上传前的验证
 const beforeFileRemove = (file: any) => {
   return ElMessageBox.confirm(
-    `确定移除 ${file.name}？`
+    `Are you sure to remove ${file.name}?`
   ).then(
     () => true,
     () => false
@@ -688,7 +688,7 @@ fetchUsers()
 onMounted(async () => {
   // 检查用户权限
   if (userStore.userInfo?.role !== 1) {
-    ElMessage.error('只有项目负责人才能创建或编辑项目')
+    ElMessage.error('Only project leaders can create or edit projects')
     router.push('/project/list')
     return
   }
@@ -704,7 +704,7 @@ onMounted(async () => {
 
 // 额外添加一些控制台调试代码，帮助排查问题
 watch(memberOptions, (newVal) => {
-  console.log('成员选项已更新:', newVal.length, '个选项')
+  console.log('Member options updated:', newVal.length, 'options')
 }, { immediate: true, deep: true })
 </script>
 

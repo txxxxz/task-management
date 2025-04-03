@@ -5,16 +5,16 @@ import * as notificationApi from '@/api/notification'
 import { useUserStore } from './user'
 
 export const useNotificationStore = defineStore('notification', () => {
-  // 通知列表
+  // Notification list
   const notifications = ref<Notification[]>([])
-  // 通知总数
+  // Total number of notifications
   const total = ref(0)
-  // 未读通知数量
+  // Unread notification count
   const unreadCount = ref(0)
-  // 是否加载中
+  // Loading state
   const loading = ref(false)
 
-  // 获取通知列表
+  // Get notification list
   const getNotifications = async (page = 1, pageSize = 10) => {
     loading.value = true
     try {
@@ -29,7 +29,7 @@ export const useNotificationStore = defineStore('notification', () => {
       notifications.value = res.data.records
       total.value = res.data.total
       
-      // 更新未读通知数量
+      // Update unread notification count
       getUnreadCount()
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
@@ -38,7 +38,7 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  // 获取未读通知数量
+  // Get unread notification count
   const getUnreadCount = async () => {
     try {
       const userStore = useUserStore()
@@ -51,7 +51,7 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  // 标记通知为已读
+  // Mark notification as read
   const markAsRead = async (notificationId: number) => {
     try {
       const userStore = useUserStore()
@@ -59,20 +59,20 @@ export const useNotificationStore = defineStore('notification', () => {
       
       await notificationApi.markAsRead(notificationId, userStore.userInfo.id)
       
-      // 更新本地状态
+      // Update local state
       const index = notifications.value.findIndex(n => n.id === notificationId)
       if (index !== -1) {
         notifications.value[index].isRead = 1
       }
       
-      // 更新未读数量
+      // Update unread count
       getUnreadCount()
     } catch (error) {
       console.error('Failed to mark notification as read:', error)
     }
   }
 
-  // 标记所有通知为已读
+  // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
       const userStore = useUserStore()
@@ -80,7 +80,7 @@ export const useNotificationStore = defineStore('notification', () => {
       
       await notificationApi.markAllAsRead(userStore.userInfo.id)
       
-      // 更新本地状态
+      // Update local state
       notifications.value = notifications.value.map(n => ({ ...n, isRead: 1 }))
       unreadCount.value = 0
     } catch (error) {

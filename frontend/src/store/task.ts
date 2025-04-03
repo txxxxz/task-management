@@ -17,7 +17,7 @@ export const useTaskStore = defineStore('task', () => {
       tasks.value = response.data.items
       return true
     } catch (error) {
-      ElMessage.error('获取任务列表失败')
+      ElMessage.error('Failed to get task list')
       return false
     }
   }
@@ -32,7 +32,7 @@ export const useTaskStore = defineStore('task', () => {
       ])
       return true
     } catch (error) {
-      ElMessage.error('获取任务详情失败')
+      ElMessage.error('Failed to get task details')
       return false
     }
   }
@@ -41,10 +41,10 @@ export const useTaskStore = defineStore('task', () => {
     try {
       await taskApi.createProjectTask(projectId, data)
       await fetchTasks(projectId)
-      ElMessage.success('创建成功')
+      ElMessage.success('Created successfully')
       return true
     } catch (error) {
-      ElMessage.error('创建任务失败')
+      ElMessage.error('Failed to create task')
       return false
     }
   }
@@ -56,10 +56,10 @@ export const useTaskStore = defineStore('task', () => {
       if (currentTask.value?.id === taskId) {
         await getTask(projectId, taskId)
       }
-      ElMessage.success('更新成功')
+      ElMessage.success('Updated successfully')
       return true
     } catch (error) {
-      ElMessage.error('更新任务失败')
+      ElMessage.error('Failed to update task')
       return false
     }
   }
@@ -71,10 +71,10 @@ export const useTaskStore = defineStore('task', () => {
       if (currentTask.value?.id === taskId) {
         currentTask.value = null
       }
-      ElMessage.success('删除成功')
+      ElMessage.success('Deleted successfully')
       return true
     } catch (error) {
-      ElMessage.error('删除任务失败')
+      ElMessage.error('Failed to delete task')
       return false
     }
   }
@@ -85,7 +85,7 @@ export const useTaskStore = defineStore('task', () => {
       comments.value = response.data
       return true
     } catch (error) {
-      ElMessage.error('获取评论失败')
+      ElMessage.error('Failed to get comments')
       return false
     }
   }
@@ -94,10 +94,10 @@ export const useTaskStore = defineStore('task', () => {
     try {
       await taskApi.createComment(taskId, { content })
       await fetchComments(taskId)
-      ElMessage.success('评论成功')
+      ElMessage.success('Comment posted successfully')
       return true
     } catch (error) {
-      ElMessage.error('发表评论失败')
+      ElMessage.error('Failed to post comment')
       return false
     }
   }
@@ -106,10 +106,10 @@ export const useTaskStore = defineStore('task', () => {
     try {
       await taskApi.deleteComment(taskId, commentId)
       await fetchComments(taskId)
-      ElMessage.success('删除成功')
+      ElMessage.success('Deleted successfully')
       return true
     } catch (error) {
-      ElMessage.error('删除评论失败')
+      ElMessage.error('Failed to delete comment')
       return false
     }
   }
@@ -120,7 +120,7 @@ export const useTaskStore = defineStore('task', () => {
       attachments.value = response.data
       return true
     } catch (error) {
-      ElMessage.error('获取附件失败')
+      ElMessage.error('Failed to get attachments')
       return false
     }
   }
@@ -129,10 +129,10 @@ export const useTaskStore = defineStore('task', () => {
     try {
       await taskApi.uploadAttachment(taskId, file)
       await fetchAttachments(taskId)
-      ElMessage.success('上传成功')
+      ElMessage.success('Uploaded successfully')
       return true
     } catch (error) {
-      ElMessage.error('上传附件失败')
+      ElMessage.error('Failed to upload attachment')
       return false
     }
   }
@@ -141,10 +141,10 @@ export const useTaskStore = defineStore('task', () => {
     try {
       await taskApi.deleteAttachment(taskId, attachmentId)
       await fetchAttachments(taskId)
-      ElMessage.success('删除成功')
+      ElMessage.success('Deleted successfully')
       return true
     } catch (error) {
-      ElMessage.error('删除附件失败')
+      ElMessage.error('Failed to delete attachment')
       return false
     }
   }

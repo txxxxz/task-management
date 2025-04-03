@@ -47,7 +47,7 @@ export const useProjectStore = defineStore('project', () => {
         updateUser: 1
       }
       projects.value.push(newProject)
-      ElMessage.success('创建成功')
+      ElMessage.success('Created successfully')
     } finally {
       loading.value = false
     }
@@ -65,7 +65,7 @@ export const useProjectStore = defineStore('project', () => {
           updateTime: new Date().toISOString(),
           updateUser: 1
         }
-        ElMessage.success('更新成功')
+        ElMessage.success('Updated successfully')
       }
     } finally {
       loading.value = false
@@ -79,7 +79,7 @@ export const useProjectStore = defineStore('project', () => {
       const index = projects.value.findIndex(p => p.id === id)
       if (index !== -1) {
         projects.value.splice(index, 1)
-        ElMessage.success('删除成功')
+        ElMessage.success('Deleted successfully')
       }
     } finally {
       loading.value = false
