@@ -1,8 +1,10 @@
-package com.taskManagement.mapper;
+package com.taskManagement.unitTest.mapper;
 
 import com.taskManagement.TestApplication;
 import com.taskManagement.config.TestConfig;
 import com.taskManagement.entity.User;
+import com.taskManagement.mapper.UserMapper;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

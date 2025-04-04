@@ -1,4 +1,4 @@
-package com.taskManagement.service.impl;
+package com.taskManagement.unitTest.service;
 
 import com.taskManagement.dto.UserLoginDTO;
 import com.taskManagement.dto.UserRegisterDTO;
@@ -7,6 +7,7 @@ import com.taskManagement.exception.UserBusinessException;
 import com.taskManagement.mapper.UserMapper;
 import com.taskManagement.service.FileService;
 import com.taskManagement.service.UserService;
+import com.taskManagement.service.impl.UserServiceImpl;
 import com.taskManagement.utils.JwtUtil;
 import com.taskManagement.utils.PasswordUtil;
 import com.taskManagement.vo.LoginVO;
@@ -34,7 +35,7 @@ import static org.mockito.Mockito.*;
  * UserService单元测试 - 纯单元测试方式
  */
 @ExtendWith(MockitoExtension.class)
-public class UserServiceImplTest {
+public class UserServiceTest {
 
     @Mock
     private UserMapper userMapper;

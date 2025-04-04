@@ -2,6 +2,9 @@ package com.taskManagement.config;
 
 import com.aliyun.oss.OSS;
 import com.taskManagement.Application;
+import com.taskManagement.config.AliyunOSSConfig;
+import com.taskManagement.config.OSSConfiguration;
+import com.taskManagement.config.WebMvcConfiguration;
 import com.taskManagement.interceptor.JwtTokenUserInterceptor;
 import com.taskManagement.interceptor.JwtTokenAdminInterceptor;
 import com.taskManagement.mapper.CommentMapper;
@@ -10,7 +13,7 @@ import com.taskManagement.mapper.TaskAttachmentMapper;
 import com.taskManagement.mapper.ProjectMapper;
 import com.taskManagement.mapper.TaskMapper;
 import com.taskManagement.properties.JwtProperties;
-import com.taskManagement.utils.JwtUtil;
+
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
@@ -93,14 +96,18 @@ public class TestConfig {
     }
     
     /**
-     * 配置测试环境的MVC设置，禁用JWT拦截器
+     * 配置测试环境的MVC设置，使用模拟JWT拦截器
      */
     @Bean
-    public WebMvcConfigurer testWebMvcConfigurer() {
+    public WebMvcConfigurer testWebMvcConfigurer(MockJwtTokenUserInterceptor mockJwtTokenUserInterceptor) {
         return new WebMvcConfigurer() {
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
-                // 测试环境不添加任何拦截器
+                // 使用模拟JWT拦截器，不验证令牌直接通过认证
+                registry.addInterceptor(mockJwtTokenUserInterceptor)
+                        .addPathPatterns("/**") // 拦截所有请求
+                        .excludePathPatterns("/auth/login", "/auth/register", "/error") // 排除登录和注册接口
+                        .order(Integer.MIN_VALUE); // 确保这个拦截器最先执行
             }
         };
     }

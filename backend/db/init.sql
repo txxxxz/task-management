@@ -1,119 +1,272 @@
--- 创建数据库
-CREATE DATABASE IF NOT EXISTS task_management DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
-USE task_management;
+-- auto-generated definition
+create table tb_comment
+(
+    id          bigint auto_increment comment 'Primary key ID'
+        primary key,
+    task_id     bigint                             not null comment 'Task ID',
+    content     text                               not null comment 'Comment Content',
+    parent_id   bigint                             null comment 'Parent comment ID (NULL indicates top-level comment)',
+    create_time datetime default CURRENT_TIMESTAMP not null comment 'Create Time',
+    create_user bigint                             null comment 'Create User ID',
+    constraint tb_comment_ibfk_1
+        foreign key (task_id) references tb_task (id)
+            on delete cascade,
+    constraint tb_comment_ibfk_2
+        foreign key (parent_id) references tb_comment (id)
+            on delete cascade
+)
+    comment 'Comment Table';
 
--- 用户表
-CREATE TABLE IF NOT EXISTS tb_user (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
-    password VARCHAR(100) NOT NULL COMMENT '密码',
-    email VARCHAR(100) COMMENT '邮箱',
-    phone VARCHAR(20) COMMENT '手机号',
-    avatar VARCHAR(255) COMMENT '头像URL',
-    status TINYINT NOT NULL DEFAULT 1 COMMENT '用户状态：0-禁用，1-正常',
-    role TINYINT NOT NULL DEFAULT 0 COMMENT '角色：0-普通成员，1-leader，2-admin',
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_user BIGINT COMMENT '创建者ID',
-    update_user BIGINT COMMENT '更新者ID'
-) COMMENT '用户表';
+create index idx_parent_id
+    on tb_comment (parent_id);
 
--- 项目表
-CREATE TABLE IF NOT EXISTS tb_project (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-    name VARCHAR(100) NOT NULL COMMENT '项目名称',
-    description TEXT COMMENT '项目描述',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '项目状态：0-筹备中，1-进行中，2-已完成，3-已归档',
-    start_time DATETIME COMMENT '开始时间',
-    end_time DATETIME COMMENT '结束时间',
-    priority TINYINT NOT NULL DEFAULT 1 COMMENT '项目优先级：1-低，2-中，3-高，4-紧急',
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_user BIGINT COMMENT '创建者ID',
-    update_user BIGINT COMMENT '更新者ID'
-) COMMENT '项目表';
+create index idx_task_id
+    on tb_comment (task_id);
+```
 
--- 任务表
-CREATE TABLE IF NOT EXISTS tb_task (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-    title VARCHAR(200) NOT NULL COMMENT '任务标题',
-    description TEXT COMMENT '任务描述',
-    project_id BIGINT NOT NULL COMMENT '所属项目ID',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '任务状态：0-待处理，1-进行中，2-已完成，3-已取消',
-    priority TINYINT NOT NULL DEFAULT 1 COMMENT '优先级：1-低，2-中，3-高，4-紧急',
-    start_time DATETIME COMMENT '开始时间',
-    deadline DATETIME COMMENT '截止时间',
-    completed_time DATETIME COMMENT '实际完成时间',
-    estimated_hours DOUBLE COMMENT '预计工时（小时）',
-    actual_hours DOUBLE COMMENT '实际工时（小时）',
-    comment_count INT NOT NULL DEFAULT 0 COMMENT '评论数量',
-    attachment_count INT NOT NULL DEFAULT 0 COMMENT '附件数量',
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_user BIGINT COMMENT '创建者ID',
-    update_user BIGINT COMMENT '更新者ID',
-    FOREIGN KEY (project_id) REFERENCES tb_project(id)
-) COMMENT '任务表';
+```
+-- auto-generated definition
+create table tb_notification
+(
+    id          bigint auto_increment comment 'Primary Key ID'
+        primary key,
+    type        varchar(50)                          not null comment 'Notification Type：task_update-Update Task, comment_mention-Comment@',
+    content     varchar(500)                         not null comment 'Notification Content',
+    user_id     bigint                               not null comment 'ID for Receiving Notification User',
+    is_read     tinyint(1) default 0                 not null comment 'Read or not: 0- unread, 1- Read',
+    related_id  bigint                               null comment 'Associated ID (task ID & comment ID)',
+    create_time datetime   default CURRENT_TIMESTAMP not null comment 'Create Time',
+    update_time datetime   default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment 'Update Time',
+    constraint tb_notification_ibfk_1
+        foreign key (user_id) references tb_user (id)
+            on delete cascade
+)
+    comment 'Notification Table';
 
--- 任务成员表
-CREATE TABLE IF NOT EXISTS tb_task_member (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-    task_id BIGINT NOT NULL COMMENT '任务ID',
-    user_id BIGINT NOT NULL COMMENT '用户ID',
-    role TINYINT NOT NULL DEFAULT 0 COMMENT '角色：0-参与者，1-负责人',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '成员状态：0-待接受，1-已接受，2-已拒绝',
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_user BIGINT COMMENT '创建者ID',
-    update_user BIGINT COMMENT '更新者ID',
-    FOREIGN KEY (task_id) REFERENCES tb_task(id),
-    FOREIGN KEY (user_id) REFERENCES tb_user(id),
-    UNIQUE KEY uk_task_user (task_id, user_id)
-) COMMENT '任务成员表';
+create index idx_create_time
+    on tb_notification (create_time);
 
--- 标签表
-CREATE TABLE IF NOT EXISTS tb_tag (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-    name VARCHAR(50) NOT NULL COMMENT '标签名称',
-    color VARCHAR(20) NOT NULL COMMENT '标签颜色（十六进制颜色码）',
-    project_id BIGINT NOT NULL COMMENT '所属项目ID',
-    description VARCHAR(255) COMMENT '标签描述',
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_user BIGINT COMMENT '创建者ID',
-    update_user BIGINT COMMENT '更新者ID',
-    FOREIGN KEY (project_id) REFERENCES tb_project(id)
-) COMMENT '标签表';
+create index idx_is_read
+    on tb_notification (is_read);
 
--- 任务标签关联表
-CREATE TABLE IF NOT EXISTS tb_task_tag (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-    task_id BIGINT NOT NULL COMMENT '任务ID',
-    tag_id BIGINT NOT NULL COMMENT '标签ID',
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_user BIGINT COMMENT '创建者ID',
-    update_user BIGINT COMMENT '更新者ID',
-    FOREIGN KEY (task_id) REFERENCES tb_task(id),
-    FOREIGN KEY (tag_id) REFERENCES tb_tag(id),
-    UNIQUE KEY uk_task_tag (task_id, tag_id)
-) COMMENT '任务标签关联表';
+create index idx_user_id
+    on tb_notification (user_id);
+```
 
--- 评论表已经转移到task_tables.sql文件中
+```
+-- auto-generated definition
+create table tb_project
+(
+    id          bigint auto_increment comment 'Primary Key ID'
+        primary key,
+    name        varchar(100)                       not null comment 'Project Name',
+    description text                               null comment 'Project Description',
+    status      tinyint  default 0                 not null comment 'Project status: 0- in preparation, 1- in progress, 2- completed, 3- achived',
+    start_time  datetime                           null comment 'Start Time',
+    end_time    datetime                           null comment 'End Time',
+    priority    tinyint  default 1                 not null comment 'Project priority: 1- low, 2- medium, 3- High, 4- Crtical',
+    create_time datetime default CURRENT_TIMESTAMP not null comment 'Create Time',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment 'Update Time',
+    create_user bigint                             null comment 'Create User ID',
+    update_user bigint                             null comment 'Update User ID'
+)
+    comment 'Project Table';
+```
 
--- 附件表
-CREATE TABLE IF NOT EXISTS tb_attachment (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-    file_name VARCHAR(255) NOT NULL COMMENT '文件名',
-    file_type VARCHAR(50) NOT NULL COMMENT '文件类型',
-    file_size BIGINT NOT NULL COMMENT '文件大小（字节）',
-    file_path VARCHAR(255) NOT NULL COMMENT '文件路径',
-    task_id BIGINT NOT NULL COMMENT '所属任务ID',
-    md5 VARCHAR(32) NOT NULL COMMENT '文件MD5值',
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_user BIGINT COMMENT '创建者ID',
-    update_user BIGINT COMMENT '更新者ID',
-    FOREIGN KEY (task_id) REFERENCES tb_task(id)
-) COMMENT '附件表'; 
+```
+-- auto-generated definition
+create table tb_project_attachment
+(
+    id          bigint auto_increment comment 'Primary Key ID'
+        primary key,
+    project_id  bigint                             not null comment 'Project ID',
+    file_name   varchar(200)                       not null comment 'File Name',
+    file_path   varchar(500)                       not null comment 'File Path',
+    file_size   bigint                             not null comment 'File Size (Byte)',
+    file_type   varchar(100)                       null comment 'File Type',
+    create_time datetime default CURRENT_TIMESTAMP not null comment 'Create Time',
+    create_user bigint                             null comment 'Create User ID',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment 'Update Time',
+    update_user bigint                             null comment 'Update User ID',
+    constraint tb_project_attachment_ibfk_1
+        foreign key (project_id) references tb_project (id)
+            on delete cascade
+)
+    comment 'Project Attachment Table';
+
+create index idx_project_id
+    on tb_project_attachment (project_id);
+```
+
+```
+-- auto-generated definition
+create table tb_project_member
+(
+    id          bigint auto_increment comment 'Primary Key ID'
+        primary key,
+    project_id  bigint   not null comment 'Project ID',
+    user_id     bigint   not null comment 'User ID',
+    create_time datetime not null comment 'Create Time',
+    constraint uk_project_user
+        unique (project_id, user_id)
+)
+    comment 'Project Member Table';
+
+create index idx_project_id
+    on tb_project_member (project_id);
+
+create index idx_user_id
+    on tb_project_member (user_id);
+```
+
+```
+-- auto-generated definition
+create table tb_tag
+(
+    id          bigint auto_increment comment '主键'
+        primary key,
+    name        varchar(32)                        not null comment 'Tag Name',
+    description varchar(255)                       null comment 'Tag Description',
+    create_time datetime default CURRENT_TIMESTAMP not null comment 'Create Time',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment 'Update Time',
+    create_user bigint                             null comment 'Create User',
+    update_user bigint                             null comment 'Update User',
+    color       varchar(50)                        null comment 'Tag Color',
+    constraint uk_name
+        unique (name) comment '标签名称唯一'
+)
+    comment 'Tag  Table';
+```
+
+```
+-- auto-generated definition
+create table tb_task
+(
+    id               bigint auto_increment comment 'Primary Key ID'
+        primary key,
+    name             varchar(200)                       not null comment 'Task Name',
+    description      text                               null comment 'Task Decription',
+    project_id       bigint                             not null comment 'Belonging Project ID',
+    status           tinyint  default 0                 not null comment 'Task status: 0- Pending, 1- in progress, 2- Completed, 3- Cancelled',
+    priority         tinyint  default 1                 not null comment 'Priority: 1- Low, 2- Medium, 3- High, 4- Critical',
+    start_time       datetime                           null comment 'Start Time',
+    deadline         datetime                           null comment 'Due Time',
+    completed_time   datetime                           null comment 'Completed Time',
+    comment_count    int      default 0                 not null comment 'Comment Count',
+    attachment_count int      default 0                 not null comment 'Attachment_Count',
+    create_time      datetime default CURRENT_TIMESTAMP not null comment 'Create Time',
+    update_time      datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment 'Update Time',
+    create_user      bigint                             null comment 'Create User',
+    update_user      bigint                             null comment 'Update User',
+    constraint tb_task_ibfk_1
+        foreign key (project_id) references tb_project (id)
+)
+    comment 'Task Table';
+
+create index project_id
+    on tb_task (project_id);
+```
+
+```
+-- auto-generated definition
+create table tb_task_attachment
+(
+    id          bigint auto_increment comment 'Primary Key ID'
+        primary key,
+    task_id     bigint                             not null comment 'Task ID',
+    file_name   varchar(200)                       not null comment 'File Name',
+    file_path   varchar(500)                       not null comment 'File Path',
+    file_size   bigint                             not null comment 'File Size (Byte)',
+    file_type   varchar(100)                       null comment 'File Type',
+    create_time datetime default CURRENT_TIMESTAMP not null comment 'Create Time',
+    create_user bigint                             null comment 'Create User',
+    update_time datetime default (now())           null comment 'Update Time',
+    update_user bigint                             null comment 'Update User',
+    constraint tb_task_attachment_ibfk_1
+        foreign key (task_id) references tb_task (id)
+            on delete cascade
+)
+    comment 'Task Attachment Table';
+
+create index idx_task_id
+    on tb_task_attachment (task_id);
+```
+
+```
+-- auto-generated definition
+create table tb_task_member
+(
+    id          bigint auto_increment comment 'Primary Key ID'
+        primary key,
+    task_id     bigint                             not null comment 'Task ID',
+    user_id     bigint                             not null comment 'User ID',
+    create_time datetime default CURRENT_TIMESTAMP not null comment 'Create Time',
+    constraint uk_task_user
+        unique (task_id, user_id),
+    constraint tb_task_member_ibfk_1
+        foreign key (task_id) references tb_task (id)
+            on delete cascade,
+    constraint tb_task_member_ibfk_2
+        foreign key (user_id) references tb_user (id)
+            on delete cascade
+)
+    comment 'Task Member Table';
+
+create index idx_task_id
+    on tb_task_member (task_id);
+
+create index idx_user_id
+    on tb_task_member (user_id);
+
+
+-- auto-generated definition
+create table tb_task_tag_rel
+(
+    id          bigint auto_increment comment 'Primary Key ID'
+        primary key,
+    task_id     bigint                             not null comment 'Task ID',
+    tag_id      bigint                             not null comment 'Tag ID',
+    create_time datetime default CURRENT_TIMESTAMP not null comment 'Create Time',
+    constraint uk_task_tag
+        unique (task_id, tag_id) comment '任务标签关联唯一',
+    constraint fk_task_tag_rel_tag
+        foreign key (tag_id) references tb_tag (id)
+            on delete cascade,
+    constraint fk_task_tag_rel_task
+        foreign key (task_id) references tb_task (id)
+            on delete cascade
+)
+    comment 'Task Tag Relation Table';
+
+create index idx_tag_id
+    on tb_task_tag_rel (tag_id)
+    comment '标签ID索引';
+
+create index idx_task_id
+    on tb_task_tag_rel (task_id)
+    comment '任务ID索引';
+
+
+
+-- auto-generated definition
+create table tb_user
+(
+    id          bigint auto_increment comment 'Primary Key ID'
+        primary key,
+    username    varchar(50)                        not null comment 'Username',
+    password    varchar(100)                       not null comment 'Password',
+    email       varchar(100)                       null comment 'Email',
+    phone       varchar(20)                        null comment 'Phone',
+    avatar      varchar(255)                       null comment 'Avatar URL',
+    status      tinyint  default 1                 not null comment 'User status: 0-Disabled, 1-Normal',
+    role        tinyint  default 0                 not null comment 'Roles: 0- Member, 1-leader, 2-admin',
+    create_time datetime default CURRENT_TIMESTAMP not null comment 'Create Time',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment 'Update Time',
+    create_user bigint                             null comment 'Create User',
+    update_user bigint                             null comment 'Update User',
+    constraint username
+        unique (username)
+)
+    comment 'User Table';
+

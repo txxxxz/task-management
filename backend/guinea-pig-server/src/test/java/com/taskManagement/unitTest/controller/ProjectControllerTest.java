@@ -1,4 +1,4 @@
-package com.taskManagement.controller;
+package com.taskManagement.unitTest.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskManagement.TestApplication;
@@ -11,7 +11,6 @@ import com.taskManagement.properties.JwtProperties;
 import com.taskManagement.result.Result;
 import com.taskManagement.service.ProjectService;
 import com.taskManagement.service.TaskService;
-import com.taskManagement.utils.JwtUtil;
 import com.taskManagement.vo.PageResult;
 import com.taskManagement.vo.ProjectVO;
 import org.junit.jupiter.api.AfterEach;
@@ -81,15 +80,11 @@ public class ProjectControllerTest {
     private static final Long TEST_USER_ID = 1L;
     private static final String TEST_TOKEN = "test_token";
     private MockedStatic<BaseContext> mockedBaseContext;
-    private MockedStatic<JwtUtil> mockedJwtUtil;
     
     @BeforeEach
     public void setup() throws Exception {
         // 模拟JwtTokenUserInterceptor拦截器，直接返回true，绕过认证
         when(jwtTokenUserInterceptor.preHandle(any(), any(), any())).thenReturn(true);
-        
-        // 模拟JwtUtil的静态方法
-        mockedJwtUtil = Mockito.mockStatic(JwtUtil.class);
         
         // 模拟当前用户ID
         mockedBaseContext = Mockito.mockStatic(BaseContext.class);
@@ -106,9 +101,6 @@ public class ProjectControllerTest {
     public void tearDown() {
         if (mockedBaseContext != null) {
             mockedBaseContext.close();
-        }
-        if (mockedJwtUtil != null) {
-            mockedJwtUtil.close();
         }
     }
     

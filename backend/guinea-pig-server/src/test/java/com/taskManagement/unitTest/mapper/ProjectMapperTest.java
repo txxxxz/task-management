@@ -1,10 +1,12 @@
-package com.taskManagement.mapper;
+package com.taskManagement.unitTest.mapper;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.taskManagement.TestApplication;
 import com.taskManagement.config.TestConfig;
 import com.taskManagement.entity.Project;
+import com.taskManagement.mapper.ProjectMapper;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
