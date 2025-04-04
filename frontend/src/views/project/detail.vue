@@ -110,6 +110,7 @@
                 type="datetime"
                 :disabled="!isLeader"
                 value-format="YYYY-MM-DD HH:mm:ss"
+                format="YYYY-MM-DD HH:mm:ss"
                 style="width: 100%"
               />
             </el-form-item>
@@ -121,6 +122,7 @@
                 type="datetime"
                 :disabled="!isLeader"
                 value-format="YYYY-MM-DD HH:mm:ss"
+                format="YYYY-MM-DD HH:mm:ss"
                 style="width: 100%"
               />
             </el-form-item>
@@ -411,14 +413,14 @@ const STATUS_LABELS = {
   ARCHIVED: 'Archived'
 };
 
-const PRIORITY_TYPES = {
+const PRIORITY_TYPES: Record<string, 'danger' | 'warning' | 'info' | 'success'> = {
   CRITICAL: 'danger',
   HIGH: 'warning',
   MEDIUM: 'info',
   LOW: 'success'
 };
 
-const STATUS_TYPES = {
+const STATUS_TYPES: Record<string, 'danger' | 'warning' | 'info' | 'success'> = {
   PENDING: 'info',
   IN_PROGRESS: 'warning',
   REVIEW: 'info',
@@ -480,8 +482,8 @@ const isLeader = computed(() => userStore.userInfo?.role === 1)
 const projectForm = reactive({
   id: '',
   name: '',
-  startTime: null as string | null,
-  endTime: null as string | null,
+  startTime: '',
+  endTime: '',
   createTime: '' as string,
   priority: 'MEDIUM' as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
   status: 'PENDING' as 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'COMPLETED',
@@ -509,20 +511,30 @@ const priorityOptions = [
 const taskList = ref<Task[]>([])
 const taskLoading = ref(false)
 
-// 获取优先级标签类型
-const getPriorityType = (priority: string): string => {
-  return PRIORITY_TYPES[priority as keyof typeof PRIORITY_TYPES] || 'info';
-}
+// 获取优先级对应的类型
+const getPriorityType = (priority: string): 'info' | 'warning' | 'success' | 'danger' => {
+  if (!priority) return 'info';
+  return PRIORITY_TYPES[priority] || 'info';
+};
 
-// 获取状态标签类型
-const getStatusType = (status: string): string => {
-  return STATUS_TYPES[status as keyof typeof STATUS_TYPES] || 'info';
-}
+// 获取状态对应的类型
+const getStatusType = (status: string): 'info' | 'warning' | 'success' | 'danger' => {
+  if (!status) return 'info';
+  // 使用默认状态类型映射（与TASK_STATUS_TYPES一致）
+  const statusMap: Record<string, 'info' | 'warning' | 'success' | 'danger'> = {
+    IN_PREPARATION: 'info',
+    IN_PROGRESS: 'warning',
+    COMPLETED: 'success',
+    ARCHIVED: 'danger'
+  };
+  return statusMap[status] || 'info';
+};
 
 // 获取状态显示标签
 const getStatusLabel = (status: string): string => {
+  if (!status) return '未知状态';
   return STATUS_LABELS[status as keyof typeof STATUS_LABELS] || '未知状态';
-}
+};
 
 // 使用token的工具函数
 const getAuthHeaders = () => {
@@ -856,28 +868,28 @@ onMounted(async () => {
 })
 
 // 任务状态和优先级映射
-const TASK_STATUS_LABELS = {
+const TASK_STATUS_LABELS: Record<number, string> = {
   0: '待处理',
   1: '进行中',
   2: '已完成',
   3: '已取消'
 }
 
-const TASK_STATUS_TYPES = {
+const TASK_STATUS_TYPES: Record<number, 'info' | 'warning' | 'success' | 'danger'> = {
   0: 'info',
   1: 'warning',
   2: 'success',
   3: 'danger'
 }
 
-const TASK_PRIORITY_LABELS = {
+const TASK_PRIORITY_LABELS: Record<number, string> = {
   1: 'Low',
   2: 'Medium',
   3: 'High',
   4: 'Critical'
 }
 
-const TASK_PRIORITY_TYPES = {
+const TASK_PRIORITY_TYPES: Record<number, 'info' | 'warning' | 'success' | 'danger'> = {
   1: 'success',
   2: 'info',
   3: 'warning',
@@ -886,22 +898,22 @@ const TASK_PRIORITY_TYPES = {
 
 // 获取任务状态标签
 const getTaskStatusLabel = (status: number): string => {
-  return TASK_STATUS_LABELS[status as keyof typeof TASK_STATUS_LABELS] || '未知状态';
+  return TASK_STATUS_LABELS[status] || '未知状态';
 }
 
 // 获取任务状态类型
-const getTaskStatusType = (status: number): string => {
-  return TASK_STATUS_TYPES[status as keyof typeof TASK_STATUS_TYPES] || 'info';
+const getTaskStatusType = (status: number): 'info' | 'warning' | 'success' | 'danger' => {
+  return TASK_STATUS_TYPES[status] || 'info';
 }
 
 // 获取任务优先级标签
 const getTaskPriorityLabel = (priority: number): string => {
-  return TASK_PRIORITY_LABELS[priority as keyof typeof TASK_PRIORITY_LABELS] || '未知优先级';
+  return TASK_PRIORITY_LABELS[priority] || '未知优先级';
 }
 
 // 获取任务优先级类型
-const getTaskPriorityType = (priority: number): string => {
-  return TASK_PRIORITY_TYPES[priority as keyof typeof TASK_PRIORITY_TYPES] || 'info';
+const getTaskPriorityType = (priority: number): 'info' | 'warning' | 'success' | 'danger' => {
+  return TASK_PRIORITY_TYPES[priority] || 'info';
 }
 
 // 获取项目的任务列表

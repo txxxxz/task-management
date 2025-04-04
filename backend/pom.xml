@@ -56,6 +56,11 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <encoding>UTF-8</encoding>
+                        <compilerArgs>
+                            <arg>-Xlint:unchecked</arg>
+                            <arg>-Xlint:deprecation</arg>
+                            <arg>-Xpkginfo:always</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -64,6 +69,33 @@
                     <version>2.7.3</version>
                     <configuration>
                         <mainClass>com.taskManagement.Application</mainClass>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>3.18.0</version>
+                    <configuration>
+                        <rulesets>
+                            <ruleset>/rulesets/java/unnecessary.xml</ruleset>
+                            <ruleset>/rulesets/java/imports.xml</ruleset>
+                            <ruleset>/rulesets/java/unusedcode.xml</ruleset>
+                        </rulesets>
+                        <failOnViolation>false</failOnViolation>
+                        <linkXRef>false</linkXRef>
+                        <printFailingErrors>true</printFailingErrors>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>3.2.0</version>
+                    <configuration>
+                        <configLocation>google_checks.xml</configLocation>
+                        <encoding>UTF-8</encoding>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>false</failsOnError>
+                        <linkXRef>false</linkXRef>
                     </configuration>
                 </plugin>
             </plugins>

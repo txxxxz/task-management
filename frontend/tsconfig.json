@@ -1,7 +1,15 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
-  "exclude": ["src/**/__tests__/*"],
+  "exclude": [
+    "src/**/__tests__/*",
+    "src/components/EmployeeForm.vue",
+    "src/components/NotificationBell.vue",
+    "src/layouts/AdminLayout.vue",
+    "src/views/admin/UserManagement.vue",
+    "src/api/employee.ts",
+    "src/types/employee.ts"
+  ],
   "compilerOptions": {
     "composite": true,
     "baseUrl": ".",

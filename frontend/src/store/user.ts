@@ -11,8 +11,13 @@ export const useUserStore = defineStore('user', () => {
   const login = async (username: string, password: string, role: number) => {
     try {
       const response = await userApi.login({ username, password, role})
-      token.value = response.token
-      localStorage.setItem('token', response.token)
+      if (response.data && response.data.data && response.data.data.token) {
+        token.value = response.data.data.token
+        localStorage.setItem('token', response.data.data.token)
+      } else {
+        console.error('Token not found in response', response)
+        return false
+      }
       await getUserInfo()
       return true
     } catch (error) {
@@ -23,11 +28,19 @@ export const useUserStore = defineStore('user', () => {
   const getUserInfo = async () => {
     try {
       const response = await userApi.getUserInfo()
-      user.value = {
-        ...response,
-        id: Number(response.id),
-        status: Number(response.status),
-        role: Number(response.role)
+      if (response.data && response.data.data) {
+        const userData = response.data.data
+        user.value = {
+          id: Number(userData.id),
+          username: userData.username,
+          email: userData.email,
+          phone: userData.phone || '',
+          avatar: userData.avatar,
+          status: Number(userData.status),
+          role: Number(userData.role),
+          createTime: userData.createTime,
+          updateTime: userData.updateTime
+        }
       }
       return true
     } catch (error) {

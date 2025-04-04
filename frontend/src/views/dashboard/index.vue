@@ -277,9 +277,9 @@ const fetchUserTaskStats = async () => {
     const response = await getCurrentUserTaskStats()
     console.log('任务统计响应:', response)
     
-    // 后端返回的是Result对象，包含code, data等字段
-    if (response.data && response.data.code === 1 && response.data.data) {
-      const stats = response.data.data
+    // 直接访问响应数据而不是嵌套的code和data
+    if (response.data) {
+      const stats = response.data
       console.log('任务统计数据:', stats)
       
       // 直接更新任务状态的数量
@@ -290,7 +290,7 @@ const fetchUserTaskStats = async () => {
       
       console.log('更新后的任务状态:', taskStatus.value)
     } else {
-      console.error('任务统计数据返回错误:', response.data)
+      console.error('任务统计数据返回错误:', response)
       ElMessage.error('Get Task Status Stats Failed')
     }
   } catch (error) {

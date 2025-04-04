@@ -192,15 +192,6 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/admin',
-    component: () => import('@/layouts/AdminLayout.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true },
-    redirect: '/admin/employee',
-    children: [
-      // 移除重复的员工管理路由，直接使用主布局中的路由
-    ]
-  },
-  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/exception/404.vue'),

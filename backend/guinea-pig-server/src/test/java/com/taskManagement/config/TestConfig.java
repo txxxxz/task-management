@@ -3,8 +3,6 @@ package com.taskManagement.config;
 import com.aliyun.oss.OSS;
 import com.taskManagement.Application;
 import com.taskManagement.config.AliyunOSSConfig;
-import com.taskManagement.config.OSSConfiguration;
-import com.taskManagement.config.WebMvcConfiguration;
 import com.taskManagement.interceptor.JwtTokenUserInterceptor;
 import com.taskManagement.interceptor.JwtTokenAdminInterceptor;
 import com.taskManagement.mapper.CommentMapper;
@@ -52,7 +50,6 @@ import java.io.IOException;
         @ComponentScan.Filter(
             type = FilterType.ASSIGNABLE_TYPE,
             classes = {
-                OSSConfiguration.class, 
                 AliyunOSSConfig.class, 
                 Application.class,
                 WebMvcConfiguration.class, // 排除生产环境的WebMvc配置，避免JWT拦截器加载
@@ -71,9 +68,6 @@ import java.io.IOException;
     }
 )
 public class TestConfig {
-    
-    @MockBean
-    private OSSConfiguration ossConfiguration;
     
     @MockBean
     private AliyunOSSConfig aliyunOSSConfig;

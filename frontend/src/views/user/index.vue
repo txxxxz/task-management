@@ -70,7 +70,7 @@
                 :active-value="1"
                 :inactive-value="0"
                 :loading="row.statusLoading"
-                @change="(val: number) => handleStatusChange(row, val)"
+                @change="handleStatusChange(row, $event)"
               />
               <span
                 class="status-text"
@@ -265,33 +265,36 @@ const getList = async () => {
 }
 
 // 处理状态变更
-const handleStatusChange = async (row: UserListItem, value: number) => {
+const handleStatusChange = async (row: UserListItem, value: any) => {
+  // 确保value是数字类型
+  const statusValue = Number(value);
+  
   // 防止重复点击
   if (row.statusLoading) return
 
   // 先恢复原状态
-  const oldStatus = value === 1 ? 0 : 1
+  const oldStatus = statusValue === 1 ? 0 : 1
   row.status = oldStatus
 
   // 确认操作
   try {
     await ElMessageBox.confirm(
-      `确定要${value === 1 ? '启用' : '禁用'}用户 "${row.username}" 吗？`,
+      `确定要${statusValue === 1 ? '启用' : '禁用'}用户 "${row.username}" 吗？`,
       '操作确认',
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: value === 1 ? 'success' : 'warning'
+        type: statusValue === 1 ? 'success' : 'warning'
       }
     )
 
     // 用户确认后，再次改变状态并发送请求
-    row.status = value
+    row.status = statusValue
     row.statusLoading = true
-    const res = await updateUserStatusById(row.id, value)
+    const res = await updateUserStatusById(row.id, statusValue)
     
     if (res.code === 1) {
-      ElMessage.success(`用户${value === 1 ? '启用' : '禁用'}成功`)
+      ElMessage.success(`用户${statusValue === 1 ? '启用' : '禁用'}成功`)
     } else {
       // 操作失败，恢复原状态
       row.status = oldStatus

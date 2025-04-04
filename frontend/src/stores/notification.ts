@@ -22,7 +22,7 @@ export const useNotificationStore = defineStore('notification', () => {
       if (!userStore.userInfo?.id) return
       
       const res = await notificationApi.getUserNotifications(
-        userStore.userInfo.id, 
+        Number(userStore.userInfo.id), 
         page, 
         pageSize
       )
@@ -44,7 +44,7 @@ export const useNotificationStore = defineStore('notification', () => {
       const userStore = useUserStore()
       if (!userStore.userInfo?.id) return
       
-      const res = await notificationApi.getUnreadCount(userStore.userInfo.id)
+      const res = await notificationApi.getUnreadCount(Number(userStore.userInfo.id))
       unreadCount.value = res.data
     } catch (error) {
       console.error('Failed to fetch unread count:', error)
@@ -57,7 +57,7 @@ export const useNotificationStore = defineStore('notification', () => {
       const userStore = useUserStore()
       if (!userStore.userInfo?.id) return
       
-      await notificationApi.markAsRead(notificationId, userStore.userInfo.id)
+      await notificationApi.markAsRead(notificationId, Number(userStore.userInfo.id))
       
       // Update local state
       const index = notifications.value.findIndex(n => n.id === notificationId)
@@ -78,7 +78,7 @@ export const useNotificationStore = defineStore('notification', () => {
       const userStore = useUserStore()
       if (!userStore.userInfo?.id) return
       
-      await notificationApi.markAllAsRead(userStore.userInfo.id)
+      await notificationApi.markAllAsRead(Number(userStore.userInfo.id))
       
       // Update local state
       notifications.value = notifications.value.map(n => ({ ...n, isRead: 1 }))

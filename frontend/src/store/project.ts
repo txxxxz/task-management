@@ -11,8 +11,10 @@ export const useProjectStore = defineStore('project', () => {
 
   const fetchProjects = async () => {
     try {
-      const data = await projectApi.getAllProjects()
-      projects.value = data
+      const response = await projectApi.getAllProjects()
+      if (response.data && Array.isArray(response.data)) {
+        projects.value = response.data
+      }
       return true
     } catch (error) {
       return false
@@ -21,8 +23,10 @@ export const useProjectStore = defineStore('project', () => {
 
   const getProject = async (id: number) => {
     try {
-      const data = await projectApi.getProjectById(id)
-      currentProject.value = data
+      const response = await projectApi.getProjectDetail(id)
+      if (response.data) {
+        currentProject.value = response.data
+      }
       return true
     } catch (error) {
       return false
@@ -44,7 +48,8 @@ export const useProjectStore = defineStore('project', () => {
         createTime: new Date().toISOString(),
         createUser: 1,
         updateTime: new Date().toISOString(),
-        updateUser: 1
+        updateUser: 1,
+        members: projectData.members || []
       }
       projects.value.push(newProject)
       ElMessage.success('Created successfully')

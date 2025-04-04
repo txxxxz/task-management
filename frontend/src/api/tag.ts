@@ -2,13 +2,7 @@ import request from '@/utils/request'
 import type { Tag } from '@/types/tag'
 
 // 标签接口
-export interface Tag {
-  id: string
-  name: string
-  color: string
-  projectId?: string
-}
-
+// 下面的定义与导入的类型冲突，删除此定义
 // 通用API响应格式
 interface ApiResponse<T> {
   code: number

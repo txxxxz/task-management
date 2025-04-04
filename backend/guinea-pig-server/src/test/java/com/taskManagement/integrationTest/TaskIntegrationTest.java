@@ -4,16 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskManagement.TestApplication;
 import com.taskManagement.config.TestConfig;
 import com.taskManagement.dto.CommentDTO;
-import com.taskManagement.dto.ProjectDTO;
 import com.taskManagement.dto.TaskDTO;
-import com.taskManagement.dto.UserLoginDTO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.entity.ProjectMember;
 import com.taskManagement.entity.Task;
 import com.taskManagement.entity.TaskMember;
-import com.taskManagement.entity.TaskTag;
 import com.taskManagement.entity.User;
-import com.taskManagement.entity.Tag;
 import com.taskManagement.mapper.ProjectMapper;
 import com.taskManagement.mapper.ProjectMemberMapper;
 import com.taskManagement.mapper.TaskMapper;
@@ -21,7 +17,6 @@ import com.taskManagement.mapper.TaskMemberMapper;
 import com.taskManagement.mapper.UserMapper;
 import com.taskManagement.mapper.TagMapper;
 import com.taskManagement.mapper.TaskTagRelMapper;
-import com.taskManagement.result.Result;
 import com.taskManagement.utils.PasswordUtil;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,23 +29,15 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import org.junit.jupiter.api.Disabled;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 /**
  * 任务功能集成测试
  * 测试任务的创建、修改、删除、查询等功能

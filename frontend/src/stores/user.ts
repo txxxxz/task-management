@@ -53,7 +53,9 @@ export const useUserStore = defineStore('user', () => {
           email: userData.email || '',
           phone: userData.phone || '',
           avatar: userData.avatar,
-          status: userData.status === 1 || userData.status === true,
+          status: typeof userData.status === 'boolean' 
+            ? userData.status 
+            : Number(userData.status) === 1,
           role: Number(userData.role || 0),
           createTime: userData.createTime || '',
           updateTime: userData.updateTime || ''
@@ -117,7 +119,7 @@ export const useUserStore = defineStore('user', () => {
         avatar: userData.avatar,
         status: typeof userData.status === 'boolean' 
           ? userData.status 
-          : userData.status === 1,
+          : Number(userData.status) === 1,
         role: Number(userData.role || 0),
         createTime: userData.createTime || '',
         updateTime: userData.updateTime || ''
