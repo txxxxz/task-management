@@ -13,16 +13,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 任务Mapper接口
+ * task mapper interface
  */
 @Mapper
 public interface TaskMapper extends BaseMapper<Task> {
     
     /**
-     * 根据条件统计任务数量
-     * @param projectId 项目ID（可选）
-     * @param status 状态（可选）
-     * @return 任务数量
+     * count tasks by conditions
+     * @param projectId project ID (optional)
+     * @param status status (optional)
+     * @return task count
      */
     @Select("<script>" +
             "SELECT COUNT(*) FROM tb_task WHERE 1=1" +

@@ -45,8 +45,7 @@ public class UserServiceTest {
     private static final String TEST_EMAIL = "service@example.com";
     private static final String TEST_PHONE = "13812345678";
 
-    // 存储创建的用户ID
-    private static Long userId;
+
 
     /**
      * 测试用户注册功能
@@ -62,6 +61,7 @@ public class UserServiceTest {
         registerDTO.setEmail(TEST_EMAIL);
         registerDTO.setPhone(TEST_PHONE);
 
+  
         // 执行注册
         UserVO userVO = userService.register(registerDTO);
 
@@ -77,9 +77,6 @@ public class UserServiceTest {
         assertThat(user.getUsername()).isEqualTo(TEST_USERNAME);
         assertThat(user.getEmail()).isEqualTo(TEST_EMAIL);
         assertThat(user.getPhone()).isEqualTo(TEST_PHONE);
-
-        // 存储用户ID
-        userId = user.getId();
     }
 
     /**

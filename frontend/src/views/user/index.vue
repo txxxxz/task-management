@@ -1,7 +1,6 @@
 <template>
   <div class="user-management">
     <div class="page-header">
-      <h2 class="page-title">用户管理</h2>
     </div>
 
     <!-- 搜索栏 -->
@@ -9,37 +8,37 @@
       <el-form :model="queryParams" class="search-form">
         <div class="search-grid">
           <!-- 第一行 -->
-          <el-form-item label="用户名">
-            <el-input v-model="queryParams.username" placeholder="请输入用户名" clearable @keyup.enter="handleSearch" />
+          <el-form-item label="Username">
+            <el-input v-model="queryParams.username" placeholder="Please enter the username" clearable @keyup.enter="handleSearch" />
           </el-form-item>
           
-          <el-form-item label="邮箱">
-            <el-input v-model="queryParams.email" placeholder="请输入邮箱" clearable @keyup.enter="handleSearch" />
+          <el-form-item label="Email">
+            <el-input v-model="queryParams.email" placeholder="Please enter the email" clearable @keyup.enter="handleSearch" />
           </el-form-item>
           
-          <el-form-item label="电话">
-            <el-input v-model="queryParams.phone" placeholder="请输入电话" clearable @keyup.enter="handleSearch" />
+          <el-form-item label="Phone">
+            <el-input v-model="queryParams.phone" placeholder="Please enter the phone" clearable @keyup.enter="handleSearch" />
           </el-form-item>
 
           <!-- 第二行 -->
-          <el-form-item label="角色">
-            <el-select v-model="queryParams.role" placeholder="请选择角色" clearable class="full-width">
-              <el-option label="管理员" :value="2" />
-              <el-option label="项目负责人" :value="1" />
-              <el-option label="普通成员" :value="0" />
+          <el-form-item label="Role">
+            <el-select v-model="queryParams.role" placeholder="Please select the role" clearable class="full-width">
+              <el-option label="Admin" :value="2" />
+              <el-option label="Project Leader" :value="1" />
+              <el-option label="Member" :value="0" />
             </el-select>
           </el-form-item>
           
-          <el-form-item label="状态">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="full-width">
-              <el-option label="启用" :value="1" />
-              <el-option label="禁用" :value="0" />
+          <el-form-item label="Status">
+            <el-select v-model="queryParams.status" placeholder="Please select the status" clearable class="full-width">
+              <el-option label="Enabled" :value="1" />
+              <el-option label="Disabled" :value="0" />
             </el-select>
           </el-form-item>
           
           <div class="button-container">
-            <el-button type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
-            <el-button @click="resetQuery" :icon="RefreshRight">重置</el-button>
+            <el-button type="primary" @click="handleSearch" :icon="Search">Search</el-button>
+            <el-button @click="resetQuery" :icon="RefreshRight">Reset</el-button>
           </div>
         </div>
       </el-form>
@@ -48,21 +47,21 @@
     <!-- 操作按钮和表格 -->
     <el-card class="table-card" shadow="hover">
       <div class="table-operations">
-        <el-button type="primary" @click="handleAdd" :icon="Plus" class="add-button">新增用户</el-button>
+        <el-button type="primary" @click="handleAdd" :icon="Plus" class="add-button">C</el-button>
       </div>
 
       <el-table v-loading="loading" :data="userList" border style="width: 100%">
-        <el-table-column prop="username" label="用户名" min-width="100" />
-        <el-table-column prop="email" label="邮箱" min-width="180" />
-        <el-table-column prop="phone" label="电话" min-width="150" />
-        <el-table-column label="角色" min-width="120">
+        <el-table-column prop="username" label="Username" min-width="100" />
+        <el-table-column prop="email" label="Email" min-width="180" />
+        <el-table-column prop="phone" label="Phone" min-width="150" />
+        <el-table-column label="Role" min-width="120">
           <template #default="{ row }">
             <el-tag :type="getRoleTagType(row.role)" effect="dark">
               {{ getRoleText(row.role) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" min-width="120">
+        <el-table-column label="Status" min-width="120">
           <template #default="{ row }">
             <div class="status-switch-wrapper">
               <el-switch
@@ -75,16 +74,16 @@
               <span
                 class="status-text"
                 :class="{ 'status-enabled': row.status === 1, 'status-disabled': row.status === 0 }" >
-                {{ row.status === 1 ? '启用' : '禁用' }}
+                {{ row.status === 1 ? 'Enabled' : 'Disabled' }}
               </span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" min-width="180" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column prop="createTime" label="Create Time" min-width="180" />
+        <el-table-column label="Operation" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)" :icon="Edit">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)" :icon="Delete">删除</el-button>
+            <el-button type="primary" link @click="handleEdit(row)" :icon="Edit">Edit</el-button>
+            <el-button type="danger" link @click="handleDelete(row)" :icon="Delete">Delete</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -117,36 +116,36 @@
         label-width="100px"
         class="user-form"
       >
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
+        <el-form-item label="Username" prop="username">
+          <el-input v-model="form.username" placeholder="Please enter the username" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="请输入邮箱" />
+        <el-form-item label="Email" prop="email">
+          <el-input v-model="form.email" placeholder="Please enter the email" />
         </el-form-item>
-        <el-form-item label="电话" prop="phone">
-          <el-input v-model="form.phone" placeholder="请输入电话" />
+        <el-form-item label="Phone" prop="phone">
+          <el-input v-model="form.phone" placeholder="Please enter the phone" />
         </el-form-item>
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="form.role" placeholder="请选择角色">
-            <el-option label="管理员" :value="2" />
-            <el-option label="项目负责人" :value="1" />
-            <el-option label="普通成员" :value="0" />
+        <el-form-item label="Role" prop="role">
+          <el-select v-model="form.role" placeholder="Please select the role">
+            <el-option label="Admin" :value="2" />
+            <el-option label="Project Leader" :value="1" />
+            <el-option label="Member" :value="0" />
           </el-select>
         </el-form-item>
-        <el-form-item label="密码" prop="password" v-if="isAdd">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
+        <el-form-item label="Password" prop="password" v-if="isAdd">
+          <el-input v-model="form.password" type="password" placeholder="Please enter the password" show-password />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="Status" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio :label="1">启用</el-radio>
-            <el-radio :label="0">禁用</el-radio>
+            <el-radio :label="1">Enabled</el-radio>
+            <el-radio :label="0">Disabled</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+          <el-button @click="dialogVisible = false">Cancel</el-button>
+          <el-button type="primary" @click="handleSubmit" :loading="submitLoading">Confirm</el-button>
         </span>
       </template>
     </el-dialog>
@@ -234,9 +233,9 @@ const getRoleTagType = (role: number) => {
 // 获取角色文本
 const getRoleText = (role: number) => {
   const texts: Record<number, string> = {
-    0: '普通成员',
-    1: '项目负责人',
-    2: '管理员'
+    0: 'Member',
+    1: 'Project Leader',
+    2: 'Admin'
   }
   return texts[role] || '未知角色'
 }
@@ -255,10 +254,10 @@ const getList = async () => {
       }))
       total.value = res.data.total || 0
     } else {
-      ElMessage.error(res.msg || '获取用户列表失败')
+      ElMessage.error(res.msg || 'Failed to get user list')
     }
   } catch (error) {
-    console.error('获取用户列表失败', error)
+    console.error('Failed to get user list', error)
   } finally {
     loading.value = false
   }
@@ -279,11 +278,11 @@ const handleStatusChange = async (row: UserListItem, value: any) => {
   // 确认操作
   try {
     await ElMessageBox.confirm(
-      `确定要${statusValue === 1 ? '启用' : '禁用'}用户 "${row.username}" 吗？`,
-      '操作确认',
+      `Are you sure you want to ${statusValue === 1 ? 'enable' : 'disable'} user "${row.username}"?`,
+      'Operation Confirmation',
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
         type: statusValue === 1 ? 'success' : 'warning'
       }
     )
@@ -294,17 +293,17 @@ const handleStatusChange = async (row: UserListItem, value: any) => {
     const res = await updateUserStatusById(row.id, statusValue)
     
     if (res.code === 1) {
-      ElMessage.success(`用户${statusValue === 1 ? '启用' : '禁用'}成功`)
+      ElMessage.success(`User ${statusValue === 1 ? 'enabled' : 'disabled'} successfully`)
     } else {
       // 操作失败，恢复原状态
       row.status = oldStatus
-      ElMessage.error(res.msg || '状态更新失败')
+      ElMessage.error(res.msg || 'Status update failed')
     }
   } catch (error) {
     // 用户取消操作或者请求出错，状态已经恢复为原状态
     if (error !== 'cancel' && error !== 'close') {
-      console.error('更新用户状态失败', error)
-      ElMessage.error('状态更新失败')
+      console.error('Failed to update user status', error)
+      ElMessage.error('Status update failed')
     }
   } finally {
     row.statusLoading = false
@@ -338,14 +337,14 @@ const handleAdd = () => {
   form.password = ''
   
   isAdd.value = true
-  dialogTitle.value = '新增用户'
+  dialogTitle.value = 'Add User'
   dialogVisible.value = true
 }
 
 // 编辑用户
 const handleEdit = (row: UserDetail) => {
   isAdd.value = false
-  dialogTitle.value = '编辑用户'
+  dialogTitle.value = 'Edit User'
   
   form.username = row.username
   form.email = row.email
@@ -359,18 +358,18 @@ const handleEdit = (row: UserDetail) => {
 
 // 删除用户
 const handleDelete = (row: UserDetail) => {
-  ElMessageBox.confirm('确定要删除该用户吗？', '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm('Are you sure you want to delete this user?', 'Warning', {
+    confirmButtonText: 'Confirm',
+    cancelButtonText: 'Cancel',
     type: 'warning'
   }).then(async () => {
     try {
       const res = await deleteUser(row.id)
       if (res.code === 1) {
-        ElMessage.success('删除成功')
+        ElMessage.success('Delete successfully')
         getList()
       } else {
-        ElMessage.error(res.msg || '删除失败')
+        ElMessage.error(res.msg || 'Delete failed')
       }
     } catch (error) {
       console.error('删除用户失败', error)

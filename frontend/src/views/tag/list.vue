@@ -41,11 +41,6 @@
           <el-icon><Plus /></el-icon> New Tag
         </el-button>
       </div>
-      <div class="right-buttons">
-        <el-button @click="handleDownload">
-          <el-icon><Download /></el-icon> Export
-        </el-button>
-      </div>
     </div>
 
     <!-- Table area -->

@@ -23,7 +23,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 import java.util.List;
 
 /**
- * 配置类，注册web层相关组件
+ * configure web layer components
  */
 @Configuration
 @Slf4j
@@ -36,7 +36,7 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
     private ObjectMapper objectMapper;
 
     /**
-     * 注册自定义拦截器
+     * register custom interceptor
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

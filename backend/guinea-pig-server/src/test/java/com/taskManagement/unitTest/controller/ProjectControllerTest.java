@@ -5,7 +5,6 @@ import com.taskManagement.TestApplication;
 import com.taskManagement.config.TestConfig;
 import com.taskManagement.context.BaseContext;
 import com.taskManagement.dto.ProjectDTO;
-import com.taskManagement.entity.Project;
 import com.taskManagement.interceptor.JwtTokenUserInterceptor;
 import com.taskManagement.properties.JwtProperties;
 import com.taskManagement.result.Result;
@@ -291,7 +290,7 @@ public class ProjectControllerTest {
         mockMvc.perform(addAuthHeader(post("/projects")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(project))))
-                .andExpect(status().isOk()); // 由于测试环境中可能不触发校验，这里期望200状态码
+                .andExpect(status().isBadRequest()); // 名称过长应返回400错误
     }
     
     @Test

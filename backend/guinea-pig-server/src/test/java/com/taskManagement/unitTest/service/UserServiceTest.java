@@ -6,7 +6,6 @@ import com.taskManagement.entity.User;
 import com.taskManagement.exception.UserBusinessException;
 import com.taskManagement.mapper.UserMapper;
 import com.taskManagement.service.FileService;
-import com.taskManagement.service.UserService;
 import com.taskManagement.service.impl.UserServiceImpl;
 import com.taskManagement.utils.JwtUtil;
 import com.taskManagement.utils.PasswordUtil;
@@ -22,10 +21,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;

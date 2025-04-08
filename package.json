@@ -9,6 +9,9 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-  "clean-restart": "rm -rf node_modules dist && npm install && npm run dev"
-}
+    "clean-restart": "rm -rf node_modules dist && npm install && npm run dev"
+  },
+  "devDependencies": {
+    "@vue/tsconfig": "^0.7.0"
+  }
 }

@@ -179,25 +179,25 @@
     >
       <template #empty>
         <div class="empty-table">
-          <el-empty description="暂无任务数据" :image-size="100">
+          <el-empty description="No task data" :image-size="100">
             <template #image>
               <img src="https://cdn.jsdelivr.net/npm/@element-plus/icons-svg/dist/svg/tickets.svg" 
                    style="width: 80px; height: 80px; opacity: 0.1;" />
             </template>
             <template #description>
-              <p>暂无任务数据</p>
-              <p class="empty-tip">您可以点击下方按钮创建新任务</p>
+              <p>No task data</p>
+              <p class="empty-tip">You can click the button below to create a new task</p>
             </template>
-            <el-button type="primary" @click="handleNewTask">创建任务</el-button>
+            <el-button type="primary" @click="handleNewTask">Create Task</el-button>
           </el-empty>
         </div>
       </template>
-      <el-table-column label="序号" width="60" align="center">
+      <el-table-column label="Number" width="60" align="center">
         <template #default="scope">
           <span class="index-cell">{{ getRowIndex(scope.$index) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="任务名称" min-width="160" align="left">
+      <el-table-column prop="name" label="Task Name" min-width="160" align="left">
         <template #default="{ row }">
           <el-link 
             type="primary" 
@@ -205,11 +205,11 @@
             @click="handleViewDetail(row)"
             class="task-name-link"
           >
-            {{ row.name || row.title || '未命名任务' }}
+            {{ row.name || row.title || 'Unnamed Task' }}
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column prop="projectName" label="所属项目" min-width="120" align="center">
+      <el-table-column prop="projectName" label="Project Name" min-width="120" align="center">
         <template #default="{ row }">
           <el-tooltip
             :content="formatProjectName(row.projectName)"
@@ -227,7 +227,7 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column prop="priority" label="优先级" width="100" align="center">
+      <el-table-column prop="priority" label="Priority" width="100" align="center">
         <template #default="{ row }">
           <el-tag
             :type="getPriorityType(row.priority)"
@@ -238,7 +238,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="100" align="center">
+      <el-table-column prop="status" label="Status" width="100" align="center">
         <template #default="{ row }">
           <el-tag
             :type="getStatusType(row.status)"
@@ -249,21 +249,21 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="startTime" label="开始时间" width="160">
+      <el-table-column prop="startTime" label="Start Time" width="160">
         <template #default="{ row }">
           {{ formatDate(row.startTime) }}
         </template>
       </el-table-column>
-      <el-table-column prop="deadline" label="截止时间" width="160">
+      <el-table-column prop="deadline" label="Deadline" width="160">
         <template #default="{ row }">
           {{ formatDate(row.deadline || row.dueTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120" fixed="right" align="center">
+      <el-table-column label="Operation" width="120" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
             
-            <el-tooltip content="编辑任务" placement="top" v-if="isLeader">
+            <el-tooltip content="Edit Task" placement="top" v-if="isLeader">
               <el-button
                 type="primary"
                 link
@@ -274,7 +274,7 @@
               </el-button>
             </el-tooltip>
             
-            <el-tooltip content="删除任务" placement="top" v-if="isLeader">
+            <el-tooltip content="Delete Task" placement="top" v-if="isLeader">
               <el-button
                 type="danger"
                 link
@@ -467,32 +467,32 @@ const updateUrlParams = (params: Record<string, any>) => {
   router.push({ query })
 }
 
-// 从后端获取任务列表
+// get task list from backend
 const fetchTaskList = async () => {
   loadingCount.value++
   loading.value = true
   try {
-    // 清除空值参数
+    // clear empty value parameters
     const cleanParams: Record<string, any> = {}
     
-    // 基本参数
+    // basic parameters
     if (filterForm.name) cleanParams.keyword = filterForm.name
     if (typeof filterForm.status === 'number') cleanParams.status = filterForm.status
     if (typeof filterForm.priority === 'number') cleanParams.priority = filterForm.priority
     
-    // 成员筛选
+    // member filter
     if (filterForm.members && filterForm.members.length > 0) {
-      cleanParams.member = filterForm.members[0] // 使用第一个成员作为搜索条件
-      // 打印搜索条件
-      console.log(`按成员[${filterForm.members[0]}]搜索任务`)
+      cleanParams.member = filterForm.members[0] // use the first member as search condition
+      // print search condition
+      console.log(`Search tasks by member[${filterForm.members[0]}]`)
     }
     
-    // 标签筛选
+    // tag filter
     if (filterForm.tags && filterForm.tags.length > 0) {
       cleanParams.tags = filterForm.tags.join(',')
     }
     
-    // 日期范围
+    // date range
     if (filterForm.createDateRange && filterForm.createDateRange.length === 2) {
       cleanParams.startTime = filterForm.createDateRange[0]
       cleanParams.endTime = filterForm.createDateRange[1]

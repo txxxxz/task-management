@@ -78,7 +78,7 @@ public class UserControllerTest {
                 .content(objectMapper.writeValueAsString(loginDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(1)))
-                .andExpect(jsonPath("$.msg", nullValue()))
+                .andExpect(jsonPath("$.msg", is("success")))
                 .andExpect(jsonPath("$.data.token", is("test-token")))
                 .andExpect(jsonPath("$.data.user.username", is("testuser")));
     }
@@ -110,7 +110,7 @@ public class UserControllerTest {
                 .content(objectMapper.writeValueAsString(registerDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(1)))
-                .andExpect(jsonPath("$.msg", nullValue()))
+                .andExpect(jsonPath("$.msg", is("success")))
                 .andExpect(jsonPath("$.data.username", is("newuser")))
                 .andExpect(jsonPath("$.data.email", is("new@example.com")));
     }

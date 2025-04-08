@@ -33,7 +33,7 @@ public class JwtTokenUserInterceptor implements HandlerInterceptor {
     private Environment environment;
 
     /**
-     * 校验jwt
+     * check jwt
      */
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 如果不是处理器方法直接放行

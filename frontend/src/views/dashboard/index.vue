@@ -277,16 +277,18 @@ const fetchUserTaskStats = async () => {
     const response = await getCurrentUserTaskStats()
     console.log('任务统计响应:', response)
     
-    // 直接访问响应数据而不是嵌套的code和data
-    if (response.data) {
-      const stats = response.data
+    if (response && response.data) {
+      // 处理响应数据，支持两种可能的格式
+      const responseData = response.data as any
+      const stats = responseData.data ? responseData.data : responseData
+      
       console.log('任务统计数据:', stats)
       
-      // 直接更新任务状态的数量
-      taskStatus.value[0].count = Number(stats.pending) || 0
-      taskStatus.value[1].count = Number(stats.inProgress) || 0
-      taskStatus.value[2].count = Number(stats.todayExpired) || 0
-      taskStatus.value[3].count = Number(stats.completed) || 0
+      // 安全地更新任务状态的数量
+      taskStatus.value[0].count = Number(stats.pending || 0)
+      taskStatus.value[1].count = Number(stats.inProgress || 0)
+      taskStatus.value[2].count = Number(stats.todayExpired || 0)
+      taskStatus.value[3].count = Number(stats.completed || 0)
       
       console.log('更新后的任务状态:', taskStatus.value)
     } else {

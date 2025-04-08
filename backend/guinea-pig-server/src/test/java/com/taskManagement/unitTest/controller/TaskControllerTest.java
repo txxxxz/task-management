@@ -5,7 +5,6 @@ import com.taskManagement.TestApplication;
 import com.taskManagement.config.TestConfig;
 import com.taskManagement.context.BaseContext;
 import com.taskManagement.dto.TaskDTO;
-import com.taskManagement.entity.Task;
 import com.taskManagement.interceptor.JwtTokenUserInterceptor;
 import com.taskManagement.properties.JwtProperties;
 import com.taskManagement.result.Result;

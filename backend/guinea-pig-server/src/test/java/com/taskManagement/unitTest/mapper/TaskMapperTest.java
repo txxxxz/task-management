@@ -1,8 +1,6 @@
 package com.taskManagement.unitTest.mapper;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.taskManagement.TestApplication;
 import com.taskManagement.entity.Project;
 import com.taskManagement.entity.Tag;
@@ -14,7 +12,6 @@ import com.taskManagement.mapper.TagMapper;
 import com.taskManagement.mapper.TaskMapper;
 import com.taskManagement.mapper.TaskTagRelMapper;
 import com.taskManagement.mapper.UserMapper;
-import com.taskManagement.vo.TaskVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

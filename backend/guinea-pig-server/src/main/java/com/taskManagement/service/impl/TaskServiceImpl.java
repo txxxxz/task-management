@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 任务服务实现类
+ * task service implementation class
  */
 @Service
 @Slf4j
@@ -338,7 +338,6 @@ public class TaskServiceImpl implements TaskService {
         // 获取任务新状态描述
         String newStatusDesc = getStatusDescription(freshTask.getStatus());
         
-        // 确保任务名称不为空 - 使用已更新的任务对象的name属性
         // 先尝试使用传入的task对象的name
         String taskName = task.getName();
         log.info("从原始任务对象获取的名称: {}", taskName);
@@ -356,7 +355,7 @@ public class TaskServiceImpl implements TaskService {
         }
         
         // 组装通知内容
-        String content = currentUsername + " 将任务 [" + taskName + "] 的状态更新为 " + newStatusDesc;
+        String content = currentUsername + " has updated the status of [" + taskName + "] to " + newStatusDesc;
         log.info("生成的通知内容: {}", content);
         
         // 获取任务成员，并发送通知

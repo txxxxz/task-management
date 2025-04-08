@@ -8,17 +8,16 @@ import router from './router'
 
 import './assets/main.css'
 import 'animate.css'
-// 导入自定义的frappe-gantt样式文件，覆盖原始样式
 import './styles/frappe-gantt-custom.scss'
-// 导入自定义的gantt样式覆盖
+
 import './styles/gantt-overrides.scss'
 
-// 导入通知store
+// import notification store
 import { useNotificationStore } from '@/stores/notification'
 
 const app = createApp(App)
 
-// 注册 Element Plus 图标
+// register element plus icons
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
@@ -28,6 +27,9 @@ app.use(router)
 app.use(ElementPlus)
 app.mount('#app')
 
-// 预加载通知数量
+// preload notification count
 const notificationStore = useNotificationStore()
 notificationStore.getUnreadCount()
+
+
+

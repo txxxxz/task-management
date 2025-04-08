@@ -12,27 +12,26 @@ const service: AxiosInstance = axios.create({
   }
 })
 
-// 请求拦截器
+// request interceptor
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    console.log('发送请求:', config.url, config.data || config.params)
+    console.log('sending request:', config.url, config.data || config.params)
     
-    // 不需要token的白名单路径（完全匹配）
+    // white list of paths that do not need token 
     const whiteList = ['/auth/login', '/auth/register', '/auth/check']
     const isWhitelisted = whiteList.some(path => config.url === path)
     
-    // 为所有非白名单请求添加token
+    // add token to all non-whitelisted requests
     if (!isWhitelisted) {
       const token = localStorage.getItem('token')
-      console.log('当前token:', token)
+      console.log('current token:', token)
       
       if (token && config.headers) {
-        // 添加标准Authorization头
+        // add standard Authorization header
         config.headers['Authorization'] = `Bearer ${token}`
-        // 同时添加token头（有些后端框架期望这种格式）
         config.headers['token'] = token
       } else {
-        console.warn('未找到token或headers不存在，请求可能会失败:', config.url)
+        console.warn('no token or headers not found, request may fail:', config.url)
       }
     }
 

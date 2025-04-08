@@ -17,7 +17,7 @@
           label-width="100px"
           class="project-form"
         >
-          <!-- 基本信息分组 -->
+          <!-- basic information group -->
           <div class="form-group">
             <div class="group-title">Basic Information</div>
             <el-row :gutter="20">

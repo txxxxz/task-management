@@ -27,7 +27,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/tasks")
 @Slf4j
-@Api(tags = "任务管理接口")
+@Api(tags = "task management interface")
 public class TaskController {
 
     @Autowired
@@ -40,16 +40,16 @@ public class TaskController {
     private FileService fileService;
 
     /**
-     * 创建任务
-     * @param taskDTO 任务数据
-     * @return 创建后的任务
+     * create task
+     * @param taskDTO task data
+     * @return created task
      */
     @PostMapping
-    @ApiOperation("创建任务")
+    @ApiOperation("create task")
     public Result<TaskDTO> createTask(@RequestBody TaskDTO taskDTO) {
-        log.info("创建任务：{}", taskDTO);
+        log.info("create task: {}", taskDTO);
         
-        // 调用service创建任务
+        // call service to create task
         TaskDTO createdTask = taskService.createTask(taskDTO);
         return Result.success(createdTask);
     }

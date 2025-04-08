@@ -7,12 +7,6 @@
         <span class="logo-text" style="font-size: 16px; color: #333;">Guinea Pig Task Management System</span>
       </div>
       <div class="header-right">
-        <el-input
-          placeholder="Search..."
-          prefix-icon="Search"
-          v-model="searchKeyword"
-          class="search-input"
-        />
         <NotificationDropdown />
         <el-dropdown @command="handleCommand">
           <el-avatar 

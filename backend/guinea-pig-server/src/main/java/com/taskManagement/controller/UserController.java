@@ -10,7 +10,6 @@ import com.taskManagement.vo.UserVO;
 import com.taskManagement.service.UserService;
 import com.taskManagement.utils.JwtUtil;
 import com.taskManagement.properties.JwtProperties;
-import com.taskManagement.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

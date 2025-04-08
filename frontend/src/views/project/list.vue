@@ -6,18 +6,18 @@
         <!-- 第一行：项目名称、优先级、状态 -->
         <div class="filter-row">
           <div class="filter-item-half">
-            <el-form-item label="名称">
+            <el-form-item label="Name">
               <el-input 
                 v-model="searchForm.name" 
-                placeholder="支持模糊搜索" 
+                placeholder="Please enter the project name" 
                 clearable 
                 prefix-icon="Search"
               />
             </el-form-item>
           </div>
           <div class="filter-item-half">
-            <el-form-item label="状态">
-              <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 100%">
+            <el-form-item label="Status">
+              <el-select v-model="searchForm.status" placeholder="Please select the status" clearable style="width: 100%">
                 <el-option
                   v-for="item in statusOptions"
                   :key="item.value"
@@ -26,8 +26,8 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="优先级">
-              <el-select v-model="searchForm.priority" placeholder="请选择优先级" clearable style="width: 100%">
+            <el-form-item label="Priority">
+              <el-select v-model="searchForm.priority" placeholder="Please select the priority" clearable style="width: 100%">
                 <el-option
                   v-for="item in priorityOptions"
                   :key="item.value"
@@ -42,16 +42,16 @@
         <!-- 第二行：负责人、成员 -->
         <div class="filter-row">
           <div class="filter-item-half">
-            <el-form-item label="负责人">
+            <el-form-item label="Leader">
               <el-select 
                 v-model="searchForm.leader" 
-                placeholder="项目负责人" 
+                placeholder="Please select the leader" 
                 clearable
                 filterable
                 remote
                 :remote-method="searchProjectLeaders"
                 :loading="leadersLoading"
-                loading-text="加载中..."
+                loading-text="Loading..."
                 @visible-change="onLeaderSelectOpen"
                 style="width: 100%"
               >
@@ -76,16 +76,16 @@
             </el-form-item>
           </div>
           <div class="filter-item-half">
-            <el-form-item label="成员">
+            <el-form-item label="Members">
               <el-select 
                 v-model="searchForm.members" 
                 multiple 
-                placeholder="支持模糊搜索成员" 
+                placeholder="Please select the members" 
                 clearable 
                 style="width: 100%"
                 filterable
                 :loading="membersLoading"
-                loading-text="加载中..."
+                loading-text="Loading..."
                 remote
                 :remote-method="searchUsers"
                 collapse-tags
@@ -123,26 +123,26 @@
         <!-- 第三行：开始时间、截止时间 -->
         <div class="filter-row">
           <div class="filter-item-half">
-            <el-form-item label="开始日期">
+            <el-form-item label="Start">
               <el-date-picker
                 v-model="searchForm.startTimeRange"
                 type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
+                range-separator="To"
+                start-placeholder="Start Date"
+                end-placeholder="Due Date"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 style="width: 100%"
               />
             </el-form-item>
           </div>
           <div class="filter-item-half">
-            <el-form-item label="截止日期">
+            <el-form-item label="Due">
               <el-date-picker
                 v-model="searchForm.endTimeRange"
                 type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
+                range-separator="To"
+                start-placeholder="Start Date"
+                end-placeholder="Due Date"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 style="width: 100%"
               />
@@ -154,10 +154,10 @@
         <div class="filter-buttons-row">
           <div class="filter-buttons">
             <el-button type="primary" @click="handleSearch">
-              <el-icon><Search /></el-icon> 搜索
+              <el-icon><Search /></el-icon> Search
             </el-button>
             <el-button @click="handleReset">
-              <el-icon><Refresh /></el-icon> 重置
+              <el-icon><Refresh /></el-icon> Reset
             </el-button>
           </div>
         </div>
@@ -191,50 +191,50 @@
         height: '46px'
       }"
     >
-      <el-table-column type="index" label="序号" width="60" align="center" />
-      <el-table-column prop="name" label="项目名称" min-width="200">
+      <el-table-column type="index" label="No." width="60" align="center" />
+      <el-table-column prop="name" label="Project Name" min-width="200">
         <template #default="{ row }">
           <el-link type="primary" @click="handleViewDetail(row)">{{ row.name }}</el-link>
         </template>
       </el-table-column>
-      <el-table-column label="状态" width="120" align="center">
+      <el-table-column label="Status" width="120" align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusType(row.status)">
             {{ getStatusLabel(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="优先级" width="120" align="center">
+      <el-table-column label="Priority" width="120" align="center">
         <template #default="{ row }">
           <el-tag :type="getPriorityType(row.priority)" effect="light">
             {{ getPriorityLabel(row.priority) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="开始日期" width="180">
+      <el-table-column label="Start Date" width="180">
         <template #default="{ row }">
           {{ formatDate(row.startTime) || '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="截止日期" width="180">
+      <el-table-column label="Due Date" width="180">
         <template #default="{ row }">
           {{ formatDate(row.endTime) || '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120" fixed="right" align="center">
+      <el-table-column label="Operation" width="120" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
-            <el-tooltip content="查看" placement="top">
+            <el-tooltip content="View" placement="top">
               <el-button type="primary" link @click="handleViewDetail(row)">
                 <el-icon><View /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="编辑" placement="top" v-if="isLeader">
+            <el-tooltip content="Edit" placement="top" v-if="isLeader">
               <el-button type="primary" link @click="handleProjectAction('edit', row)">
                 <el-icon><Edit /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="删除" placement="top" v-if="isLeader">
+            <el-tooltip content="Delete" placement="top" v-if="isLeader">
               <el-button type="danger" link @click="handleProjectAction('delete', row)">
                 <el-icon><Delete /></el-icon>
               </el-button>

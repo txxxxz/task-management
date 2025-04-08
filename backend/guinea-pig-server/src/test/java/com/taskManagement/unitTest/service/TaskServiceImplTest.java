@@ -6,9 +6,6 @@ import com.taskManagement.context.BaseContext;
 import com.taskManagement.dto.TaskDTO;
 import com.taskManagement.entity.Project;
 import com.taskManagement.entity.Task;
-import com.taskManagement.entity.User;
-import com.taskManagement.entity.Tag;
-import com.taskManagement.entity.TaskMember;
 import com.taskManagement.mapper.ProjectMapper;
 import com.taskManagement.mapper.TaskMapper;
 import com.taskManagement.mapper.TaskMemberMapper;
@@ -36,13 +33,12 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyList;
+
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doReturn;
+
 
 /**
  * TaskService 服务层测试类
@@ -185,7 +181,6 @@ public class TaskServiceImplTest {
     public void testCreateTask() {
         // 准备测试数据
         TaskDTO taskDTO = createTestTaskDTO();
-        Task task = createTestTask();
         Project project = createTestProject();
         
         // 模拟依赖行为
