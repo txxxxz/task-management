@@ -37,3 +37,9 @@ backend/**/target/
 **/target/
 **/dist/
 **/build/
+
+# Sensitive configuration files
+backend/guinea-pig-server/src/main/resources/application-dev.yml
+backend/guinea-pig-server/src/main/resources/application-prod.yml
+backend/guinea-pig-server/src/main/resources/application-*.properties
+*.env
