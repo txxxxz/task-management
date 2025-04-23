@@ -59,12 +59,39 @@ npm run build
 # 进入后端目录
 cd backend
 
+# 配置环境变量
+# 复制环境变量模板文件
+cp .env.template .env
+# 编辑.env文件，填入实际的配置信息
+# 包括数据库密码、微信配置、阿里云OSS配置等
+
 # 编译项目
 mvn clean package
 
 # 运行服务
 java -jar guinea-pig-server/target/guinea-pig-server.jar
 ```
+
+### 环境变量配置
+
+项目使用环境变量来存储敏感信息，包括：
+
+1. 数据库配置
+   - DB_PASSWORD: 数据库密码
+
+2. 微信配置
+   - WECHAT_APPID: 微信小程序AppID
+   - WECHAT_SECRET: 微信小程序密钥
+
+3. 阿里云OSS配置
+   - ALIYUN_ACCESS_KEY_ID: 阿里云访问密钥ID
+   - ALIYUN_ACCESS_KEY_SECRET: 阿里云访问密钥密码
+   - ENCRYPTION_KEY: 文件加密密钥
+
+请确保：
+- 不要将.env文件提交到版本控制系统
+- 定期更换密钥以提高安全性
+- 在生产环境中使用更复杂的密钥
 
 ### 数据库配置
 
@@ -145,12 +172,39 @@ npm run build
 # Enter backend directory
 cd backend
 
+# Configure environment variables
+# Copy environment variable template file
+cp .env.template .env
+# Edit .env file to fill in actual configuration information
+# Including database password, WeChat configuration, and AliCloud OSS configuration
+
 # Compile project
 mvn clean package
 
 # Run server
 java -jar guinea-pig-server/target/guinea-pig-server.jar
 ```
+
+### Environment Variable Configuration
+
+The project uses environment variables to store sensitive information, including:
+
+1. Database configuration
+   - DB_PASSWORD: Database password
+
+2. WeChat configuration
+   - WECHAT_APPID: WeChat Mini Program AppID
+   - WECHAT_SECRET: WeChat Mini Program Secret
+
+3. AliCloud OSS configuration
+   - ALIYUN_ACCESS_KEY_ID: AliCloud Access Key ID
+   - ALIYUN_ACCESS_KEY_SECRET: AliCloud Access Key Secret
+   - ENCRYPTION_KEY: File Encryption Key
+
+Please ensure:
+- Do not commit .env file to version control system
+- Change key regularly to improve security
+- Use more complex key in production environment
 
 ### Database Configuration
 
