@@ -79,10 +79,11 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { User, Lock, Message, Phone } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { User, Lock, Message, Phone, InfoFilled } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { register } from '@/api/user'
+import type { UserRegisterData } from '@/api/user'
 
 const router = useRouter()
 const registerFormRef = ref<FormInstance>()
@@ -137,7 +138,15 @@ const handleRegister = async () => {
   await registerFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        const { confirmPassword, ...registerData } = registerForm.value
+        // 包含角色信息的注册数据
+        const registerData = {
+          username: registerForm.value.username,
+          password: registerForm.value.password,
+          email: registerForm.value.email,
+          phone: registerForm.value.phone,
+          role: registerForm.value.role
+        }
+        
         await register(registerData)
         ElMessage.success('Registration successful')
         router.push('/login')
@@ -246,5 +255,20 @@ const handleRegister = async () => {
 
 :deep(.el-radio__inner:hover) {
   border-color: #764ba2;
+}
+
+.role-tip {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #e6a23c;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+}
+
+.role-tip .el-icon {
+  margin-right: 5px;
+  font-size: 14px;
+  color: #e6a23c;
 }
 </style> 

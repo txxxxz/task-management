@@ -16,6 +16,7 @@ import com.taskManagement.mapper.UserMapper;
 import com.taskManagement.mapper.ProjectAttachmentMapper;
 import com.taskManagement.service.ProjectService;
 import com.taskManagement.service.FileService;
+import com.taskManagement.service.NotificationService;
 import com.taskManagement.vo.PageResult;
 import com.taskManagement.vo.ProjectVO;
 import com.taskManagement.vo.UserVO;
@@ -44,14 +45,16 @@ public class ProjectServiceImpl implements ProjectService {
     private final UserMapper userMapper;
     private final ProjectAttachmentMapper projectAttachmentMapper;
     private final FileService fileService;
+    private final NotificationService notificationService;
     
     @Autowired
-    public ProjectServiceImpl(ProjectMapper projectMapper, ProjectMemberMapper projectMemberMapper, UserMapper userMapper, ProjectAttachmentMapper projectAttachmentMapper, FileService fileService) {
+    public ProjectServiceImpl(ProjectMapper projectMapper, ProjectMemberMapper projectMemberMapper, UserMapper userMapper, ProjectAttachmentMapper projectAttachmentMapper, FileService fileService, NotificationService notificationService) {
         this.projectMapper = projectMapper;
         this.projectMemberMapper = projectMemberMapper;
         this.userMapper = userMapper;
         this.projectAttachmentMapper = projectAttachmentMapper;
         this.fileService = fileService;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -439,6 +442,18 @@ public class ProjectServiceImpl implements ProjectService {
         
         // 添加项目成员
         addProjectMember(id, user.getId());
+        
+        // 发送通知给被添加的成员
+        Project project = projectMapper.selectById(id);
+        if (project != null) {
+            Long currentUserId = BaseContext.getCurrentId();
+            User currentUser = userMapper.selectById(currentUserId);
+            String currentUsername = currentUser != null ? currentUser.getUsername() : "Unknown User";
+            String content = currentUsername + " added you to project [" + project.getName() + "]";
+            // 使用任务更新通知，但关联ID是项目ID
+            notificationService.createTaskUpdateNotification(id, content, user.getId());
+            log.info("已发送项目成员添加通知给用户: {}", username);
+        }
     }
     
     /**
@@ -486,6 +501,18 @@ public class ProjectServiceImpl implements ProjectService {
         
         // 删除成员关系
         projectMemberMapper.delete(queryWrapper);
+        
+        // 发送通知给被移除的成员
+        Project project = projectMapper.selectById(id);
+        if (project != null) {
+            Long currentUserId = BaseContext.getCurrentId();
+            User currentUser = userMapper.selectById(currentUserId);
+            String currentUsername = currentUser != null ? currentUser.getUsername() : "Unknown User";
+            String content = currentUsername + " removed you from project [" + project.getName() + "]";
+            // 使用任务更新通知，但关联ID是项目ID
+            notificationService.createTaskUpdateNotification(id, content, user.getId());
+            log.info("已发送项目成员移除通知给用户: {}", username);
+        }
     }
     
     /**

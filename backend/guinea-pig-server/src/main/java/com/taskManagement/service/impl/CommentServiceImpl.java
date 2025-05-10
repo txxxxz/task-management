@@ -1,14 +1,17 @@
 package com.taskManagement.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.taskManagement.dto.CommentDTO;
 import com.taskManagement.entity.Comment;
 import com.taskManagement.entity.Task;
 import com.taskManagement.entity.User;
+import com.taskManagement.entity.TaskMember;
 import com.taskManagement.exception.BusinessException;
 import com.taskManagement.mapper.CommentMapper;
 import com.taskManagement.mapper.TaskMapper;
 import com.taskManagement.mapper.UserMapper;
+import com.taskManagement.mapper.TaskMemberMapper;
 import com.taskManagement.service.CommentService;
 import com.taskManagement.service.NotificationService;
 import com.taskManagement.context.BaseContext;
@@ -40,6 +43,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     
     @Autowired
     private NotificationService notificationService;
+    
+    @Autowired
+    private TaskMemberMapper taskMemberMapper;
 
     /**
      * 根据任务ID获取评论列表，并构建评论树结构
@@ -143,55 +149,35 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     public CommentDTO createComment(CommentDTO commentDTO) {
         log.info("创建评论: {}", commentDTO);
         
-        // 获取当前登录用户ID
-        Long userId = BaseContext.getCurrentId();
-        if (userId == null) {
-            throw new BusinessException("用户未登录");
-        }
-        
-        // 检查任务是否存在
+        // 1. 检查任务是否存在
         Task task = taskMapper.selectById(commentDTO.getTaskId());
         if (task == null) {
             throw new BusinessException("任务不存在");
         }
         
-        // 如果有父评论ID，检查父评论是否存在且属于同一任务
-        if (commentDTO.getParentId() != null) {
-            log.info("检测到父评论ID: {}", commentDTO.getParentId());
-            Comment parentComment = commentMapper.selectCommentWithoutUpdateFields(commentDTO.getParentId());
-            if (parentComment == null) {
-                throw new BusinessException("父评论不存在");
-            }
-            
-            if (!parentComment.getTaskId().equals(commentDTO.getTaskId())) {
-                throw new BusinessException("不能跨任务评论");
-            }
-            
-            log.info("已验证父评论存在并属于同一任务");
-        }
-        
-        // 创建评论实体并设置属性
+        // 2. 创建评论实体
         Comment comment = new Comment();
-        comment.setContent(commentDTO.getContent());
-        comment.setTaskId(commentDTO.getTaskId());
-        comment.setParentId(commentDTO.getParentId());
-        comment.setCreateUser(userId);
+        BeanUtils.copyProperties(commentDTO, comment);
+        
+        // 3. 补全创建信息
+        Long currentUserId = BaseContext.getCurrentId();
+        comment.setCreateUser(currentUserId);
         comment.setCreateTime(LocalDateTime.now());
         
-        log.info("准备保存评论实体: {}", comment);
-        
-        // 保存评论
+        // 4. 保存评论
         commentMapper.insert(comment);
-        log.info("评论已保存到数据库，ID: {}", comment.getId());
         
-        // 更新任务评论数量
+        // 5. 更新任务评论数
         task.setCommentCount(task.getCommentCount() + 1);
         taskMapper.updateById(task);
         
-        // 处理评论中的@用户通知
+        // 6. 处理评论中的@用户通知
         processCommentMentions(comment);
         
-        // 转换为DTO并返回
+        // 7. 通知任务所有成员有新评论
+        notifyTaskMembers(comment, task);
+        
+        // 8. 转换为DTO并返回
         CommentDTO resultDTO = convertToDTO(comment);
         log.info("返回评论DTO: {}", resultDTO);
         return resultDTO;
@@ -211,20 +197,62 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         // 获取当前用户信息
         Long currentUserId = comment.getCreateUser();
         User currentUser = userMapper.selectById(currentUserId);
-        String currentUsername = currentUser != null ? currentUser.getUsername() : "用户" + currentUserId;
+        String currentUsername = currentUser != null ? currentUser.getUsername() : "User" + currentUserId;
         
         // 获取任务信息
         Task task = taskMapper.selectById(comment.getTaskId());
-        String taskName = task != null ? task.getName() : "未知任务";
+        String taskName = task != null ? task.getName() : "Unknown Task";
         
         // 查找被@用户的ID并发送通知
         for (String username : mentionedUsernames) {
             User user = userMapper.getByUsername(username);
             if (user != null && !user.getId().equals(currentUserId)) { // 不通知自己
-                String content = currentUsername + " 在任务 [" + taskName + "] 的评论中@了你";
+                String content = currentUsername + " mentioned you in task [" + taskName + "]";
                 notificationService.createCommentMentionNotification(comment.getId(), content, user.getId());
-                log.info("已发送评论@通知给用户 {}", username);
+                log.info("Comment mention notification sent to user {}", username);
             }
+        }
+    }
+
+    /**
+     * 通知任务所有成员有新评论
+     * @param comment 评论
+     * @param task 任务
+     */
+    private void notifyTaskMembers(Comment comment, Task task) {
+        // 获取当前用户信息
+        Long currentUserId = comment.getCreateUser();
+        User currentUser = userMapper.selectById(currentUserId);
+        String currentUsername = currentUser != null ? currentUser.getUsername() : "User" + currentUserId;
+        
+        // 获取任务名称
+        String taskName = task.getName();
+        
+        // 获取任务所有成员，包括创建者
+        List<Long> memberIds = new ArrayList<>();
+        
+        // 添加任务创建者
+        if (task.getCreateUser() != null && !task.getCreateUser().equals(currentUserId)) {
+            memberIds.add(task.getCreateUser());
+        }
+        
+        // 查询任务成员
+        List<TaskMember> members = taskMemberMapper.selectList(
+                new LambdaQueryWrapper<TaskMember>()
+                        .eq(TaskMember::getTaskId, task.getId()));
+        
+        // 添加任务成员
+        for (TaskMember member : members) {
+            if (!member.getUserId().equals(currentUserId) && !memberIds.contains(member.getUserId())) {
+                memberIds.add(member.getUserId());
+            }
+        }
+        
+        // 发送通知给所有成员
+        String content = currentUsername + " commented on task [" + taskName + "]";
+        for (Long userId : memberIds) {
+            notificationService.createCommentMentionNotification(comment.getId(), content, userId);
+            log.info("已发送评论通知给任务成员: {}", userId);
         }
     }
 

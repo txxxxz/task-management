@@ -498,7 +498,7 @@ const fetchUsers = async (keyword = '') => {
       if (Array.isArray(items)) {
         memberOptions.value = items.map(user => ({
           value: user.username,
-          label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+          label: `${user.username} (${user.role === 0 ? 'Member' : 'Leader'})`,
           avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
         }))
       } else {
@@ -511,8 +511,8 @@ const fetchUsers = async (keyword = '') => {
     }
   } catch (error) {
     memberOptions.value = []
-    console.error('获取用户列表失败:', error)
-    ElMessage.error('获取用户列表失败')
+    console.error('Get user list failed:', error)
+    ElMessage.error('Get user list failed')
   } finally {
     membersLoading.value = false
   }
@@ -634,7 +634,7 @@ const handleNext = async () => {
       await formRef.value.validate()
       // 验证成功后，进入第二步
     } catch (error) {
-      ElMessage.error('请完成必填信息')
+      ElMessage.error('Please complete the required information')
       return
     }
   } else if (currentStep.value === 1) {
@@ -675,14 +675,14 @@ const handleNext = async () => {
         } catch (uploadError: any) {
           console.error('文件上传请求失败:', uploadError)
           console.error('错误详情:', uploadError.response?.data || uploadError.message)
-          ElMessage.error(`文件上传失败: ${uploadError.response?.data?.message || uploadError.message}`)
+          ElMessage.error(`File upload failed: ${uploadError.response?.data?.message || uploadError.message}`)
           return
         }
       }
       
     } catch (error: any) {
       console.error('文件上传失败:', error)
-      ElMessage.error(error.message || '文件上传失败')
+      ElMessage.error(error.message || 'File upload failed')
       return
     } finally {
       loading.value = false
@@ -902,12 +902,12 @@ const fetchTaskDetail = async (taskId: string) => {
       taskForm.projectId = taskData.projectId
       taskForm.attachments = taskData.attachments || []
     } else {
-      ElMessage.error('获取任务详情失败')
+      ElMessage.error('Get task details failed')
       router.back()
     }
   } catch (error) {
     console.error('获取任务详情失败:', error)
-    ElMessage.error('获取任务详情失败')
+    ElMessage.error('Get task details failed')
     router.back()
   } finally {
     loading.value = false
@@ -1103,7 +1103,7 @@ const formatTagsDisplay = computed(() => {
 onMounted(async () => {
   // 检查用户权限
   if (userStore.userInfo?.role !== 1) {
-    ElMessage.error('只有项目负责人才能创建或编辑任务')
+    ElMessage.error('Only project leaders can create or edit tasks')
     router.push('/list')
     return
   }

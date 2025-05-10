@@ -431,10 +431,10 @@ const STATUS_MAP_REVERSE = {
 } as const;
 
 const STATUS_LABELS = {
-  PENDING: '待处理',
-  IN_PROGRESS: '进行中',
-  COMPLETED: '已完成',
-  CANCELLED: '已取消'
+  PENDING: 'Pending',
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled'
 } as const;
 
 const PRIORITY_TYPES = {
@@ -602,7 +602,7 @@ const fetchTags = async (projectId?: string) => {
       projectId: tag.projectId
     }));
   } catch (error) {
-    ElMessage.error('获取标签列表失败');
+    ElMessage.error('Get tag list failed');
     tagOptions.value = [];
   } finally {
     tagsLoading.value = false;
@@ -625,14 +625,14 @@ const fetchUsers = async (keyword = '') => {
     if (userData?.items && Array.isArray(userData.items)) {
       memberOptions.value = userData.items.map((user: any) => ({
         value: user.username,
-        label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+        label: `${user.username} (${user.role === 0 ? 'Member' : 'Leader'})`,
         avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
       }));
     } else {
       memberOptions.value = [];
     }
   } catch (error) {
-    ElMessage.error('获取用户列表失败');
+    ElMessage.error('Get user list failed');
     memberOptions.value = [];
   } finally {
     membersLoading.value = false;
@@ -643,7 +643,7 @@ const fetchUsers = async (keyword = '') => {
 const fetchTaskDetail = async () => {
   const taskId = route.params.id as string
   if (!taskId) {
-    error.value = '任务ID不能为空';
+    error.value = 'Task ID cannot be empty';
     return;
   }
 
@@ -655,7 +655,7 @@ const fetchTaskDetail = async () => {
     const data = extractDataFromResponse(response);
     
     if (!data) {
-      ElMessage.warning('未获取到任务数据');
+      ElMessage.warning('No task data obtained');
       return;
     }
     
@@ -679,7 +679,7 @@ const fetchTaskDetail = async () => {
     const projectId = data.projectId ? Number(data.projectId) : undefined;
     
     // 如果有项目ID，获取项目详情
-    let projectName = '未选择项目';
+    let projectName = 'No project selected';
     if (projectId) {
       try {
         const projectResponse = await getProjectDetail(projectId);
@@ -689,7 +689,7 @@ const fetchTaskDetail = async () => {
         }
       } catch (err) {
         console.error('获取项目详情失败:', err);
-        projectName = '项目获取失败';
+        projectName = 'Project details acquisition failed';
       }
     }
     
@@ -715,8 +715,8 @@ const fetchTaskDetail = async () => {
       fetchAttachments(parseInt(taskId))
     ]);
   } catch (err: any) {
-    error.value = err.message || '获取任务详情失败';
-    ElMessage.error(error.value || '获取任务详情失败');
+    error.value = err.message || 'Get task details failed';
+    ElMessage.error(error.value || 'Get task details failed');
   } finally {
     loading.value = false;
   }
@@ -764,16 +764,16 @@ const refreshTaskTags = async () => {
     // 然后重新获取任务详情
     await fetchTaskDetail();
     
-    ElMessage.success('标签已刷新');
+    ElMessage.success('Tags refreshed');
   } catch (err: any) {
-    ElMessage.error('刷新标签失败');
+    ElMessage.error('Refresh tags failed');
   }
 }
 
 // 保存任务修改
 const handleSave = async () => {
   if (!isLeader.value) {
-    ElMessage.warning('您没有权限修改任务信息');
+    ElMessage.warning('You do not have permission to modify task information');
     return;
   }
 
@@ -808,7 +808,7 @@ const handleSave = async () => {
     
     // 更新任务
     await updateTask(route.params.id as string, updateData);
-    ElMessage.success('保存成功');
+    ElMessage.success('Save successfully');
     
     // 刷新数据
     setTimeout(async () => {
@@ -818,11 +818,11 @@ const handleSave = async () => {
   } catch (err: any) {
     // 精简错误处理
     if (err.response) {
-      ElMessage.error(`保存失败: ${err.response.status} - ${err.response.data?.message || '服务器错误'}`);
+      ElMessage.error(`Save failed: ${err.response.status} - ${err.response.data?.message || 'Server error'}`);
     } else if (err.request) {
-      ElMessage.error('保存失败: 服务器没有响应');
+      ElMessage.error('Save failed: Server not responding');
     } else {
-      ElMessage.error(err.message || '保存失败');
+      ElMessage.error(err.message || 'Save failed');
     }
   } finally {
     saveLoading.value = false;
@@ -834,10 +834,6 @@ const handleUpload = () => {
   uploadDialogVisible.value = true;
 };
 
-const handleBatchUpload = () => {
-  ElMessage.info('批量导入功能正在开发中');
-};
-
 const uploadFiles = ref<File[]>([]);
 
 const handleFileChange = (file: any) => {
@@ -846,7 +842,7 @@ const handleFileChange = (file: any) => {
 
 const handleManualUpload = async () => {
   if (uploadFiles.value.length === 0) {
-    ElMessage.warning('请选择要上传的文件');
+    ElMessage.warning('Please select the file to upload');
     return;
   }
 
@@ -864,28 +860,28 @@ const handleManualUpload = async () => {
     );
 
     if (response.data.code === 1) {
-      ElMessage.success('上传成功');
+      ElMessage.success('Upload successfully');
       uploadDialogVisible.value = false;
       uploadFiles.value = [];
       // 刷新文件列表
       await fetchAttachments(parseInt(route.params.id as string));
     } else {
-      ElMessage.error(response.data.message || '上传失败');
+      ElMessage.error(response.data.message || 'Upload failed');
     }
   } catch (error: any) {
     if (error.response?.status === 401) {
-      ElMessage.error('认证失败，请重新登录');
+      ElMessage.error('Authentication failed, please log in again');
       userStore.logout();
       router.push('/login');
       return;
     }
     
     if (error.response?.data?.message?.includes('UserDisable')) {
-      ElMessage.error('文件存储服务暂时不可用，请联系管理员');
+      ElMessage.error('File storage service is temporarily unavailable, please contact the administrator');
     } else if (error.response?.status === 500) {
-      ElMessage.error('服务器内部错误，请稍后重试');
+      ElMessage.error('Server internal error, please try again later');
     } else {
-      ElMessage.error(error.message || '上传失败，请稍后重试');
+      ElMessage.error(error.message || 'Upload failed, please try again later');
     }
   } finally {
     uploadLoading.value = false;
@@ -895,7 +891,7 @@ const handleManualUpload = async () => {
 // 文件操作方法
 const handleViewFile = (file: TaskFile) => {
   if (!file.url) {
-    ElMessage.warning('文件链接不可用');
+    ElMessage.warning('File link is not available');
     return;
   }
   // 使用预览API打开文件
@@ -904,7 +900,7 @@ const handleViewFile = (file: TaskFile) => {
 
 const handleDownloadFile = (file: TaskFile) => {
   if (!file.url) {
-    ElMessage.warning('文件链接不可用');
+    ElMessage.warning('File link is not available');
     return;
   }
   
@@ -912,21 +908,21 @@ const handleDownloadFile = (file: TaskFile) => {
     // 使用下载API获取解密后的文件
     window.location.href = `/api/files/download?fileUrl=${encodeURIComponent(file.url)}`;
   } catch (err) {
-    ElMessage.error('下载失败');
+    ElMessage.error('Download failed');
   }
 };
 
 const handleDeleteFile = async (file: TaskFile) => {
   if (!isLeader.value && file.uploader !== userStore.userInfo?.username) {
-    ElMessage.warning('您没有权限删除此文件');
+    ElMessage.warning('You do not have permission to delete this file');
     return;
   }
 
   try {
-    await ElMessageBox.confirm('确定要删除此文件吗？', '警告', {
+    await ElMessageBox.confirm('Confirm to delete this file?', 'Warning', {
       type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel'
     });
 
     // 删除文件
@@ -934,17 +930,17 @@ const handleDeleteFile = async (file: TaskFile) => {
     const fileId = parseInt(file.id);
     
     if(isNaN(taskId) || isNaN(fileId)) {
-      throw new Error('任务ID或文件ID无效');
+      throw new Error('Invalid task ID or file ID');
     }
     
     await deleteAttachment(taskId, fileId);
-    ElMessage.success('删除成功');
+    ElMessage.success('Delete successfully');
     
     // 刷新文件列表
     await fetchAttachments(taskId);
   } catch (err: any) {
     if (err !== 'cancel') {
-      ElMessage.error(err.message || '删除失败');
+      ElMessage.error(err.message || 'Delete failed');
     }
   }
 };
@@ -1049,7 +1045,7 @@ const fetchComments = async () => {
     comments.value = sortByTime(rootComments);
   } catch (err) {
     console.error('获取评论失败:', err);
-    ElMessage.error('获取评论列表失败');
+    ElMessage.error('Get comment list failed');
     comments.value = [];
   }
 };
@@ -1057,7 +1053,7 @@ const fetchComments = async () => {
 // 修改handleAddComment函数以支持多层级评论
 const handleAddComment = async () => {
   if (!newComment.content.trim()) {
-    ElMessage.warning('请输入评论内容');
+    ElMessage.warning('Please enter a comment');
     return;
   }
 
@@ -1076,9 +1072,9 @@ const handleAddComment = async () => {
     if (createdComment) {
       // 评论成功后，直接重新获取所有评论以确保数据一致性
       await fetchComments();
-      ElMessage.success('评论成功');
+      ElMessage.success('Comment successfully');
     } else {
-      ElMessage.warning('评论已提交，但无法获取评论详情');
+      ElMessage.warning('Comment submitted, but unable to get comment details');
       await fetchComments();
     }
     
@@ -1087,7 +1083,7 @@ const handleAddComment = async () => {
     newComment.parentId = null;
     replyToComment.value = null;
   } catch (err: any) {
-    ElMessage.error(err.message || '评论失败');
+    ElMessage.error(err.message || 'Comment failed');
     await fetchComments();
   } finally {
     commentLoading.value = false;
@@ -1115,15 +1111,15 @@ const cancelReply = () => {
 
 const handleDeleteComment = async (comment: CommentData) => {
   if (!isLeader.value && String(comment.createUser) !== String(userStore.userInfo?.id)) {
-    ElMessage.warning('您没有权限删除此评论');
+    ElMessage.warning('You do not have permission to delete this comment');
     return;
   }
 
   try {
-    await ElMessageBox.confirm('确定要删除此评论吗？所有子评论也将被删除！', '警告', {
+    await ElMessageBox.confirm('Confirm to delete this comment? All sub-comments will also be deleted!', 'Warning', {
       type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel'
     });
 
     // 删除评论
@@ -1131,13 +1127,13 @@ const handleDeleteComment = async (comment: CommentData) => {
     const commentId = comment.id;
     
     await deleteComment(taskId, commentId);
-    ElMessage.success('删除成功');
+    ElMessage.success('Delete successfully');
     
     // 刷新评论列表
     await fetchComments();
   } catch (err: any) {
     if (err !== 'cancel') {
-      ElMessage.error(err.message || '删除失败');
+      ElMessage.error(err.message || 'Delete failed');
     }
   }
 };
@@ -1146,11 +1142,11 @@ const handleDeleteComment = async (comment: CommentData) => {
 const handleDelete = async () => {
   try {
     await ElMessageBox.confirm(
-      '确定要删除此任务吗？此操作不可撤销！',
-      '警告',
+      'Are you sure you want to delete this task? This action cannot be undone!',
+      'Delete Confirmation',
       {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
@@ -1232,7 +1228,7 @@ const fetchAttachments = async (taskId: number) => {
       uploadTime: formatDate(file.createTime || file.uploadTime || file.updateTime)
     }));
   } catch (err) {
-    ElMessage.error('获取文件列表失败');
+    ElMessage.error('Get file list failed');
     fileList.value = [];
   }
 }

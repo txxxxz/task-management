@@ -22,7 +22,7 @@ export const useUserStore = defineStore('user', () => {
       // 处理标准响应格式
       if (!response || !response.data) {
         console.error('登录响应无效:', response)
-        throw new Error('登录响应数据格式不正确')
+        throw new Error('The login response data format is incorrect')
       }
       
       const responseData = response.data
@@ -30,14 +30,14 @@ export const useUserStore = defineStore('user', () => {
       // 根据后端的标准响应格式处理数据
       if (responseData.code !== 1 && responseData.code !== 200 && responseData.code !== 0) {
         console.error('登录响应错误:', responseData)
-        throw new Error(responseData.msg || '登录失败')
+        throw new Error(responseData.msg || 'Fail to Login')
       }
       
       // 从data字段中提取实际数据
       const loginData = responseData.data
       if (!loginData || !loginData.token) {
         console.error('登录响应中缺少token:', responseData)
-        throw new Error('登录响应数据格式不正确')
+        throw new Error('The login response data format is incorrect')
       }
       
       // 设置token
@@ -70,11 +70,11 @@ export const useUserStore = defineStore('user', () => {
         }
       }
       
-      ElMessage.success('登录成功')
+      ElMessage.success('Login Success')
       router.push('/dashboard')
     } catch (error: any) {
-      console.error('登录失败:', error)
-      ElMessage.error(error.message || '登录失败，请检查网络或凭据')
+      console.error('Login Failed:', error)
+      ElMessage.error(error.message || 'Login Failed, please check the network or credentials')
       throw error
     } finally {
       loading.value = false
@@ -142,7 +142,7 @@ export const useUserStore = defineStore('user', () => {
     } finally {
       clearUserInfo()
       router.push('/login')
-      ElMessage.success('退出登录成功')
+      ElMessage.success('Logout Success')
     }
   }
 

@@ -1,7 +1,7 @@
 <template>
   <div class="profile-container">
     <div class="page-header">
-      <h2 class="page-title">个人中心</h2>
+      <h2 class="page-title">Personal Center</h2>
     </div>
 
     <el-row :gutter="30">
@@ -28,7 +28,7 @@
                 >
                   <el-button type="primary" class="upload-btn" round>
                     <el-icon class="upload-icon"><Upload /></el-icon>
-                    更换头像
+                    Change Avatar
                   </el-button>
                 </el-upload>
               </div>
@@ -60,8 +60,8 @@
                 ref="basicFormRef"
                 :model="basicForm"
                 :rules="basicRules"
-                label-width="100px"
-                class="profile-form"
+                label-width="180px"
+                class="profile-form basic-form"
               >
                 <el-form-item label="Username" prop="username">
                   <el-input 
@@ -104,8 +104,8 @@
                 ref="passwordFormRef"
                 :model="passwordForm"
                 :rules="passwordRules"
-                label-width="100px"
-                class="profile-form"
+                label-width="180px"
+                class="profile-form password-form"
               >
                 <el-form-item label="Current Password" prop="oldPassword">
                   <el-input
@@ -125,7 +125,7 @@
                     :prefix-icon="Lock"
                   />
                 </el-form-item>
-                <el-form-item label="Confirm New Password" prop="confirmPassword">
+                <el-form-item label="Confirm Password" prop="confirmPassword">
                   <el-input
                     v-model="passwordForm.confirmPassword"
                     type="password"
@@ -139,10 +139,10 @@
                     type="primary" 
                     @click="handleUpdatePassword"
                     class="submit-btn"
-                    :icon="Key"
+                    :icon="Check"
                     round
                   >
-                    Change Password
+                    Save Changes
                   </el-button>
                 </el-form-item>
               </el-form>
@@ -502,15 +502,19 @@ onMounted(() => {
 }
 
 .profile-form {
-  max-width: 500px;
-  margin: 0 auto;
+  max-width: 580px;
+  margin: 20px auto;
   padding: 20px 0;
 }
 
 .submit-btn {
-  width: 140px;
+  width: 155px;
   height: 40px;
   font-size: 16px;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
 }
 
 :deep(.el-input__wrapper) {
@@ -566,5 +570,49 @@ onMounted(() => {
 .profile-card:hover, .info-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* 添加密码表单的专属样式 */
+.password-form :deep(.el-form-item__label) {
+  font-weight: 500;
+  white-space: nowrap;
+  padding-right: 15px;
+}
+
+.password-form :deep(.el-input__wrapper) {
+  width: 100%;
+  max-width: 400px;
+}
+
+.password-form .el-form-item {
+  margin-bottom: 25px;
+}
+
+/* 添加基本信息表单的专属样式 */
+.basic-form :deep(.el-form-item__label) {
+  font-weight: 500;
+  white-space: nowrap;
+  padding-right: 15px;
+}
+
+.basic-form :deep(.el-input__wrapper) {
+  width: 100%;
+  max-width: 400px;
+}
+
+.basic-form .el-form-item {
+  margin-bottom: 25px;
+}
+
+/* 按钮所在的form-item不需要左侧标签 */
+.basic-form .el-form-item:last-child, .password-form .el-form-item:last-child {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.basic-form .el-form-item:last-child :deep(.el-form-item__content), 
+.password-form .el-form-item:last-child :deep(.el-form-item__content) {
+  margin-left: 0 !important;
+  justify-content: center;
 }
 </style> 

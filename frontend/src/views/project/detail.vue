@@ -561,7 +561,7 @@ const fetchUsers = async () => {
     if (userData?.items && Array.isArray(userData.items)) {
       memberOptions.value = userData.items.map((user: any) => ({
         value: user.username,
-        label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+        label: `${user.username} (${user.role === 0 ? 'Member' : 'Leader'})`,
         avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
         role: user.role
       }));
@@ -569,7 +569,7 @@ const fetchUsers = async () => {
       memberOptions.value = [];
     }
   } catch (error) {
-    ElMessage.error('获取用户列表失败');
+    ElMessage.error('Get user list failed');
     memberOptions.value = [];
   } finally {
     membersLoading.value = false;
@@ -592,7 +592,7 @@ const fetchProjectDetail = async () => {
     const data = extractDataFromResponse(response);
     
     if (!data) {
-      ElMessage.warning('未获取到项目数据');
+      ElMessage.warning('No project data obtained');
       return;
     }
     
@@ -627,8 +627,8 @@ const fetchProjectDetail = async () => {
     // 加载任务列表
     await fetchTasks(projectId);
   } catch (err: any) {
-    error.value = err.message || '获取项目详情失败';
-    ElMessage.error(error.value || '获取项目详情失败');
+    error.value = err.message || 'Get project details failed';
+    ElMessage.error(error.value || 'Get project details failed');
   } finally {
     loading.value = false;
   }
@@ -637,7 +637,7 @@ const fetchProjectDetail = async () => {
 // 保存项目修改
 const handleSave = async () => {
   if (!isLeader.value) {
-    ElMessage.warning('您没有权限修改项目信息');
+    ElMessage.warning('You do not have permission to modify project information');
     return;
   }
 
@@ -657,7 +657,7 @@ const handleSave = async () => {
     
     // 更新项目
     await updateProject(route.params.id as string, updateData);
-    ElMessage.success('保存成功');
+    ElMessage.success('Save successfully');
     
     // 刷新数据
     setTimeout(() => {
@@ -665,11 +665,11 @@ const handleSave = async () => {
     }, 500);
   } catch (err: any) {
     if (err.response) {
-      ElMessage.error(`保存失败: ${err.response.status} - ${err.response.data?.message || '服务器错误'}`);
+      ElMessage.error(`Save failed: ${err.response.status} - ${err.response.data?.message || 'Server error'}`);
     } else if (err.request) {
-      ElMessage.error('保存失败: 服务器没有响应');
+      ElMessage.error('Save failed: Server not responding');
     } else {
-      ElMessage.error(err.message || '保存失败');
+      ElMessage.error(err.message || 'Save failed');
     }
   } finally {
     saveLoading.value = false;
@@ -688,7 +688,7 @@ const handleFileChange = (file: any) => {
 
 const handleManualUpload = async () => {
   if (uploadFiles.value.length === 0) {
-    ElMessage.warning('请选择要上传的文件');
+    ElMessage.warning('Please select the file to upload');
     return;
   }
 
@@ -706,23 +706,23 @@ const handleManualUpload = async () => {
     );
 
     if (response.data.code === 1) {
-      ElMessage.success('上传成功');
+      ElMessage.success('Upload successfully');
       uploadDialogVisible.value = false;
       uploadFiles.value = [];
       // 刷新文件列表
       await fetchAttachments(parseInt(route.params.id as string));
     } else {
-      ElMessage.error(response.data.message || '上传失败');
+      ElMessage.error(response.data.message || 'Upload failed');
     }
   } catch (error: any) {
     if (error.response?.status === 401) {
-      ElMessage.error('认证失败，请重新登录');
+      ElMessage.error('Authentication failed, please log in again');
       userStore.logout();
       router.push('/login');
       return;
     }
     
-    ElMessage.error(error.message || '上传失败，请稍后重试');
+    ElMessage.error(error.message || 'Upload failed, please try again later');
   } finally {
     uploadLoading.value = false;
   }
@@ -731,7 +731,7 @@ const handleManualUpload = async () => {
 // 文件操作方法
 const handleViewFile = (file: ProjectFile) => {
   if (!file.url) {
-    ElMessage.warning('文件链接不可用');
+    ElMessage.warning('The file link is not available');
     return;
   }
   // 使用预览API打开文件
@@ -740,7 +740,7 @@ const handleViewFile = (file: ProjectFile) => {
 
 const handleDownloadFile = (file: ProjectFile) => {
   if (!file.url) {
-    ElMessage.warning('文件链接不可用');
+    ElMessage.warning('The file link is not available');
     return;
   }
   
@@ -748,21 +748,21 @@ const handleDownloadFile = (file: ProjectFile) => {
     // 使用下载API获取解密后的文件
     window.location.href = `/api/files/download?fileUrl=${encodeURIComponent(file.url)}`;
   } catch (err) {
-    ElMessage.error('下载失败');
+    ElMessage.error('Download failed');
   }
 };
 
 const handleDeleteFile = async (file: ProjectFile) => {
   if (!isLeader.value && file.uploader !== userStore.userInfo?.username) {
-    ElMessage.warning('您没有权限删除此文件');
+    ElMessage.warning('You do not have permission to delete this file');
     return;
   }
 
   try {
-    await ElMessageBox.confirm('确定要删除此文件吗？', '警告', {
+    await ElMessageBox.confirm('Confirm to delete this file?', 'Warning', {
       type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel'
     });
 
     // 删除文件
@@ -770,17 +770,17 @@ const handleDeleteFile = async (file: ProjectFile) => {
     const fileId = parseInt(file.id);
     
     if(isNaN(projectId) || isNaN(fileId)) {
-      throw new Error('项目ID或文件ID无效');
+      throw new Error('Invalid project ID or file ID');
     }
     
     await deleteAttachment(projectId, fileId);
-    ElMessage.success('删除成功');
+    ElMessage.success('Delete successfully');
     
     // 刷新文件列表
     await fetchAttachments(projectId);
   } catch (err: any) {
     if (err !== 'cancel') {
-      ElMessage.error(err.message || '删除失败');
+      ElMessage.error(err.message || 'Delete failed');
     }
   }
 };
@@ -789,11 +789,11 @@ const handleDeleteFile = async (file: ProjectFile) => {
 const handleDelete = async () => {
   try {
     await ElMessageBox.confirm(
-      '确定要删除此项目吗？此操作不可撤销！',
-      '警告',
+      'Confirm to delete this project? This action cannot be undone!',
+      'Warning',
       {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
@@ -801,11 +801,11 @@ const handleDelete = async () => {
     
     loading.value = true;
     await deleteProject(route.params.id as string);
-    ElMessage.success('删除成功');
+    ElMessage.success('Delete successfully');
     router.push('/project/list');
   } catch (err: any) {
     if (err !== 'cancel') {
-      ElMessage.error(err.message || '删除失败');
+      ElMessage.error(err.message || 'Delete failed');
     }
   } finally {
     loading.value = false;
@@ -837,7 +837,7 @@ const fetchAttachments = async (projectId: number) => {
       uploadTime: formatDate(file.createTime || file.uploadTime || file.updateTime)
     }));
   } catch (err) {
-    ElMessage.error('获取文件列表失败');
+    ElMessage.error('Get file list failed');
     fileList.value = [];
   }
 }
@@ -869,10 +869,10 @@ onMounted(async () => {
 
 // 任务状态和优先级映射
 const TASK_STATUS_LABELS: Record<number, string> = {
-  0: '待处理',
-  1: '进行中',
-  2: '已完成',
-  3: '已取消'
+  0: 'Pending',
+  1: 'In Progress',
+  2: 'Completed',
+  3: 'Cancelled'
 }
 
 const TASK_STATUS_TYPES: Record<number, 'info' | 'warning' | 'success' | 'danger'> = {
@@ -951,7 +951,7 @@ const fetchTasks = async (projectId: string) => {
       taskList.value = [];
     }
   } catch (err) {
-    ElMessage.error('获取任务列表失败');
+    ElMessage.error('Get task list failed');
     taskList.value = [];
   } finally {
     taskLoading.value = false;
@@ -967,24 +967,24 @@ const handleViewTask = (task: Task) => {
 const handleDeleteTask = async (task: Task) => {
   try {
     await ElMessageBox.confirm(
-      '确定要删除此任务吗？此操作不可撤销！',
-      '警告',
+      'Are you sure you want to delete this task? This action cannot be undone!',
+      'Delete Confirmation',
       {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
     );
     
     await deleteTask(task.id.toString());
-    ElMessage.success('删除成功');
+    ElMessage.success('Delete successfully');
     
     // 刷新任务列表
     await fetchTasks(route.params.id as string);
   } catch (err: any) {
     if (err !== 'cancel') {
-      ElMessage.error(err.message || '删除失败');
+      ElMessage.error(err.message || 'Delete failed');
     }
   }
 };

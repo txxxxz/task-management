@@ -160,7 +160,7 @@
     <!-- 操作按钮区域 -->
     <div class="operation-section">
       <div class="left-buttons">
-        <el-button type="primary" @click="handleNewTask">
+        <el-button type="primary" @click="handleNewTask" v-if="isLeader">
           <el-icon><Plus /></el-icon> New Task
         </el-button>
       </div>
@@ -186,9 +186,16 @@
             </template>
             <template #description>
               <p>No task data</p>
-              <p class="empty-tip">You can click the button below to create a new task</p>
+              <p class="empty-tip">
+                <template v-if="isLeader">
+                  You can click the button below to create a new task
+                </template>
+                <template v-else>
+                  No tasks found in the current view
+                </template>
+              </p>
             </template>
-            <el-button type="primary" @click="handleNewTask">Create Task</el-button>
+            <el-button type="primary" @click="handleNewTask" v-if="isLeader">Create Task</el-button>
           </el-empty>
         </div>
       </template>
@@ -262,28 +269,44 @@
       <el-table-column label="Operation" width="120" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
+            <!-- 针对leader显示编辑和删除按钮 -->
+            <template v-if="isLeader">
+              <el-tooltip content="Edit Task" placement="top">
+                <el-button
+                  type="primary"
+                  link
+                  @click="handleEditTask(row)"
+                  class="action-button"
+                >
+                  <el-icon><Edit /></el-icon>
+                </el-button>
+              </el-tooltip>
+              
+              <el-tooltip content="Delete Task" placement="top">
+                <el-button
+                  type="danger"
+                  link
+                  @click="handleDeleteTask(row)"
+                  class="action-button"
+                >
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
             
-            <el-tooltip content="Edit Task" placement="top" v-if="isLeader">
-              <el-button
-                type="primary"
-                link
-                @click="handleEditTask(row)"
-                class="action-button"
-              >
-                <el-icon><Edit /></el-icon>
-              </el-button>
-            </el-tooltip>
-            
-            <el-tooltip content="Delete Task" placement="top" v-if="isLeader">
-              <el-button
-                type="danger"
-                link
-                @click="handleDeleteTask(row)"
-                class="action-button"
-              >
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </el-tooltip>
+            <!-- 针对普通成员只显示查看按钮 -->
+            <template v-else>
+              <el-tooltip content="View Task" placement="top">
+                <el-button
+                  type="info"
+                  link
+                  @click="handleViewDetail(row)"
+                  class="action-button"
+                >
+                  <el-icon><View /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
           </div>
         </template>
       </el-table-column>
@@ -606,7 +629,7 @@ const fetchTaskList = async () => {
       console.error('错误状态码:', error.response.status)
       console.error('错误响应:', error.response.data)
     }
-    ElMessage.error(`获取任务失败: ${error.message || '请稍后再试'}`)
+    ElMessage.error(`Get task list failed: ${error.message || 'Please try again later'}`)
     // 清空数据
     taskList.value = []
     total.value = 0
@@ -713,7 +736,7 @@ const fetchMemberOptions = async () => {
       if (Array.isArray(items)) {
         memberOptions.value = items.map(user => ({
           value: user.username,
-          label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+          label: `${user.username} (${user.role === 0 ? 'Member' : 'Leader'})`,
           avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
         }))
       } else {
@@ -804,7 +827,7 @@ const doSearchMembers = async (query: string) => {
         if (Array.isArray(items)) {
           memberOptions.value = items.map(user => ({
             value: user.username,
-            label: `${user.username} (${user.role === 0 ? '成员' : '负责人'})`,
+            label: `${user.username} (${user.role === 0 ? 'Member' : 'Leader'})`,
             avatar: user.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
           }))
         } else {
@@ -882,11 +905,11 @@ const getPriorityType = (priority: number): 'success' | 'warning' | 'info' | 'da
 
 const getPriorityText = (priority: number): string => {
   switch (priority) {
-    case 4: return '紧急'
-    case 3: return '高'
-    case 2: return '中'
-    case 1: return '低'
-    default: return '未知'
+    case 4: return 'Critical'
+    case 3: return 'High'
+    case 2: return 'Medium'
+    case 1: return 'Low'
+    default: return 'Unknown'
   }
 }
 
@@ -902,11 +925,11 @@ const getStatusType = (status: number): 'success' | 'warning' | 'info' | 'danger
 
 const getStatusText = (status: number): string => {
   switch (status) {
-    case 0: return '待处理'
-    case 1: return '进行中'
-    case 2: return '已完成'
-    case 3: return '已取消'
-    default: return '未知'
+    case 0: return 'Pending'
+    case 1: return 'In Progress'
+    case 2: return 'Completed'
+    case 3: return 'Cancelled'
+    default: return 'Unknown'
   }
 }
 
@@ -997,7 +1020,7 @@ const handleCurrentChange = (val: number) => {
 
 const handleEditTask = (row: TaskDetail) => {
   if (!isLeader.value) {
-    ElMessage.warning('只有项目负责人才能编辑任务')
+    ElMessage.warning('Only project leaders can edit tasks')
     return
   }
   
@@ -1007,13 +1030,13 @@ const handleEditTask = (row: TaskDetail) => {
 
 const handleDeleteTask = (row: TaskDetail) => {
   if (!isLeader.value) {
-    ElMessage.warning('只有项目负责人才能删除任务')
+    ElMessage.warning('Only project leaders can delete tasks')
     return
   }
 
   ElMessageBox.confirm(
-    `确定要删除任务"${row.name || row.title || '未命名任务'}"吗？此操作不可恢复！`,
-    '删除确认',
+    `Are you sure you want to delete the task "${row.name || row.title || 'Unnamed Task'}"? This action cannot be undone!`,
+    'Delete Confirmation',
     {
       confirmButtonText: 'Confirm Delete',
       cancelButtonText: 'Cancel',

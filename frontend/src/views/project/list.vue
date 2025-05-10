@@ -166,7 +166,7 @@
 
     <div class="operation-section">
       <div class="left-buttons">
-        <el-button type="primary" @click="handleCreate">
+        <el-button type="primary" @click="handleCreate" v-if="isLeader">
           <el-icon><Plus /></el-icon> New Project
         </el-button>
       </div>
@@ -224,21 +224,27 @@
       <el-table-column label="Operation" width="120" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
-            <el-tooltip content="View" placement="top">
-              <el-button type="primary" link @click="handleViewDetail(row)">
-                <el-icon><View /></el-icon>
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="Edit" placement="top" v-if="isLeader">
-              <el-button type="primary" link @click="handleProjectAction('edit', row)">
-                <el-icon><Edit /></el-icon>
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="Delete" placement="top" v-if="isLeader">
-              <el-button type="danger" link @click="handleProjectAction('delete', row)">
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </el-tooltip>
+            <!-- 针对 leader 显示编辑和删除按钮 -->
+            <template v-if="isLeader">
+              <el-tooltip content="Edit" placement="top">
+                <el-button type="primary" link @click="handleProjectAction('edit', row)">
+                  <el-icon><Edit /></el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="Delete" placement="top">
+                <el-button type="danger" link @click="handleProjectAction('delete', row)">
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
+            <!-- 针对普通成员只显示查看按钮 -->
+            <template v-else>
+              <el-tooltip content="View" placement="top">
+                <el-button type="info" link @click="handleViewDetail(row)">
+                  <el-icon><View /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
           </div>
         </template>
       </el-table-column>
@@ -480,7 +486,7 @@ const fetchProjects = async () => {
     }
   } catch (error) {
     console.error('Failed to get project list:', error)
-    ElMessage.error('获取项目列表失败')
+    ElMessage.error('Get project list failed')
   } finally {
     loading.value = false
   }
@@ -543,7 +549,7 @@ const fetchLeaders = async () => {
     }
   } catch (error) {
     leaderOptions.value = []
-    ElMessage.error('获取项目负责人列表失败')
+    ElMessage.error('Get project leader list failed')
   } finally {
     leadersLoading.value = false
   }
@@ -612,7 +618,7 @@ const searchProjectLeaders = async (query: string) => {
       }
     } catch (error) {
       leaderOptions.value = []
-      ElMessage.error('搜索项目负责人失败')
+      ElMessage.error('Search project leader failed')
     } finally {
       leadersLoading.value = false
     }

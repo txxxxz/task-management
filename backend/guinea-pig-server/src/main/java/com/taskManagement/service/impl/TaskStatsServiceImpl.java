@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.taskManagement.mapper.TaskStatsMapper;
+import com.taskManagement.dto.TaskDTO;
+import com.taskManagement.service.TaskService;
+import com.taskManagement.service.TaskTagService;
 /**
  * 任务统计服务实现类
  */
@@ -19,6 +22,12 @@ public class TaskStatsServiceImpl implements TaskStatsService {
 
     @Autowired
     private TaskStatsMapper taskStatsMapper;
+
+    @Autowired
+    private TaskService taskService;
+
+    @Autowired
+    private TaskTagService taskTagService;
 
     /**
      * 获取指定周的任务状态统计数据
@@ -110,11 +119,24 @@ public class TaskStatsServiceImpl implements TaskStatsService {
         
         // 获取总数和分页数据
         Integer total = taskStatsMapper.getUserTasksCount(userId, status);
-        List<?> items = taskStatsMapper.getUserTasksByStatus(userId, status, offset, pageSize);
+        List<TaskDTO> tasks = taskStatsMapper.getUserTasksByStatus(userId, status, offset, pageSize);
+        
+        // 为每个任务补充成员信息
+        if (tasks != null && !tasks.isEmpty()) {
+            for (TaskDTO task : tasks) {
+                // 查询任务成员
+                List<String> members = taskService.getTaskMembers(task.getId());
+                task.setMembers(members);
+                
+                // 查询任务标签ID
+                List<Long> tagIds = taskTagService.getTagIdsByTaskId(task.getId());
+                task.setTagIds(tagIds);
+            }
+        }
         
         // 构建返回结果
         result.put("total", total != null ? total : 0);
-        result.put("items", items != null ? items : new ArrayList<>());
+        result.put("items", tasks != null ? tasks : new ArrayList<>());
         result.put("page", page);
         result.put("pageSize", pageSize);
         result.put("totalPages", total == null ? 0 : (total + pageSize - 1) / pageSize);
@@ -133,11 +155,24 @@ public class TaskStatsServiceImpl implements TaskStatsService {
         
         // 获取总数和分页数据
         Integer total = taskStatsMapper.getUserTodayExpiredTasksCount(userId);
-        List<?> items = taskStatsMapper.getUserTodayExpiredTasks(userId, offset, pageSize);
+        List<TaskDTO> tasks = taskStatsMapper.getUserTodayExpiredTasks(userId, offset, pageSize);
+        
+        // 为每个任务补充成员信息
+        if (tasks != null && !tasks.isEmpty()) {
+            for (TaskDTO task : tasks) {
+                // 查询任务成员
+                List<String> members = taskService.getTaskMembers(task.getId());
+                task.setMembers(members);
+                
+                // 查询任务标签ID
+                List<Long> tagIds = taskTagService.getTagIdsByTaskId(task.getId());
+                task.setTagIds(tagIds);
+            }
+        }
         
         // 构建返回结果
         result.put("total", total != null ? total : 0);
-        result.put("items", items != null ? items : new ArrayList<>());
+        result.put("items", tasks != null ? tasks : new ArrayList<>());
         result.put("page", page);
         result.put("pageSize", pageSize);
         result.put("totalPages", total == null ? 0 : (total + pageSize - 1) / pageSize);

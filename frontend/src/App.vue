@@ -19,7 +19,7 @@ onMounted(async () => {
       userStore.clearUserInfo()
       
       // 显示错误消息但不中断用户体验
-      ElMessage.warning('身份信息已过期，请重新登录')
+      ElMessage.warning('Identity information has expired, please log in again')
     }
   } else {
     console.log('未检测到token')

@@ -107,7 +107,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 设置默认值
         user.setPassword(PasswordUtil.encode(registerDTO.getPassword()));
         user.setStatus(1);  // 正常状态
-        user.setRole(0);    // 设置默认角色为普通成员
+        
+        // 如果没有传入角色，则默认为普通成员
+        if (registerDTO.getRole() == null) {
+            user.setRole(0);
+        } else {
+            user.setRole(registerDTO.getRole());
+        }
         
         this.save(user);
         

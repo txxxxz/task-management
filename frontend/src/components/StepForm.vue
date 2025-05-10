@@ -20,14 +20,14 @@
         v-if="currentStep > 0" 
         @click="handlePrevious"
       >
-        上一步
+        Previous Step
       </el-button>
       <el-button 
         type="primary" 
         @click="handleNext"
         :loading="loading"
       >
-        {{ isLastStep ? '完成' : '下一步' }}
+        {{ isLastStep ? 'Finish' : 'Next Step' }}
       </el-button>
     </div>
   </div>

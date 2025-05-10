@@ -188,6 +188,15 @@ const routes: RouteRecordRaw[] = [
           requiresAuth: true,
           requiresLeader: true
         }
+      },
+      {
+        path: 'tag/view/:id',
+        name: 'TagView',
+        component: () => import('@/views/tag/view.vue'),
+        meta: {
+          title: 'View Tag',
+          requiresAuth: true
+        }
       }
     ]
   },

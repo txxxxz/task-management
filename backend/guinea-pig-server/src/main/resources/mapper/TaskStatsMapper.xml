@@ -9,9 +9,21 @@
             SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as inProgress,
             SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as completed,
             SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as cancelled,
-            SUM(CASE WHEN DATE(deadline) = CURDATE() AND status != 2 THEN 1 ELSE 0 END) as todayExpired
+            SUM(CASE WHEN DATE(deadline) = DATE(DATE_ADD(#{date}, INTERVAL #{weekOffset} WEEK)) AND status != 2 THEN 1 ELSE 0 END) as todayExpired
         FROM tb_task
-        WHERE DATE(create_time) = DATE(DATE_ADD(#{date}, INTERVAL #{weekOffset} WEEK))
+        WHERE 
+            (
+                <!-- 任务在指定日期仍处于活跃状态 -->
+                (start_time IS NULL OR DATE(start_time) &lt;= DATE(DATE_ADD(#{date}, INTERVAL #{weekOffset} WEEK)))
+                AND
+                (deadline IS NULL OR DATE(deadline) &gt;= DATE(DATE_ADD(#{date}, INTERVAL #{weekOffset} WEEK)))
+            )
+            OR
+            <!-- 当天创建的任务也包括 -->
+            DATE(create_time) = DATE(DATE_ADD(#{date}, INTERVAL #{weekOffset} WEEK))
+            OR
+            <!-- 当天完成的任务也包括 -->
+            (status = 2 AND DATE(completed_time) = DATE(DATE_ADD(#{date}, INTERVAL #{weekOffset} WEEK)))
     </select>
 
     <select id="getTaskStats" resultType="java.util.Map">
@@ -31,73 +43,82 @@
 
     <select id="getUserTaskStats" resultType="java.util.Map">
         SELECT 
-            COUNT(*) as total,
-            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as inProgress,
-            SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as completed,
-            SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as cancelled,
-            SUM(CASE WHEN DATE(deadline) = CURDATE() AND status != 2 THEN 1 ELSE 0 END) as todayExpired
-        FROM tb_task
-        WHERE create_user = #{userId}
+            COUNT(DISTINCT t.id) as total,
+            SUM(CASE WHEN t.status = 0 THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN t.status = 1 THEN 1 ELSE 0 END) as inProgress,
+            SUM(CASE WHEN t.status = 2 THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN t.status = 3 THEN 1 ELSE 0 END) as cancelled,
+            SUM(CASE WHEN DATE(t.deadline) = CURDATE() AND t.status != 2 THEN 1 ELSE 0 END) as todayExpired
+        FROM 
+            tb_task t
+        LEFT JOIN 
+            tb_task_member tm ON t.id = tm.task_id
+        WHERE 
+            t.create_user = #{userId} OR tm.user_id = #{userId}
     </select>
 
     <select id="getUserTasksCount" resultType="java.lang.Integer">
-        SELECT COUNT(*)
-        FROM tb_task
-        WHERE create_user = #{userId}
+        SELECT COUNT(DISTINCT t.id)
+        FROM tb_task t
+        LEFT JOIN tb_task_member tm ON t.id = tm.task_id
+        WHERE t.create_user = #{userId} OR tm.user_id = #{userId}
         <if test="status != null">
-            AND status = #{status}
+            AND t.status = #{status}
         </if>
     </select>
 
     <select id="getUserTasksByStatus" resultType="com.taskManagement.dto.TaskDTO">
-        SELECT 
-            id, name, description, project_id as projectId,
-            status, priority, start_time as startTime,
-            deadline, complete_time as completeTime,
-            comment_count as commentCount, create_user as createUser,
-            create_time as createTime, update_user as updateUser,
-            update_time as updateTime
-        FROM tb_task
-        WHERE create_user = #{userId}
+        SELECT DISTINCT
+            t.id, t.name, t.description, t.project_id as projectId,
+            t.status, t.priority, t.start_time as startTime,
+            t.deadline, t.completed_time as completeTime,
+            t.comment_count as commentCount, t.create_user as createUser,
+            t.create_time as createTime, t.update_user as updateUser,
+            t.update_time as updateTime
+        FROM tb_task t
+        LEFT JOIN tb_task_member tm ON t.id = tm.task_id
+        WHERE t.create_user = #{userId} OR tm.user_id = #{userId}
         <if test="status != null">
-            AND status = #{status}
+            AND t.status = #{status}
         </if>
-        ORDER BY create_time DESC
+        ORDER BY t.create_time DESC
         LIMIT #{offset}, #{pageSize}
     </select>
 
     <select id="getUserTodayExpiredTasksCount" resultType="java.lang.Integer">
-        SELECT COUNT(*)
-        FROM tb_task
-        WHERE create_user = #{userId}
-        AND DATE(deadline) = CURDATE()
-        AND status != 2
+        SELECT COUNT(DISTINCT t.id)
+        FROM tb_task t
+        LEFT JOIN tb_task_member tm ON t.id = tm.task_id
+        WHERE (t.create_user = #{userId} OR tm.user_id = #{userId})
+        AND DATE(t.deadline) = CURDATE()
+        AND t.status != 2
     </select>
 
     <select id="getUserTodayExpiredTasks" resultType="com.taskManagement.dto.TaskDTO">
-        SELECT 
-            id, name, description, project_id as projectId,
-            status, priority, start_time as startTime,
-            deadline, complete_time as completeTime,
-            comment_count as commentCount, create_user as createUser,
-            create_time as createTime, update_user as updateUser,
-            update_time as updateTime
-        FROM tb_task
-        WHERE create_user = #{userId}
-        AND DATE(deadline) = CURDATE()
-        AND status != 2
-        ORDER BY create_time DESC
+        SELECT DISTINCT
+            t.id, t.name, t.description, t.project_id as projectId,
+            t.status, t.priority, t.start_time as startTime,
+            t.deadline, t.completed_time as completeTime,
+            t.comment_count as commentCount, t.create_user as createUser,
+            t.create_time as createTime, t.update_user as updateUser,
+            t.update_time as updateTime
+        FROM tb_task t
+        LEFT JOIN tb_task_member tm ON t.id = tm.task_id
+        WHERE (t.create_user = #{userId} OR tm.user_id = #{userId})
+        AND DATE(t.deadline) = CURDATE()
+        AND t.status != 2
+        ORDER BY t.create_time DESC
         LIMIT #{offset}, #{pageSize}
     </select>
     
     <select id="getTaskPriorityDistribution" resultType="java.util.Map">
         SELECT 
-            SUM(CASE WHEN priority = 0 THEN 1 ELSE 0 END) as low,
-            SUM(CASE WHEN priority = 1 THEN 1 ELSE 0 END) as medium,
-            SUM(CASE WHEN priority = 2 THEN 1 ELSE 0 END) as high,
-            SUM(CASE WHEN priority = 3 THEN 1 ELSE 0 END) as critical
-        FROM tb_task
-        WHERE create_user = #{userId}
+            SUM(CASE WHEN t.priority = 0 THEN 1 ELSE 0 END) as low,
+            SUM(CASE WHEN t.priority = 1 THEN 1 ELSE 0 END) as medium,
+            SUM(CASE WHEN t.priority = 2 THEN 1 ELSE 0 END) as high,
+            SUM(CASE WHEN t.priority = 3 THEN 1 ELSE 0 END) as critical
+        FROM tb_task t
+        LEFT JOIN tb_task_member tm ON t.id = tm.task_id
+        WHERE t.create_user = #{userId} OR tm.user_id = #{userId}
     </select>
 </mapper> 

@@ -103,8 +103,9 @@ java -jar guinea-pig-server/target/guinea-pig-server.jar
 
 1. 访问前端应用：`http://localhost:5173/`
 2. 使用以下默认账号登录:
-   - 用户名: admin
+   - 用户名: leader
    - 密码: 123456
+   - 角色：leader
 3. 开始创建项目和任务
 
 ## 📚 API文档

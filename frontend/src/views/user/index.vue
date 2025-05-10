@@ -80,10 +80,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="Create Time" min-width="180" />
-        <el-table-column label="Operation" width="180" fixed="right">
+        <el-table-column label="Action" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)" :icon="Edit">Edit</el-button>
-            <el-button type="danger" link @click="handleDelete(row)" :icon="Delete">Delete</el-button>
+            <el-button type="primary" link @click="handleEdit(row)" :icon="Edit"></el-button>
+            <el-button type="danger" link @click="handleDelete(row)" :icon="Delete"></el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -398,17 +398,17 @@ const handleSubmit = async () => {
         }
         const res = await createUser(registerData)
         if (res.code === 1) {
-          ElMessage.success('新增成功')
+          ElMessage.success('Add successfully')
           dialogVisible.value = false
           getList()
         } else {
-          ElMessage.error(res.msg || '新增失败')
+          ElMessage.error(res.msg || 'Add failed')
         }
       } else {
         // 编辑时需要用户ID，从当前选中的行获取
         const currentUser = userList.value.find(u => u.username === form.username)
         if (!currentUser) {
-          ElMessage.error('用户信息获取失败')
+          ElMessage.error('Get user information failed')
           return
         }
         
@@ -421,11 +421,11 @@ const handleSubmit = async () => {
         
         const res = await updateUser(currentUser.id, updateData)
         if (res.code === 1) {
-          ElMessage.success('更新成功')
+          ElMessage.success('Update successfully')
           dialogVisible.value = false
           getList()
         } else {
-          ElMessage.error(res.msg || '更新失败')
+          ElMessage.error(res.msg || 'Update failed')
         }
       }
     } catch (error) {

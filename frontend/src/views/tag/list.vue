@@ -73,22 +73,39 @@
       </el-table-column>
       <el-table-column label="Actions" width="150" fixed="right">
         <template #default="{ row }">
-          <el-button
-            type="primary"
-            link
-            @click="handleEdit(row)"
-            v-if="userStore.userInfo?.role === 1"
-          >
-            Edit
-          </el-button>
-          <el-button
-            type="danger"
-            link
-            @click="handleDelete(row)"
-            v-if="userStore.userInfo?.role === 1"
-          >
-            Delete
-          </el-button>
+          <!-- 针对leader显示编辑和删除按钮 -->
+          <template v-if="userStore.userInfo?.role === 1">
+            <el-tooltip content="Edit" placement="top">
+              <el-button
+                type="primary"
+                link
+                @click="handleEdit(row)"
+              >
+                <el-icon><Edit /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="Delete" placement="top" >
+              <el-button
+                type="danger"
+                link
+                @click="handleDelete(row)"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </template>
+          <!-- 针对普通成员显示查看按钮 -->
+          <template v-else>
+            <el-tooltip content="View Tag" placement="top">
+              <el-button
+                type="info"
+                link
+                @click="handleViewTag(row)"
+              >
+                <el-icon><View /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -110,7 +127,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Search, Refresh, Plus, Download } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Download, Edit, Delete, View } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { getTagList, deleteTag } from '@/api/tag'
@@ -258,6 +275,11 @@ const handleSizeChange = (val: number) => {
 const handleCurrentChange = (val: number) => {
   currentPage.value = val
   fetchTagList()
+}
+
+const handleViewTag = (row: Tag) => {
+  // 跳转到标签详情页面
+  router.push(`/tag/view/${row.id}`)
 }
 
 onMounted(async () => {

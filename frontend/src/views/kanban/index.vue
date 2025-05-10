@@ -72,7 +72,10 @@
             <div class="card-content">
               <p>create time: {{ task.createTime }}</p>
               <p>start time: {{ task.startTime }}</p>
-              <p>due time: {{ task.deadline || task.dueTime }}</p>
+              <p>
+                <span>due time: </span>
+                <span :class="{ 'expired-date': isTaskExpired(task) }">{{ task.deadline || task.dueTime }}</span>
+              </p>
               <div class="tags-container">
                 <el-tag v-for="tag in task.tags" :key="tag" size="small" class="mx-1">
                   {{ tag }}
@@ -91,7 +94,7 @@
                     :size="28"
                     class="member-avatar"
                     @click.stop="isLeader && handleRemoveMember(task, member)"
-                    :title="isLeader ? '点击移除成员' : member"
+                    :title="isLeader ? 'Click to remove member' : member"
                   >
                     {{ member.charAt(0) }}
                   </el-avatar>
@@ -152,7 +155,10 @@
             <div class="task-info">
               <p><span class="label">create time:</span> {{ task.createTime }}</p>
               <p><span class="label">start time:</span> {{ task.startTime }}</p>
-              <p><span class="label">due time:</span> {{ task.deadline || task.dueTime }}</p>
+              <p>
+                <span class="label">due time:</span> 
+                <span :class="{ 'expired-date': isTaskExpired(task) }">{{ task.deadline || task.dueTime }}</span>
+              </p>
             </div>
             <div class="task-tags">
               <el-tag
@@ -178,7 +184,7 @@
                   :size="28"
                   class="member-avatar"
                   @click.stop="isLeader && handleRemoveMember(task, member)"
-                  :title="isLeader ? '点击移除成员' : member"
+                  :title="isLeader ? 'Click to remove member' : member"
                 >
                   {{ member.charAt(0) }}
                 </el-avatar>
@@ -238,7 +244,10 @@
             <div class="task-info">
               <p><span class="label">create time:</span> {{ task.createTime }}</p>
               <p><span class="label">start time:</span> {{ task.startTime }}</p>
-              <p><span class="label">due time:</span> {{ task.deadline || task.dueTime }}</p>
+              <p>
+                <span class="label">due time:</span> 
+                <span :class="{ 'expired-date': isTaskExpired(task) }">{{ task.deadline || task.dueTime }}</span>
+              </p>
             </div>
             <div class="task-tags">
               <el-tag
@@ -292,7 +301,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../../stores/user'
 import { useRouter } from 'vue-router'
 import { getAllProjects } from '../../api/project'
-import { getTaskList, getProjectTasks, updateTask, getTaskComments } from '../../api/task'
+import { getTaskList, getProjectTasks, updateTask, getTaskComments, getAllUserTasks, getUserTasksByStatus, getCurrentUserTaskStats } from '../../api/task'
 import type { TaskDetail, Project } from '../../types/task'
 import dayjs from 'dayjs'
 
@@ -358,11 +367,11 @@ const fetchProjects = async () => {
     }
   } catch (error) {
     console.error('获取项目列表失败:', error)
-    ElMessage.error('获取项目列表失败')
+    ElMessage.error('Get project list failed')
   }
 }
 
-// 获取任务列表
+// 获取当前用户的任务列表
 const fetchTasks = async () => {
   loading.value = true
   try {
@@ -376,26 +385,42 @@ const fetchTasks = async () => {
       console.log('项目任务API响应:', res)
       
       if (res && res.data) {
-        // 项目任务API直接返回{total, items}格式
-        taskData = res.data.items || []
+        // 统一处理项目任务数据
+        const responseData = res.data as any
+        
+        // 标准响应格式：res.data.data.items
+        if (responseData.data && responseData.data.items) {
+          taskData = responseData.data.items
+        } 
+        // 直接返回items格式
+        else if (responseData.items) {
+          taskData = responseData.items
+        }
+        // 直接返回数组格式
+        else if (Array.isArray(responseData)) {
+          taskData = responseData
+        }
       }
     } else {
-      // 获取所有任务
-      const res = await getTaskList({
-        keyword: searchText.value || undefined
-      })
-      console.log('所有任务API响应:', res)
+      // 获取当前用户的所有任务
+      const res = await getAllUserTasks()
+      console.log('用户任务API响应:', res)
       
       if (res && res.data) {
-        // 处理不同的响应格式
-        if (res.data.code === 1 && res.data.data && res.data.data.items) {
-          taskData = res.data.data.items
-        } else if (res.data.items) {
-          taskData = res.data.items
-        } else if (Array.isArray(res.data)) {
-          taskData = res.data
-        } else {
-          console.error('任务数据格式不符合预期:', res.data)
+        // 统一处理用户任务数据
+        const responseData = res.data as any
+        
+        // 标准响应格式：res.data.data.items
+        if (responseData.data && responseData.data.items) {
+          taskData = responseData.data.items
+        } 
+        // 直接返回items格式
+        else if (responseData.items) {
+          taskData = responseData.items
+        }
+        // 直接返回数组格式
+        else if (Array.isArray(responseData)) {
+          taskData = responseData
         }
       }
     }
@@ -491,7 +516,7 @@ watch(searchText, () => {
 // 在组件挂载时初始化数据
 onMounted(async () => {
   await fetchProjects() // 先获取项目列表
-  fetchTasks()          // 再获取任务列表
+  fetchTasks()          // 再获取当前用户的任务列表
 })
 
 // 按状态分组的任务列表
@@ -540,12 +565,12 @@ const handleFinish = async (task: TaskDetail) => {
     
     await updateTask(task.id.toString(), { status: 2 })
     task.status = 2
-    ElMessage.success('任务已完成')
+    ElMessage.success('Task completed')
     fetchTasks() // 重新获取最新数据
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('更新任务状态失败:', error)
-      ElMessage.error('操作失败')
+      console.error('Update task status failed:', error)
+      ElMessage.error('Operation failed')
     }
   }
 }
@@ -564,9 +589,9 @@ const handleAddMember = (task: TaskDetail) => {
 }
 
 const handleRemoveMember = (task: TaskDetail, member: string) => {
-  ElMessageBox.confirm(`确认将 ${member} 从任务中移除？`, '提示', {
-    confirmButtonText: '确认',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm(`Confirm to remove ${member} from the task?`, 'Tips', {
+    confirmButtonText: 'Confirm',
+    cancelButtonText: 'Cancel',
     type: 'warning'
   }).then(async () => {
     const index = task.members.indexOf(member)
@@ -577,11 +602,11 @@ const handleRemoveMember = (task: TaskDetail, member: string) => {
       try {
         await updateTask(task.id.toString(), { members: updatedMembers })
         task.members = updatedMembers
-        ElMessage.success('成员已移除')
+        ElMessage.success('Member removed')
         fetchTasks() // 重新获取最新数据
       } catch (error) {
-        console.error('移除成员失败:', error)
-        ElMessage.error('操作失败')
+        console.error('Remove member failed:', error)
+        ElMessage.error('Operation failed')
       }
     }
   }).catch(() => {})
@@ -601,22 +626,36 @@ const handleTaskClick = (task: TaskDetail) => {
 
 const handleProcess = async (task: TaskDetail) => {
   try {
-    await ElMessageBox.confirm('确认将任务标记为进行中？', '提示', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm('Confirm to mark the task as in progress?', 'Tips', {
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
       type: 'warning'
     })
     
     await updateTask(task.id.toString(), { status: 1 })
     task.status = 1
-    ElMessage.success('任务已开始处理')
+    ElMessage.success('Task started')
     fetchTasks() // 重新获取最新数据
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('更新任务状态失败:', error)
-      ElMessage.error('操作失败')
+      console.error('Update task status failed:', error)
+      ElMessage.error('Operation failed')
     }
   }
+}
+
+// 检查任务是否已过期
+const isTaskExpired = (task: TaskDetail): boolean => {
+  if (!task.deadline && !task.dueTime) return false;
+  
+  const deadlineStr = task.deadline || task.dueTime;
+  if (!deadlineStr) return false;
+  
+  const deadline = new Date(deadlineStr);
+  const now = new Date();
+  
+  // 如果任务未完成且已过截止日期，则认为已过期
+  return task.status !== 2 && deadline < now;
 }
 </script>
 
@@ -1173,5 +1212,10 @@ const handleProcess = async (task: TaskDetail) => {
 
 .task-card[data-priority="LOW"] {
   border-left-color: #67C23A;
+}
+
+.expired-date {
+  color: #f56c6c;
+  font-weight: 600;
 }
 </style>

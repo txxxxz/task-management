@@ -10,9 +10,16 @@
       <div class="gantt-header">
         <!-- 靠左展示 -->
         <div class="gantt-controls" style="text-align: left;">
-          <el-button type="primary" @click="fetchTasks" >
-            <el-icon><Refresh /></el-icon> Refresh
-          </el-button>
+          
+          
+          <!-- 添加显示已完成任务的开关 -->
+          <el-switch
+            v-model="showCompletedTasks"
+            active-text="Show completed tasks"
+            inactive-text="Hide completed tasks"
+            class="task-switch"
+            @change="updateGanttWithTaskFilter"
+          />
         </div>
       </div>
       
@@ -23,13 +30,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, onUnmounted, onActivated } from 'vue'
 import { Search, Refresh, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import Gantt from 'frappe-gantt'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { getTaskList } from '@/api/task'
 import type { TaskDetail } from '@/types/task'
+import { useUserStore } from '@/stores/user'
+
+// 是否显示已完成的任务
+const showCompletedTasks = ref(false)
 
 // 计算当前一周的开始（周一）和结束（周日）日期
 const weekStart = computed(() => {
@@ -359,12 +370,433 @@ const updateGanttChart = () => {
   }
 }
 
+// 自定义更新表头，将每个 header cell 修改为两行显示：星期和日期
+const customizeHeader = () => {
+  try {
+    console.log('开始自定义表头...')
+    
+    // 增加延迟确保DOM完全渲染
+    setTimeout(() => {
+      // 尝试多种可能的选择器找到表头单元格
+      const selectors = [
+        '.gantt .grid-header .grid-header-cell',
+        '.gantt .grid-header-cell',
+        '.gantt .grid-row .grid-header-cell',
+        '.gantt [class*="header"] [class*="cell"]',
+        '.gantt svg .tick'
+      ]
+      
+      let headerCells = null
+      let usedSelector = ''
+      
+      // 遍历尝试选择器
+      for (const selector of selectors) {
+        const cells = document.querySelectorAll(selector)
+        if (cells && cells.length > 0) {
+          headerCells = cells
+          usedSelector = selector
+          console.log(`找到表头元素，使用选择器: ${usedSelector}，数量: ${cells.length}`)
+          break
+        }
+      }
+      
+      if (!headerCells || headerCells.length === 0) {
+        console.warn('所有选择器都未找到甘特图表头元素，跳过自定义表头处理')
+        return
+      }
+      
+      // 获取今天的日期，用于高亮显示
+      const today = dayjs().format('YYYY-MM-DD')
+      console.log('今天日期:', today)
+      
+      // 先移除所有已有的today-highlight类，防止重复添加
+      document.querySelectorAll('.today-highlight').forEach(element => {
+        element.classList.remove('today-highlight')
+      })
+      
+      // 记录是否找到今天日期
+      let foundToday = false
+      
+      headerCells.forEach((cell: Element, index: number) => {
+        if (!cell) return
+        
+        const cellElement = cell as HTMLElement
+        const dateText = cellElement.innerText ? cellElement.innerText.trim() : ''
+        
+        if (!dateText) {
+          // 对于空文本的情况，可能是svg中的tick元素
+          if (usedSelector.includes('tick')) {
+            try {
+              // 尝试从SVG tick元素中获取日期信息
+              const transform = cellElement.getAttribute('transform')
+              if (transform) {
+                // 对于SVG tick，位置可能和日期相关
+                const match = transform.match(/translate\((\d+)/)
+                if (match && match[1]) {
+                  const position = parseInt(match[1])
+                  console.log(`SVG tick位置: ${position}`)
+                }
+              }
+            } catch (e) {
+              console.warn('处理SVG tick元素出错:', e)
+            }
+          }
+          return
+        }
+        
+        try {
+          // 保存原始日期文本到data-date属性，用于后续比较
+          const originalDate = dateText
+          cellElement.setAttribute('data-date', originalDate)
+          
+          // 尝试解析日期
+          let dateObj = dayjs(originalDate)
+          
+          // 如果解析失败，尝试使用其他格式
+          if (!dateObj.isValid()) {
+            // 可能只有日期数字，如"26"
+            if (/^\d{1,2}$/.test(dateText)) {
+              // 假设是当前月份的某一天
+              const currentMonth = dayjs().month()
+              const currentYear = dayjs().year()
+              dateObj = dayjs(new Date(currentYear, currentMonth, parseInt(dateText)))
+            } else {
+              // 尝试其他常见格式
+              const formats = ['MMM DD', 'DD MMM', 'M/D', 'D/M', 'YYYY-MM-DD', 'MM/DD']
+              for (const format of formats) {
+                dateObj = dayjs(dateText, format)
+                if (dateObj.isValid()) break
+              }
+            }
+          }
+          
+          // 如果所有尝试都失败，记录错误并继续
+          if (!dateObj.isValid()) {
+            console.warn('无法解析日期文本:', dateText)
+            return
+          }
+          
+          const weekday = getWeekdayLabel(dateObj)
+          const formattedDate = dateObj.format('MMM DD') // 英文月份显示
+          
+          // 将原始日期格式保存为YYYY-MM-DD格式，用于比较
+          const dateForComparison = dateObj.format('YYYY-MM-DD')
+          cellElement.setAttribute('data-full-date', dateForComparison)
+          
+          // 如果是当天，添加特殊标记，使用英文
+          const isToday = dateForComparison === today
+          const todayMark = isToday ? '<span class="today-mark">Today</span>' : ''
+          
+          cellElement.innerHTML = `
+            <div class="date-header">
+              <div class="weekday">${weekday} ${todayMark}</div>
+              <div class="date">${formattedDate}</div>
+            </div>
+          `
+          
+          // 如果是当天，添加高亮类，并记录详细日志
+          if (isToday) {
+            console.log('找到今天的单元格:', index, dateForComparison)
+            foundToday = true
+            
+            // 明确给当前单元格添加today-highlight类
+            cellElement.classList.add('today-highlight')
+            
+            // 找到对应的列并添加高亮样式
+            const columnIndex = Array.from(headerCells).indexOf(cell)
+            if (columnIndex !== -1) {
+              console.log('今天列的索引:', columnIndex)
+              
+              // 给甘特图中对应的时间列添加高亮样式
+              // 尝试多种方式查找对应的列
+              try {
+                // 方法1: 使用grid-cell
+                const columns = document.querySelectorAll('.gantt .grid-row .grid-cell')
+                if (columns && columns.length > 0) {
+                  const columnsPerRow = headerCells.length
+                  
+                  let highlightedCount = 0
+                  for (let i = 0; i < columns.length; i++) {
+                    if (i % columnsPerRow === columnIndex) {
+                      const column = columns[i] as HTMLElement
+                      column.classList.add('today-highlight')
+                      highlightedCount++
+                    }
+                  }
+                  
+                  console.log(`成功高亮了${highlightedCount}个单元格`)
+                }
+                
+                // 方法2: 尝试查找SVG中的矩形元素
+                const svgRects = document.querySelectorAll('.gantt svg rect')
+                if (svgRects && svgRects.length > 0) {
+                  // 计算今天矩形元素的大致x坐标
+                  // 假设单元格宽度固定，则x位置应该与索引成比例
+                  const firstRect = svgRects[0] as SVGRectElement
+                  const lastRect = svgRects[svgRects.length - 1] as SVGRectElement
+                  const totalWidth = parseFloat(lastRect.getAttribute('x') || '0') - parseFloat(firstRect.getAttribute('x') || '0')
+                  const cellWidth = totalWidth / (headerCells.length || 1)
+                  const todayX = parseFloat(firstRect.getAttribute('x') || '0') + (columnIndex * cellWidth)
+                  
+                  let svgHighlightCount = 0
+                  svgRects.forEach((rect, idx) => {
+                    const rectX = parseFloat(rect.getAttribute('x') || '0')
+                    // 如果矩形的x位置接近今天的计算位置，添加今日高亮
+                    if (Math.abs(rectX - todayX) < cellWidth / 2) {
+                      // 创建一个今日高亮矩形
+                      const svgRect = rect as SVGElement
+                      if (!svgRect.classList.contains('today-highlight')) {
+                        svgRect.classList.add('today-highlight')
+                        svgHighlightCount++
+                      }
+                    }
+                  })
+                  
+                  console.log(`成功高亮了${svgHighlightCount}个SVG矩形`)
+                }
+              } catch (e) {
+                console.error('添加列高亮时出错:', e)
+              }
+            }
+          }
+        } catch (error) {
+          console.error('处理表头日期时出错:', error)
+        }
+      })
+      
+      if (!foundToday) {
+        console.warn('未在表头中找到今天的日期，将尝试其他方式高亮今天')
+        // 尝试直接给SVG中的某些元素添加今日高亮
+        // 这是一个备选方案，直接查找包含今天日期的SVG元素
+        try {
+          // 注入一个today-highlight元素
+          const svgContainer = document.querySelector('.gantt svg')
+          if (svgContainer) {
+            // 查找SVG元素的宽高
+            const width = parseInt(svgContainer.getAttribute('width') || '800')
+            const height = parseInt(svgContainer.getAttribute('height') || '400')
+            
+            // 计算今天在时间轴上的大致位置
+            // 这里假设gantt图表示一个月的数据，将时间轴均分
+            const daysInMonth = dayjs().daysInMonth()
+            const dayOfMonth = dayjs().date()
+            const percentageOfMonth = dayOfMonth / daysInMonth
+            const xPosition = Math.floor(width * percentageOfMonth)
+            
+            // 创建今日高亮元素
+            const todayHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+            todayHighlight.setAttribute('class', 'today-highlight')
+            todayHighlight.setAttribute('x', `${xPosition - 2}`)
+            todayHighlight.setAttribute('y', '0')
+            todayHighlight.setAttribute('width', '4')
+            todayHighlight.setAttribute('height', `${height}`)
+            todayHighlight.setAttribute('fill', 'rgba(24, 144, 255, 0.15)')
+            todayHighlight.setAttribute('stroke', '#1890ff')
+            todayHighlight.setAttribute('stroke-width', '2')
+            
+            svgContainer.appendChild(todayHighlight)
+            console.log('手动添加了今日高亮SVG元素')
+          }
+        } catch (e) {
+          console.error('尝试手动添加今日高亮失败:', e)
+        }
+      }
+      
+      // 自动滚动到今天日期
+      setTimeout(() => {
+        scrollToToday()
+      }, 100)
+    }, 200) // 增加延迟确保DOM渲染完成
+  } catch (error) {
+    console.error('自定义表头处理总体失败:', error)
+  }
+}
+
+// 改进自动滚动到今天的功能
+const scrollToToday = () => {
+  try {
+    console.log('尝试滚动到今天日期')
+    
+    // 获取今天的日期字符串
+    const today = dayjs().format('YYYY-MM-DD')
+    
+    // 先尝试直接用今天的高亮元素滚动方法
+    const todayElement = document.querySelector('.gantt .today-highlight')
+    if (todayElement) {
+      console.log('找到今天的元素，使用scrollIntoView方法')
+      // 使用scrollIntoView方法更可靠地滚动到今天
+      todayElement.scrollIntoView({ 
+        inline: 'center',  // 水平居中
+        behavior: 'smooth' // 平滑滚动
+      })
+      return // 如果成功执行，直接返回
+    }
+    
+    // 如果上面的方法失败，尝试原来的方法
+    // 首先尝试通过data-full-date属性查找今天的元素
+    let todayHeaderElement = null
+    const headerCells = document.querySelectorAll('.gantt .grid-header .grid-header-cell')
+    
+    for (let i = 0; i < headerCells.length; i++) {
+      const cell = headerCells[i] as HTMLElement
+      const fullDate = cell.getAttribute('data-full-date')
+      
+      if (fullDate === today) {
+        todayHeaderElement = cell
+        console.log('通过data-full-date找到今天的元素:', fullDate)
+        break
+      }
+    }
+    
+    if (todayHeaderElement) {
+      // 查找正确的滚动容器
+      // frappe-gantt使用.gantt .scroll-container作为滚动容器
+      const scrollContainers = [
+        document.querySelector('.gantt .scroll-container'),
+        document.querySelector('.gantt .grid'),
+        document.querySelector('.gantt')
+      ]
+      
+      // 使用第一个找到的有效容器
+      const scrollContainer = scrollContainers.find(el => el !== null)
+      
+      if (scrollContainer) {
+        console.log('找到滚动容器:', scrollContainer)
+        
+        // 使用requestAnimationFrame确保DOM已完全渲染
+        requestAnimationFrame(() => {
+          // 计算滚动位置，使今天居中
+          const todayRect = todayHeaderElement!.getBoundingClientRect()
+          const containerRect = scrollContainer.getBoundingClientRect()
+          
+          // 获取甘特图左侧边栏的宽度
+          const sidebarWidth = document.querySelector('.gantt .grid-header-row')?.clientWidth || 0
+          
+          // 今天的列与容器左边的距离（考虑可能存在的左侧边栏）
+          const offsetFromContainerLeft = todayRect.left - containerRect.left
+          
+          // 滚动到的位置：使今天居中
+          const scrollTo = Math.max(0, offsetFromContainerLeft - (containerRect.width / 2) + (todayRect.width / 2))
+          
+          console.log('滚动位置计算:', {
+            todayLeft: todayRect.left,
+            containerLeft: containerRect.left,
+            containerWidth: containerRect.width,
+            todayWidth: todayRect.width,
+            offsetFromContainerLeft,
+            sidebarWidth,
+            scrollTo
+          })
+          
+          // 尝试两种滚动方法
+          // 1. 使用scrollLeft属性
+          scrollContainer.scrollLeft = scrollTo
+          
+          // 2. 如果第一种方法不奏效，使用scrollTo方法
+          setTimeout(() => {
+            if (Math.abs(scrollContainer.scrollLeft - scrollTo) > 5) {
+              console.log('使用scrollTo方法尝试滚动')
+              try {
+                scrollContainer.scrollTo({
+                  left: scrollTo,
+                  behavior: 'smooth'
+                })
+              } catch (e) {
+                console.error('scrollTo方法失败:', e)
+              }
+            }
+          }, 50)
+        })
+      } else {
+        console.warn('未找到有效的滚动容器')
+      }
+    } else {
+      console.warn('未找到今天的日期元素')
+    }
+  } catch (error) {
+    console.error('滚动到今天失败:', error)
+  }
+}
+
+// 获取星期几
+const getWeekdayLabel = (dateObj: dayjs.Dayjs) => {
+  const weekDayMap: Record<number, string> = {
+    0: 'Sun',
+    1: 'Mon',
+    2: 'Tue',
+    3: 'Wed',
+    4: 'Thu',
+    5: 'Fri',
+    6: 'Sat'
+  }
+  return weekDayMap[dateObj.day()] || ''
+}
+
+// 更新甘特图，应用任务过滤
+const updateGanttWithTaskFilter = () => {
+  if (!ganttChart) {
+    console.warn('甘特图尚未初始化')
+    return
+  }
+  
+  try {
+    // 获取所有任务
+    const allTasks = convertTasksToGanttFormat()
+    
+    // 根据开关状态决定是否过滤掉已完成任务
+    const filteredTasks = showCompletedTasks.value 
+      ? allTasks 
+      : allTasks.filter(task => task.status !== 'completed')
+    
+    console.log('甘特图任务过滤:', {
+      显示已完成任务: showCompletedTasks.value,
+      总任务数: allTasks.length,
+      显示任务数: filteredTasks.length,
+      已过滤完成任务数: allTasks.length - filteredTasks.length
+    })
+    
+    // 更新甘特图数据
+    if (filteredTasks.length > 0) {
+      ganttChart.refresh(filteredTasks)
+      
+      // 延迟处理表头和定位到今天
+      setTimeout(() => {
+        customizeHeader()
+        
+        // 在任务过滤后，延迟执行滚动到今天的操作
+        setTimeout(() => {
+          scrollToToday()
+        }, 150)
+      }, 100)
+    } else {
+      console.warn('过滤后没有可显示的任务')
+      ElMessage.warning('No tasks to display after filtering')
+    }
+  } catch (error) {
+    console.error('更新甘特图任务过滤失败:', error)
+    ElMessage.error('Failed to update task filter')
+  }
+}
+
 // 初始化甘特图
 const initGantt = () => {
   if (!ganttContainer.value) return
   
   try {
-    const ganttTasks = convertTasksToGanttFormat()
+    // 获取所有任务
+    const allTasks = convertTasksToGanttFormat()
+    
+    // 根据开关状态决定是否过滤掉已完成任务
+    const ganttTasks = showCompletedTasks.value 
+      ? allTasks 
+      : allTasks.filter(task => task.status !== 'completed')
+    
+    console.log('甘特图任务数量:', {
+      显示已完成任务: showCompletedTasks.value,
+      总任务数: allTasks.length,
+      显示任务数: ganttTasks.length,
+      已过滤完成任务数: allTasks.length - ganttTasks.length
+    })
     
     // 确保有任务数据
     if (!ganttTasks || ganttTasks.length === 0) {
@@ -384,11 +816,47 @@ const initGantt = () => {
       return
     }
     
-    // 获取今天的日期
+    // 获取今天的日期和所有任务的日期范围
     const today = dayjs().startOf('day')
-    // 确保显示当前日期，计算合适的开始和结束日期
-    const startDate = today.subtract(2, 'day').toDate()
-    const endDate = today.add(10, 'day').toDate()
+    
+    // 获取任务的最早和最晚日期
+    let earliestDate = today.toDate()
+    let latestDate = today.add(1, 'month').toDate()
+    
+    // 如果有任务数据，计算其日期范围
+    if (validTasks.length > 0) {
+      validTasks.forEach(task => {
+        if (task.start && task.start < earliestDate) {
+          earliestDate = task.start
+        }
+        if (task.end && task.end > latestDate) {
+          latestDate = task.end
+        }
+      })
+    }
+    
+    // 确保日期范围包含今天
+    // 如果最早日期比今天晚，使用今天作为开始
+    if (dayjs(earliestDate).isAfter(today)) {
+      earliestDate = today.toDate()
+    }
+    
+    // 如果最晚日期比今天+1个月早，使用今天+1个月作为结束
+    if (dayjs(latestDate).isBefore(today.add(1, 'month'))) {
+      latestDate = today.add(1, 'month').toDate()
+    }
+    
+    // 扩展日期范围，确保图表左侧有足够空间显示今天
+    const startDate = dayjs(earliestDate).subtract(5, 'day').toDate()
+    const endDate = dayjs(latestDate).add(5, 'day').toDate()
+    
+    console.log('甘特图时间范围:', {
+      today: today.format('YYYY-MM-DD'),
+      earliestTaskDate: dayjs(earliestDate).format('YYYY-MM-DD'),
+      latestTaskDate: dayjs(latestDate).format('YYYY-MM-DD'),
+      startDate: dayjs(startDate).format('YYYY-MM-DD'),
+      endDate: dayjs(endDate).format('YYYY-MM-DD')
+    })
     
     // 确保日期有效
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
@@ -399,7 +867,7 @@ const initGantt = () => {
     
     ganttChart = new Gantt(ganttContainer.value, validTasks, {
       header_height: 60,
-      column_width: 120,
+      column_width: 30, // 减小列宽，使一屏能显示更多天
       step: 24,
       view_modes: ['Day', 'Week', 'Month'],
       bar_height: 40,
@@ -425,154 +893,194 @@ const initGantt = () => {
         console.log('视图变更:', mode)
         setTimeout(() => {
           customizeHeader()
-        }, 50) // 增加延迟确保DOM渲染完成
+          injectTodayHighlightStyles() // 在视图变更后重新注入SVG样式
+        }, 100) // 增加延迟确保DOM渲染完成
       }
     })
 
-    // 增加延迟确保DOM完全渲染
-    setTimeout(() => {
-      customizeHeader()
-    }, 100)
+    // 动态注入样式，特别针对SVG元素使用fill和stroke
+    const injectTodayHighlightStyles = () => {
+      // 移除可能已存在的样式元素
+      const existingStyles = document.getElementById('custom-gantt-today-styles')
+      if (existingStyles) {
+        existingStyles.remove()
+      }
+      
+      // 创建新的样式元素，使用SVG属性 - 使用深蓝色系替代红色系
+      const styleElement = document.createElement('style')
+      styleElement.id = 'custom-gantt-today-styles'
+      styleElement.innerHTML = `
+        /* 今日高亮SVG元素样式 - 使用深蓝色系 */
+        .gantt rect.today-highlight {
+          fill: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
+          stroke: #1890ff !important; /* 蓝色边框 */
+          stroke-width: 2px !important; /* 边框宽度 */
+          filter: drop-shadow(0 0 3px rgba(24, 144, 255, 0.4)) !important; /* 蓝色阴影效果 */
+        }
+        
+        /* 表头样式（非SVG部分） */
+        .gantt .grid-header .grid-header-cell.today-highlight,
+        .gantt .grid-header .today-highlight {
+          background-color: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
+          border-top: 3px solid #1890ff !important; /* 蓝色顶部边框 */
+          box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2) !important; /* 柔和阴影 */
+        }
+        
+        /* 表头内的文字样式 */
+        .gantt .grid-header .today-highlight .weekday,
+        .gantt .grid-header .grid-header-cell.today-highlight .weekday,
+        .gantt .grid-header .today-highlight .date,
+        .gantt .grid-header .grid-header-cell.today-highlight .date {
+          color: #1890ff !important; /* 蓝色文字 */
+          font-weight: 800 !important;
+        }
+        
+        /* Today标签 */
+        .gantt .date-header .today-mark {
+          display: inline-block !important;
+          padding: 0 6px !important;
+          background-color: #1890ff !important; /* 蓝色背景 */
+          color: white !important;
+          border-radius: 4px !important;
+          font-size: 12px !important;
+          margin-left: 4px !important;
+          font-weight: bold !important;
+          box-shadow: 0 2px 4px rgba(24, 144, 255, 0.4) !important;
+        }
+      `
+      
+      // 将样式添加到文档末尾
+      document.head.appendChild(styleElement)
+      console.log('动态注入SVG今日高亮样式 - 深蓝色系')
+      
+      // 直接修改SVG元素
+      setTimeout(() => {
+        try {
+          // 使用确定有效的选择器
+          const todayTicks = document.querySelectorAll('.gantt rect.today-highlight')
+          
+          if (todayTicks && todayTicks.length > 0) {
+            console.log(`找到今日高亮SVG元素，数量: ${todayTicks.length}`)
+            
+            // 修改SVG元素样式为深蓝色
+            todayTicks.forEach((tick: Element) => {
+              const svgRect = tick as SVGElement
+              svgRect.setAttribute('fill', 'rgba(24, 144, 255, 0.15)')
+              svgRect.setAttribute('stroke', '#1890ff')
+              svgRect.setAttribute('stroke-width', '2')
+            })
+            
+            console.log('成功修改了今日高亮SVG元素样式为深蓝色系')
+          }
+        } catch (error) {
+          console.error('修改SVG元素失败:', error)
+        }
+      }, 100)
+    }
+    
+    // 大幅精简调试函数，只保留核心功能
+    const debugGanttDomStructure = () => {
+      // 检查样式表是否被正确添加
+      const styleElement = document.getElementById('custom-gantt-today-styles')
+      if (!styleElement) {
+        console.warn('未找到自定义样式元素')
+      }
+    }
+
+    // 确保直接定位到今天的日期
+    // 使用滚动到今天的直接方法 - 参考GitHub issue中的解决方案
+    const scrollTodayWithRetry = () => {
+      // 添加延迟以确保DOM渲染完成
+      setTimeout(() => {
+        customizeHeader() // 首先确保添加today-highlight等标记
+        injectTodayHighlightStyles() // 注入SVG样式
+        
+        // 再延迟一点执行滚动
+        setTimeout(() => {
+          scrollToToday() // 尝试滚动到今天
+        }, 100)
+      }, 200)
+    }
+
+    // 增加延迟确保DOM完全渲染后执行滚动
+    // 使用多个延迟尝试，确保在DOM完全渲染后执行
+    const delays: number[] = [300, 600, 1000]
+    delays.forEach((delay: number) => {
+      setTimeout(() => {
+        customizeHeader()
+        injectTodayHighlightStyles() // 每次都注入SVG样式
+        // 每次自定义表头后尝试滚动到今天
+        setTimeout(() => {
+          scrollToToday()
+        }, 100)
+      }, delay)
+    })
+    
+    // 首次加载立即尝试执行一次
+    scrollTodayWithRetry()
   } catch (error) {
     console.error('初始化甘特图失败:', error)
     ElMessage.error('初始化甘特图失败')
   }
 }
 
-// 自定义更新表头，将每个 header cell 修改为两行显示：星期和日期
-const customizeHeader = () => {
-  try {
-    console.log('开始自定义表头...')
-    const headerCells = document.querySelectorAll('.gantt .grid-header .grid-header-cell')
-    if (!headerCells || headerCells.length === 0) {
-      console.warn('未找到甘特图表头元素')
-      return
-    }
-    
-    // 获取今天的日期，用于高亮显示
-    const today = dayjs().format('YYYY-MM-DD')
-    console.log('今天日期:', today)
-    
-    headerCells.forEach((cell: Element, index: number) => {
-      if (!cell) return
-      
-      const cellElement = cell as HTMLElement
-      const dateText = cellElement.innerText ? cellElement.innerText.trim() : ''
-      
-      if (!dateText) {
-        console.warn('表头单元格文本为空')
-        return
-      }
-      
-      try {
-        const dateObj = dayjs(dateText)
-        if (dateObj.isValid()) {
-          const weekday = getWeekdayLabel(dateObj)
-          const formattedDate = dateObj.format('MMM DD') // 英文月份显示
-          
-          // 如果是当天，添加特殊标记，使用英文
-          const isToday = dateObj.format('YYYY-MM-DD') === today
-          const todayMark = isToday ? '<span class="today-mark">Today</span>' : ''
-          
-          cellElement.innerHTML = `
-            <div class="date-header">
-              <div class="weekday">${weekday} ${todayMark}</div>
-              <div class="date">${formattedDate}</div>
-            </div>
-          `
-          
-          // 如果是当天，添加高亮类
-          if (isToday) {
-            console.log('找到今天的单元格:', index, dateObj.format('YYYY-MM-DD'))
-            // 找到对应的列并添加高亮样式
-            const columnIndex = Array.from(headerCells).indexOf(cell)
-            if (columnIndex !== -1) {
-              // 给甘特图中对应的时间列添加高亮样式
-              const columns = document.querySelectorAll('.gantt .grid-row .grid-cell')
-              const columnsPerRow = headerCells.length
-              
-              for (let i = 0; i < columns.length; i++) {
-                if (i % columnsPerRow === columnIndex) {
-                  (columns[i] as HTMLElement).classList.add('today-highlight')
-                }
-              }
-              
-              // 同时高亮表头单元格
-              cellElement.classList.add('today-highlight')
-            }
-          }
-        } else {
-          console.warn('无效的日期文本:', dateText)
-        }
-      } catch (error) {
-        console.error('处理表头日期时出错:', error)
-      }
-    })
-    
-    // 自动滚动到今天日期
-    setTimeout(() => {
-      scrollToToday()
-    }, 50)
-  } catch (error) {
-    console.error('自定义表头处理失败:', error)
-  }
-}
-
-// 添加自动滚动到今天的功能
-const scrollToToday = () => {
-  try {
-    console.log('尝试滚动到今天日期')
-    const todayElement = document.querySelector('.gantt .grid-header .today-highlight')
-    if (todayElement) {
-      console.log('找到今天的元素', todayElement)
-      const ganttEl = document.querySelector('.gantt')
-      if (ganttEl) {
-        console.log('找到甘特图元素', ganttEl)
-        // 计算滚动位置，使今天居中
-        const todayRect = todayElement.getBoundingClientRect()
-        const ganttRect = ganttEl.getBoundingClientRect()
-        const scrollLeft = todayRect.left - ganttRect.left - (ganttRect.width / 2) + (todayRect.width / 2)
-        
-        console.log('滚动位置计算:', {
-          todayLeft: todayRect.left,
-          ganttLeft: ganttRect.left,
-          ganttWidth: ganttRect.width,
-          todayWidth: todayRect.width,
-          scrollLeft: scrollLeft
-        })
-        
-        // 平滑滚动到今天
-        ganttEl.scrollLeft = scrollLeft > 0 ? scrollLeft : 0
-        console.log('设置滚动位置:', ganttEl.scrollLeft)
-      }
-    } else {
-      console.warn('未找到今天的高亮元素')
-    }
-  } catch (error) {
-    console.error('滚动到今天失败:', error)
-  }
-}
-
-// 获取星期几
-const getWeekdayLabel = (dateObj: dayjs.Dayjs) => {
-  const weekDayMap: Record<number, string> = {
-    0: 'Sun',
-    1: 'Mon',
-    2: 'Tue',
-    3: 'Wed',
-    4: 'Thu',
-    5: 'Fri',
-    6: 'Sat'
-  }
-  return weekDayMap[dateObj.day()] || ''
-}
-
 onMounted(() => {
   fetchTasks() // 组件挂载后获取任务数据
+  
+  // 监听页面可见性变化，当用户从其他标签页切换回来时，重新定位到今天
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible' && ganttChart) {
+      console.log('页面重新获得焦点，尝试重新定位到今天')
+      // 延迟执行，确保DOM已更新
+      setTimeout(() => {
+        customizeHeader()
+        scrollToToday()
+      }, 300)
+    }
+  }
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // 每30秒检查一次，如果跨越了午夜时间点，则刷新今日高亮
+  // 这对长时间打开的页面特别重要
+  let lastDate = new Date().getDate()
+  const dateCheckTimer = setInterval(() => {
+    const currentDate = new Date().getDate()
+    
+    // 如果日期变了（跨越了午夜），则刷新高亮
+    if (currentDate !== lastDate) {
+      console.log('检测到日期变化，更新今日高亮')
+      lastDate = currentDate
+      
+      // 完全刷新甘特图和今日高亮
+      if (ganttChart) {
+        customizeHeader()
+        scrollToToday()
+      }
+    }
+  }, 30000) // 每30秒检查一次
+  
+  // 保存引用以便在组件卸载时移除
+  onUnmounted(() => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    clearInterval(dateCheckTimer) // 清除定时器
+  })
 })
 
 watch([currentDate], () => {
   updateGanttTimeRange()
+})
+
+// 添加onActivated钩子，当组件被keep-alive激活时调用
+// 这确保当用户从其他路由返回到甘特图时，能重新定位到今天
+onActivated(() => {
+  console.log('甘特图视图被激活，尝试重新定位到今天')
+  if (ganttChart) {
+    setTimeout(() => {
+      customizeHeader()
+      scrollToToday()
+    }, 200)
+  }
 })
 </script>
 
@@ -609,6 +1117,25 @@ watch([currentDate], () => {
 .gantt-controls {
   display: flex;
   gap: 16px;
+  align-items: center;
+}
+
+/* 任务开关样式 */
+.task-switch {
+  margin-left: 16px;
+}
+
+.task-switch :deep(.el-switch__label) {
+  font-size: 14px;
+  color: #606266;
+}
+
+.task-switch :deep(.el-switch__label.is-active) {
+  color: #409EFF;
+}
+
+.task-switch :deep(.el-switch__core) {
+  width: 50px !important;
 }
 
 .gantt-chart {
@@ -690,39 +1217,48 @@ watch([currentDate], () => {
   color: #8c9fba;
 }
 
-.gantt .date-header .today-mark {
-  display: inline-block;
-  padding: 0 4px;
-  background-color: #FAAD14; /* 使用黄色背景 */
-  color: white;
-  border-radius: 4px;
-  font-size: 12px;
-  margin-left: 4px;
-  font-weight: bold;
+/* 今日高亮相关的所有样式 - 合并为一处统一管理 */
+/* 使用SVG属性fill和stroke，而非CSS的background-color和border */
+/* 今日列的背景和边框 */
+.gantt .tick.today rect {
+  fill: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
+  stroke: #1890ff !important; /* 蓝色描边 */
+  stroke-width: 2px !important; /* 描边宽度 */
 }
 
-/* 今日高亮样式 */
-.gantt .today-highlight {
-  background-color: #FFF7E6 !important; /* 鲜艳的黄色背景 */
-  border-left: 4px solid #FAAD14 !important; /* 加粗黄色边框 */
-  border-right: 4px solid #FAAD14 !important; /* 右侧也加粗边框 */
-  position: relative;
-  z-index: 1;
+/* 今日列的文本 */
+.gantt .tick.today text {
+  fill: #1890ff !important; /* 蓝色文字 */
+  font-weight: bold !important;
 }
 
-/* 今日单元格表头特殊样式 */
+/* 表头样式（非SVG部分，使用普通CSS属性） */
+.gantt .grid-header .grid-header-cell.today-highlight,
 .gantt .grid-header .today-highlight {
-  background-color: #FFDA85 !important; /* 表头使用更明显的黄色 */
+  background-color: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
+  border-top: 3px solid #1890ff !important; /* 顶部边框 */
 }
 
-.gantt .grid-header .today-highlight .weekday {
-  color: #D46B08 !important; /* 更改文字颜色为深橙色 */
-  font-weight: 800;
+/* 表头内的文字样式 */
+.gantt .grid-header .today-highlight .weekday,
+.gantt .grid-header .grid-header-cell.today-highlight .weekday,
+.gantt .grid-header .today-highlight .date,
+.gantt .grid-header .grid-header-cell.today-highlight .date {
+  color: #1890ff !important; /* 蓝色文字 */
+  font-weight: 800 !important;
 }
 
-.gantt .grid-header .today-highlight .date {
-  color: #D46B08 !important; /* 日期也使用深橙色 */
-  font-weight: bold;
+/* Today标签 */
+.gantt .date-header .today-mark {
+  display: inline-block !important;
+  padding: 0 6px !important;
+  background-color: #1890ff !important; /* 蓝色背景 */
+  color: white !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  margin-left: 4px !important;
+  font-weight: bold !important;
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.4) !important;
 }
 
 /* 弹窗样式 */

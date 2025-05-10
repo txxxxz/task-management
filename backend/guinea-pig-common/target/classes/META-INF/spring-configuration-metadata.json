@@ -21,15 +21,13 @@
     {
       "name": "guineapig.jwt.admin-ttl",
       "type": "java.lang.Long",
-      "sourceType": "com.taskManagement.properties.JwtProperties",
-      "defaultValue": 0
+      "sourceType": "com.taskManagement.properties.JwtProperties"
     },
     {
       "name": "guineapig.jwt.token-header",
       "type": "java.lang.String",
       "description": "Token头部信息",
-      "sourceType": "com.taskManagement.properties.JwtProperties",
-      "defaultValue": "token"
+      "sourceType": "com.taskManagement.properties.JwtProperties"
     },
     {
       "name": "guineapig.jwt.user-secret-key",
@@ -45,8 +43,7 @@
     {
       "name": "guineapig.jwt.user-ttl",
       "type": "java.lang.Long",
-      "sourceType": "com.taskManagement.properties.JwtProperties",
-      "defaultValue": 0
+      "sourceType": "com.taskManagement.properties.JwtProperties"
     }
   ],
   "hints": []

@@ -205,28 +205,17 @@ onUnmounted(() => {
 const formatNotificationContent = (content: string): string => {
   if (!content) return '';
   
-  // 替换 [null] 为 [Unnamed Task]
-  content = content.replace(/\[null\]/g, '[Unnamed Task]');
+  // 替换 [null] 或 [undefined] 为 [Unnamed Task]
+  content = content.replace(/\[(null|undefined)\]/g, '[Unnamed Task]');
   
-  // 检查是否是任务更新通知并提取任务ID
-  if (content.includes('任务') && content.includes('状态更新为')) {
-    // 将中文通知转为英文格式
-    content = content.replace(/任务\s*\[(.*?)\]\s*状态更新为\s*(.*)/, 'Task [$1] status updated to $2');
-    
-    // 尝试提取方括号内的任何内容
-    const bracketPattern = /\[(.*?)\]/g;
-    return content.replace(bracketPattern, (match, taskNameInBracket) => {
-      if (!taskNameInBracket || taskNameInBracket === 'null' || taskNameInBracket === 'undefined') {
-        return '[Unnamed Task]';
-      }
-      return match; // 保持原样
-    });
-  }
-  
-  // 将其他中文通知内容替换为英文
-  content = content.replace(/用户\s*\[(.*?)\]\s*在任务\s*\[(.*?)\]\s*中提到了你/, 'User [$1] mentioned you in task [$2]');
-  
-  return content;
+  // 尝试提取方括号内的任何内容
+  const bracketPattern = /\[(.*?)\]/g;
+  return content.replace(bracketPattern, (match, contentInBracket) => {
+    if (!contentInBracket || contentInBracket === 'null' || contentInBracket === 'undefined') {
+      return '[Unnamed Task]';
+    }
+    return match; // 保持原样
+  });
 }
 </script>
 

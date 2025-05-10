@@ -379,15 +379,15 @@ public class TaskServiceImpl implements TaskService {
     private String getStatusDescription(Integer status) {
         switch (status) {
             case 0:
-                return "待处理";
+                return "Pending";
             case 1:
-                return "进行中";
+                return "In Progress";
             case 2:
-                return "已完成";
+                return "Completed";
             case 3:
-                return "已取消";
+                return "Cancelled";
             default:
-                return "未知状态";
+                return "Unknown Status";
         }
     }
 
@@ -779,6 +779,17 @@ public class TaskServiceImpl implements TaskService {
         
         // 添加任务成员
         addTaskMember(taskId, user.getId());
+        
+        // 发送通知给被添加的成员
+        Task task = taskMapper.selectById(taskId);
+        if (task != null) {
+            Long currentUserId = BaseContext.getCurrentId();
+            User currentUser = userMapper.selectById(currentUserId);
+            String currentUsername = currentUser != null ? currentUser.getUsername() : "Unknown User";
+            String content = currentUsername + " added you to task [" + task.getName() + "]";
+            notificationService.createTaskUpdateNotification(taskId, content, user.getId());
+            log.info("已发送任务成员添加通知给用户: {}", username);
+        }
     }
     
     /**
@@ -850,6 +861,17 @@ public class TaskServiceImpl implements TaskService {
         
         // 删除成员关系
         taskMemberMapper.delete(queryWrapper);
+        
+        // 发送通知给被移除的成员
+        Task task = taskMapper.selectById(taskId);
+        if (task != null) {
+            Long currentUserId = BaseContext.getCurrentId();
+            User currentUser = userMapper.selectById(currentUserId);
+            String currentUsername = currentUser != null ? currentUser.getUsername() : "Unknown User";
+            String content = currentUsername + " removed you from task [" + task.getName() + "]";
+            notificationService.createTaskUpdateNotification(taskId, content, user.getId());
+            log.info("已发送任务成员移除通知给用户: {}", username);
+        }
     }
     
     /**

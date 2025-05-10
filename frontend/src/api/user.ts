@@ -11,7 +11,7 @@ export const login = (data: LoginParams) => {
 }
 
 // 用户注册
-export const register = (data: RegisterParams) => {
+export const register = (data: UserRegisterData) => {
   return request<ApiResponse<LoginResponse>>({
     url: '/auth/register',
     method: 'post',
@@ -233,6 +233,7 @@ export interface UserRegisterData {
   password: string
   email: string
   phone?: string
+  role?: number
 }
 
 /**
