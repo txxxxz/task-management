@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -146,6 +147,7 @@ public class TaskServiceImpl implements TaskService {
      * @param status 状态
      * @param priority 优先级
      * @param projectId 项目ID
+     * @param tags 标签
      * @param startTime 创建开始日期
      * @param endTime 创建结束日期
      * @param dueStartTime 截止开始日期
@@ -156,20 +158,20 @@ public class TaskServiceImpl implements TaskService {
      */
     @Override
     public Map<String, Object> getTaskList(String keyword, Integer status, Integer priority,
-                                          Long projectId, LocalDate startTime, LocalDate endTime,
+                                          Long projectId, String tags, LocalDate startTime, LocalDate endTime,
                                           LocalDate dueStartTime, LocalDate dueEndTime, Integer page, Integer pageSize) {
-        log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}, page={}, pageSize={}",
-                keyword, status, priority, projectId, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
+        log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, tags={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}, page={}, pageSize={}",
+                keyword, status, priority, projectId, tags, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
         
         // 使用LambdaQuery构建查询条件
         LambdaQueryWrapper<Task> queryWrapper = new LambdaQueryWrapper<>();
         
         // 添加关键词查询条件
         if (StringUtils.isNotEmpty(keyword)) {
-            queryWrapper.and(wrapper -> wrapper
-                .like(Task::getName, keyword)
-                .or()
-                .like(Task::getDescription, keyword)
+            queryWrapper.and(wrapper -> 
+                wrapper.like(Task::getName, keyword)
+                    .or()
+                    .like(Task::getDescription, keyword)
             );
         }
         
@@ -188,6 +190,29 @@ public class TaskServiceImpl implements TaskService {
             queryWrapper.eq(Task::getProjectId, projectId);
         }
         
+        // 添加标签过滤条件
+        if (StringUtils.isNotEmpty(tags)) {
+            // 标签ID以逗号分隔，转换为List<Long>
+            List<Long> tagIdList = Arrays.stream(tags.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotEmpty)
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            
+            if (!tagIdList.isEmpty()) {
+                // 查询包含指定标签的任务ID列表
+                List<Long> taskIds = taskTagService.getTaskIdsByTagIds(tagIdList);
+                if (taskIds.isEmpty()) {
+                    // 如果没有任务包含这些标签，则返回空结果
+                    Map<String, Object> emptyResult = new HashMap<>();
+                    emptyResult.put("total", 0);
+                    emptyResult.put("items", new ArrayList<>());
+                    return emptyResult;
+                }
+                queryWrapper.in(Task::getId, taskIds);
+            }
+        }
+        
         // 添加创建时间范围条件
         if (startTime != null) {
             // 转换为当日开始时间: 00:00:00
@@ -197,9 +222,7 @@ public class TaskServiceImpl implements TaskService {
         
         if (endTime != null) {
             // 转换为当日结束时间: 23:59:59.999999999
-            LocalDateTime endDateTime = LocalDateTime.of(endTime, LocalTime.MIN)
-                                                     .plusDays(1)
-                                                     .minusNanos(1);
+            LocalDateTime endDateTime = LocalDateTime.of(endTime, LocalTime.MAX);
             queryWrapper.le(Task::getCreateTime, endDateTime);
         }
         
@@ -524,6 +547,7 @@ public class TaskServiceImpl implements TaskService {
      * @param keyword 关键词
      * @param status 状态
      * @param priority 优先级
+     * @param tags 标签
      * @param startTime 创建开始日期
      * @param endTime 创建结束日期
      * @param dueStartTime 截止开始日期
@@ -534,10 +558,10 @@ public class TaskServiceImpl implements TaskService {
      */
     @Override
     public Map<String, Object> getProjectTasks(Long projectId, String keyword, Integer status,
-                                             Integer priority, LocalDate startTime, LocalDate endTime,
+                                             Integer priority, String tags, LocalDate startTime, LocalDate endTime,
                                              LocalDate dueStartTime, LocalDate dueEndTime, Integer page, Integer pageSize) {
-        log.info("获取项目任务列表: projectId={}, keyword={}, status={}, priority={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}, page={}, pageSize={}",
-                projectId, keyword, status, priority, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
+        log.info("获取项目任务列表: projectId={}, keyword={}, status={}, priority={}, tags={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}, page={}, pageSize={}",
+                projectId, keyword, status, priority, tags, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
         
         // 检查项目是否存在
         Project project = projectMapper.selectById(projectId);
@@ -568,6 +592,29 @@ public class TaskServiceImpl implements TaskService {
         // 添加优先级过滤条件
         if (priority != null) {
             queryWrapper.eq(Task::getPriority, priority);
+        }
+        
+        // 添加标签过滤条件
+        if (StringUtils.isNotEmpty(tags)) {
+            // 标签ID以逗号分隔，转换为List<Long>
+            List<Long> tagIdList = Arrays.stream(tags.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotEmpty)
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            
+            if (!tagIdList.isEmpty()) {
+                // 查询包含指定标签的任务ID列表
+                List<Long> taskIds = taskTagService.getTaskIdsByTagIds(tagIdList);
+                if (taskIds.isEmpty()) {
+                    // 如果没有任务包含这些标签，则返回空结果
+                    Map<String, Object> emptyResult = new HashMap<>();
+                    emptyResult.put("total", 0);
+                    emptyResult.put("items", new ArrayList<>());
+                    return emptyResult;
+                }
+                queryWrapper.in(Task::getId, taskIds);
+            }
         }
         
         // 添加创建时间范围条件
@@ -1066,7 +1113,7 @@ public class TaskServiceImpl implements TaskService {
         }
         
         // 获取项目任务列表（不分页，获取所有任务）
-        Map<String, Object> result = getProjectTasks(projectId, null, null, null, null, null, null, null, 1, 1000);
+        Map<String, Object> result = getProjectTasks(projectId, null, null, null, null, null, null, null, null, 1, 1000);
         
         List<TaskVO> taskVOList = new ArrayList<>();
         if (result.containsKey("items")) {

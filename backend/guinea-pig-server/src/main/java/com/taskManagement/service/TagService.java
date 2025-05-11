@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.taskManagement.entity.Tag;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -44,9 +45,11 @@ public interface TagService extends IService<Tag> {
      * @param page 分页参数
      * @param keyword 关键词
      * @param projectId 项目ID（可选，用于间接过滤与项目关联的任务的标签）
+     * @param startTime 创建开始时间
+     * @param endTime 创建结束时间
      * @return 分页标签列表
      */
-    Page<Tag> getTagList(Page<Tag> page, String keyword, Long projectId);
+    Page<Tag> getTagList(Page<Tag> page, String keyword, Long projectId, LocalDate startTime, LocalDate endTime);
     
     /**
      * 根据项目ID获取标签列表

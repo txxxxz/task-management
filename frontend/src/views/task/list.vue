@@ -7,7 +7,7 @@
         <div class="filter-row">
           <div class="filter-item-half">
             <el-form-item label="Name">
-              <el-input v-model="filterForm.name" placeholder="Please enter task name" clearable />
+              <el-input v-model="filterForm.name" placeholder="Please enter task name" clearable prefix-icon="Search"/>
             </el-form-item>
           </div>
           <div class="filter-item-half">
@@ -1356,6 +1356,21 @@ async function fetchProjectName(projectId: string): Promise<string | null> {
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 标签选项中的颜色点 */
+.color-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+/* 标签选项样式 */
+.tag-option {
+  display: flex;
+  align-items: center;
 }
 
 /* 响应式布局 */

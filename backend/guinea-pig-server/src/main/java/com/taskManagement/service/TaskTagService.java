@@ -71,6 +71,13 @@ public interface TaskTagService extends IService<TaskTag> {
     List<Long> getTaskIdsByTagId(Long tagId);
     
     /**
+     * 根据多个标签ID获取关联的所有任务ID
+     * @param tagIds 标签ID列表
+     * @return 任务ID列表
+     */
+    List<Long> getTaskIdsByTagIds(List<Long> tagIds);
+    
+    /**
      * 更新任务的标签关联
      * @param taskId 任务ID
      * @param tagIds 新的标签ID列表

@@ -168,6 +168,27 @@ public class TaskTagServiceImpl extends ServiceImpl<TaskTagRelMapper, TaskTag> i
     }
 
     @Override
+    public List<Long> getTaskIdsByTagIds(List<Long> tagIds) {
+        log.info("根据多个标签ID获取关联的所有任务ID: tagIds={}", tagIds);
+        
+        if (tagIds == null || tagIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        LambdaQueryWrapper<TaskTag> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(TaskTag::getTagId, tagIds)
+                  .select(TaskTag::getTaskId);
+        
+        List<TaskTag> taskTags = list(queryWrapper);
+        
+        // 去重
+        return taskTags.stream()
+                .map(TaskTag::getTaskId)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public boolean updateTaskTags(Long taskId, List<Long> tagIds) {
         log.info("更新任务的标签关联: taskId={}, tagIds={}", taskId, tagIds);

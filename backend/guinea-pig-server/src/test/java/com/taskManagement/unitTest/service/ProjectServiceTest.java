@@ -33,6 +33,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -323,44 +324,52 @@ public class ProjectServiceTest {
     @DisplayName("测试获取项目列表")
     public void testGetProjectList() {
         // 准备测试数据
-        String keyword = "测试";
+        String keyword = "测试项目";
         Integer status = 0;
         Integer page = 1;
         Integer pageSize = 10;
+        LocalDate startTime = null;
+        LocalDate endTime = null;
+        LocalDate dueStartTime = null;
+        LocalDate dueEndTime = null;
         
-        // 创建项目成员关系
-        List<ProjectMember> memberList = new ArrayList<>();
-        ProjectMember member = new ProjectMember();
-        member.setProjectId(1L);
-        member.setUserId(TEST_USER_ID);
-        memberList.add(member);
-        
-        // 创建项目列表
+        // 模拟数据库查询结果
         List<Project> projectList = new ArrayList<>();
-        projectList.add(createTestProject(1L));
+        Project project = new Project();
+        project.setId(1L);
+        project.setName("测试项目");
+        project.setStatus(0);
+        project.setCreateUser(1L);
+        projectList.add(project);
+        
+        Page<Project> mockPage = new Page<>();
+        mockPage.setRecords(projectList);
+        mockPage.setTotal(1);
+        
+        // 模拟ProjectMember关联查询结果
+        ProjectMember projectMember = new ProjectMember();
+        projectMember.setProjectId(1L);
+        projectMember.setUserId(1L);
+        List<ProjectMember> projectMembers = Collections.singletonList(projectMember);
         
         // 模拟Mapper行为
-        when(projectMemberMapper.selectList(any())).thenReturn(memberList);
-        when(projectMapper.selectList(any())).thenReturn(projectList);
+        when(projectMapper.selectPage(any(), any())).thenReturn(mockPage);
+        when(projectMemberMapper.selectList(any())).thenReturn(projectMembers);
         when(projectMemberMapper.selectCount(any())).thenReturn(1L);
         
-        // 模拟分页查询结果
-        Page<Project> pageResult = new Page<>(page - 1, pageSize);
-        pageResult.setRecords(projectList);
-        pageResult.setTotal(1);
-        when(projectMapper.selectPage(any(), any())).thenReturn(pageResult);
-        
         // 执行测试
-        PageResult<ProjectVO> result = projectService.getProjectList(keyword, status, page, pageSize);
+        PageResult<ProjectVO> result = projectService.getProjectList(keyword, status, page, pageSize, 
+                                                                    startTime, endTime, dueStartTime, dueEndTime);
         
         // 验证结果
         assertNotNull(result);
-        assertNotNull(result.getItems());
-        assertFalse(result.getItems().isEmpty());
+        assertEquals(1, result.getTotal());
         assertEquals(1, result.getItems().size());
-        assertEquals(Long.valueOf(1), result.getItems().get(0).getId());
+        assertEquals(1, result.getItems().get(0).getId());
+        assertEquals("测试项目", result.getItems().get(0).getName());
         
-        // 验证调用 - 不验证具体调用次数，因为在convertToVO中也可能调用
+        // 验证调用
+        verify(projectMapper, times(1)).selectPage(any(), any());
         verify(projectMemberMapper, atLeastOnce()).selectList(any());
     }
     
@@ -393,5 +402,60 @@ public class ProjectServiceTest {
         // 验证调用
         verify(projectMapper, times(1)).selectList(any());
         verify(projectMapper, never()).insert(any(Project.class));
+    }
+
+    @Test
+    @DisplayName("测试获取所有项目（管理员）")
+    public void testGetAllProjects() {
+        // 准备测试数据
+        Long userId = 1L;
+        String keyword = "测试项目";
+        Integer status = 0;
+        Integer page = 1;
+        Integer pageSize = 10;
+        LocalDate startTime = null;
+        LocalDate endTime = null;
+        LocalDate dueStartTime = null;
+        LocalDate dueEndTime = null;
+        
+        // 模拟管理员用户
+        User adminUser = new User();
+        adminUser.setId(1L);
+        adminUser.setUsername("admin");
+        adminUser.setRole(2); // 2=管理员角色
+        
+        // 模拟项目列表
+        List<Project> projectList = new ArrayList<>();
+        Project project = new Project();
+        project.setId(1L);
+        project.setName("测试项目");
+        project.setStatus(0);
+        project.setCreateUser(2L);
+        projectList.add(project);
+        
+        // 模拟分页查询结果
+        Page<Project> pageResult = new Page<>(page - 1, pageSize);
+        pageResult.setRecords(projectList);
+        pageResult.setTotal(1);
+        
+        // 模拟Mapper行为
+        when(userMapper.selectById(userId)).thenReturn(adminUser);
+        when(projectMapper.selectPage(any(), any())).thenReturn(pageResult);
+        when(projectMemberMapper.selectList(any())).thenReturn(new ArrayList<>());
+        when(projectMemberMapper.selectCount(any())).thenReturn(0L);
+        
+        // 执行测试
+        PageResult<ProjectVO> result = projectService.getAllProjects(userId, keyword, status, page, pageSize,
+                                                                    startTime, endTime, dueStartTime, dueEndTime);
+        
+        // 验证结果
+        assertNotNull(result);
+        assertEquals(1, result.getTotal());
+        assertEquals(1, result.getItems().size());
+        assertEquals(1, result.getItems().get(0).getId());
+        
+        // 验证调用
+        verify(userMapper, times(1)).selectById(userId);
+        verify(projectMapper, times(1)).selectPage(any(), any());
     }
 } 

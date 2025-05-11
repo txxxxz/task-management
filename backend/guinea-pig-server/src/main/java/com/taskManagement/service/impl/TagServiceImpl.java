@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -159,65 +160,79 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
     }
 
     @Override
-    public Page<Tag> getTagList(Page<Tag> page, String keyword, Long projectId) {
-        log.info("分页查询标签列表, 关键词: {}, 项目ID: {}", keyword, projectId);
+    public Page<Tag> getTagList(Page<Tag> page, String keyword, Long projectId, LocalDate startTime, LocalDate endTime) {
+        log.info("分页查询标签列表, keyword={}, projectId={}, startTime={}, endTime={}", keyword, projectId, startTime, endTime);
         
-        // 首先获取所有标签
+        // 如果有项目ID，先检查是否存在此项目下的标签
+        if (projectId != null) {
+            // 直接从项目获取标签（通过任务关联）
+            List<Tag> projectTags = getTagsByProjectId(projectId);
+            // 如果有关键字，进行筛选
+            if (StringUtils.isNotBlank(keyword)) {
+                projectTags = projectTags.stream()
+                        .filter(tag -> tag.getName().contains(keyword))
+                        .collect(Collectors.toList());
+            }
+            
+            // 如果有时间参数，进行筛选
+            if (startTime != null) {
+                projectTags = projectTags.stream()
+                        .filter(tag -> {
+                            LocalDate createDate = tag.getCreateTime().toLocalDate();
+                            return createDate.isEqual(startTime) || createDate.isAfter(startTime);
+                        })
+                        .collect(Collectors.toList());
+            }
+            
+            if (endTime != null) {
+                projectTags = projectTags.stream()
+                        .filter(tag -> {
+                            LocalDate createDate = tag.getCreateTime().toLocalDate();
+                            return createDate.isEqual(endTime) || createDate.isBefore(endTime);
+                        })
+                        .collect(Collectors.toList());
+            }
+            
+            // 手动分页
+            int total = projectTags.size();
+            int start = (int) ((page.getCurrent() - 1) * page.getSize());
+            int end = Math.min(start + (int) page.getSize(), total);
+            
+            // 确保起始索引合法
+            if (start < total) {
+                List<Tag> pageData = projectTags.subList(start, end);
+                page.setRecords(pageData);
+                page.setTotal(total);
+            } else {
+                page.setRecords(new ArrayList<>());
+                page.setTotal(0);
+            }
+            
+            return page;
+        }
+        
+        // 否则使用通用查询
         LambdaQueryWrapper<Tag> queryWrapper = new LambdaQueryWrapper<>();
         
-        // 如果有关键词，添加名称模糊查询条件
+        // 添加关键字查询条件
         if (StringUtils.isNotBlank(keyword)) {
             queryWrapper.like(Tag::getName, keyword);
         }
         
-        // 按创建时间降序排序
-        queryWrapper.orderByDesc(Tag::getCreateTime);
-        
-        // 如果指定了项目ID，需要先获取该项目下的所有任务ID
-        // 注意：Tag与Project没有直接关系，通过Task间接关联
-        if (projectId != null) {
-            // 获取项目下的所有任务
-            LambdaQueryWrapper<Task> taskQueryWrapper = new LambdaQueryWrapper<>();
-            taskQueryWrapper.eq(Task::getProjectId, projectId);
-            taskQueryWrapper.select(Task::getId);
-            List<Task> projectTasks = taskMapper.selectList(taskQueryWrapper);
-            
-            // 提取任务ID
-            List<Long> projectTaskIds = projectTasks.stream()
-                    .map(Task::getId)
-                    .collect(Collectors.toList());
-            
-            if (projectTaskIds.isEmpty()) {
-                // 如果项目没有任务，返回空结果
-                return new Page<>(page.getCurrent(), page.getSize(), 0);
-            }
-            
-            // 获取与这些任务关联的标签ID
-            Set<Long> tagIdSet = new HashSet<>();
-            for (Long taskId : projectTaskIds) {
-                List<Long> tagIds = taskTagService.getTagIdsByTaskId(taskId);
-                tagIdSet.addAll(tagIds);
-            }
-            
-            if (tagIdSet.isEmpty()) {
-                // 如果没有找到关联的标签，返回空结果
-                return new Page<>(page.getCurrent(), page.getSize(), 0);
-            }
-            
-            // 只获取这些标签ID的标签
-            queryWrapper.in(Tag::getId, tagIdSet);
+        // 添加时间范围条件
+        if (startTime != null) {
+            queryWrapper.ge(Tag::getCreateTime, startTime.atStartOfDay());
         }
         
-        // 执行分页查询
-        Page<Tag> tagPage = page(page, queryWrapper);
-        
-        // 为每个标签添加关联的任务ID
-        for (Tag tag : tagPage.getRecords()) {
-            List<Long> taskIds = taskTagService.getTaskIdsByTagId(tag.getId());
-            tag.setTaskIds(taskIds);
+        if (endTime != null) {
+            queryWrapper.le(Tag::getCreateTime, endTime.atTime(23, 59, 59));
         }
         
-        return tagPage;
+        // 排序
+        queryWrapper.orderByDesc(Tag::getUpdateTime);
+        
+        // 执行查询
+        return page(page, queryWrapper);
     }
 
     @Override

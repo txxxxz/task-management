@@ -149,6 +149,7 @@ public class TaskServiceImplTest {
         Integer status = 0;
         Integer priority = 2;
         Long projectId = TEST_PROJECT_ID;
+        String tags = null; // 添加标签参数
         Integer page = 1;
         Integer pageSize = 10;
         // 添加日期参数，默认为null
@@ -173,7 +174,7 @@ public class TaskServiceImplTest {
         
         // 执行测试
         Map<String, Object> result = taskService.getTaskList(keyword, status, priority, projectId, 
-                                                           startTime, endTime, dueStartTime, dueEndTime, 
+                                                           tags, startTime, endTime, dueStartTime, dueEndTime, 
                                                            page, pageSize);
         
         // 验证结果

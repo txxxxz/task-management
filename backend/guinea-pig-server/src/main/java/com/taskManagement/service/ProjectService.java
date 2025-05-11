@@ -7,6 +7,7 @@ import com.taskManagement.vo.ProjectVO;
 import com.taskManagement.vo.UserVO;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -20,9 +21,14 @@ public interface ProjectService {
      * @param status 状态
      * @param page 页码
      * @param pageSize 每页大小
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param dueStartTime 截止开始时间
+     * @param dueEndTime 截止结束时间
      * @return 分页结果
      */
-    PageResult<ProjectVO> getProjectList(String keyword, Integer status, Integer page, Integer pageSize);
+    PageResult<ProjectVO> getProjectList(String keyword, Integer status, Integer page, Integer pageSize,
+                                        LocalDate startTime, LocalDate endTime, LocalDate dueStartTime, LocalDate dueEndTime);
 
     /**
      * 获取项目详情
@@ -114,7 +120,12 @@ public interface ProjectService {
      * @param status 状态
      * @param page 页码
      * @param pageSize 每页大小
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param dueStartTime 截止开始时间
+     * @param dueEndTime 截止结束时间
      * @return 分页结果
      */
-    PageResult<ProjectVO> getAllProjects(Long userId, String keyword, Integer status, Integer page, Integer pageSize);
+    PageResult<ProjectVO> getAllProjects(Long userId, String keyword, Integer status, Integer page, Integer pageSize,
+                                        LocalDate startTime, LocalDate endTime, LocalDate dueStartTime, LocalDate dueEndTime);
 } 

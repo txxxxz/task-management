@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,8 +62,10 @@ public class ProjectServiceImpl implements ProjectService {
      * 获取项目列表
      */
     @Override
-    public PageResult<ProjectVO> getProjectList(String keyword, Integer status, Integer page, Integer pageSize) {
-        log.info("查询项目列表参数: keyword={}, status={}, page={}, pageSize={}", keyword, status, page, pageSize);
+    public PageResult<ProjectVO> getProjectList(String keyword, Integer status, Integer page, Integer pageSize,
+                                               LocalDate startTime, LocalDate endTime, LocalDate dueStartTime, LocalDate dueEndTime) {
+        log.info("查询项目列表参数: keyword={}, status={}, page={}, pageSize={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}", 
+                keyword, status, page, pageSize, startTime, endTime, dueStartTime, dueEndTime);
         
         // 构建查询条件
         LambdaQueryWrapper<Project> queryWrapper = new LambdaQueryWrapper<>();
@@ -77,6 +80,23 @@ public class ProjectServiceImpl implements ProjectService {
         // 状态过滤
         if (status != null) {
             queryWrapper.eq(Project::getStatus, status);
+        }
+        
+        // 添加时间范围条件
+        if (startTime != null) {
+            queryWrapper.ge(Project::getCreateTime, startTime.atStartOfDay());
+        }
+        
+        if (endTime != null) {
+            queryWrapper.le(Project::getCreateTime, endTime.atTime(23, 59, 59));
+        }
+        
+        if (dueStartTime != null) {
+            queryWrapper.ge(Project::getEndTime, dueStartTime.atStartOfDay());
+        }
+        
+        if (dueEndTime != null) {
+            queryWrapper.le(Project::getEndTime, dueEndTime.atTime(23, 59, 59));
         }
         
         // 获取当前用户ID
@@ -695,8 +715,10 @@ public class ProjectServiceImpl implements ProjectService {
      * 获取所有项目（管理员专用）
      */
     @Override
-    public PageResult<ProjectVO> getAllProjects(Long userId, String keyword, Integer status, Integer page, Integer pageSize) {
-        log.info("管理员查询所有项目列表参数: userId={}, keyword={}, status={}, page={}, pageSize={}", userId, keyword, status, page, pageSize);
+    public PageResult<ProjectVO> getAllProjects(Long userId, String keyword, Integer status, Integer page, Integer pageSize,
+                                              LocalDate startTime, LocalDate endTime, LocalDate dueStartTime, LocalDate dueEndTime) {
+        log.info("管理员查询所有项目列表参数: userId={}, keyword={}, status={}, page={}, pageSize={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}", 
+                userId, keyword, status, page, pageSize, startTime, endTime, dueStartTime, dueEndTime);
         
         // 首先检查用户是否为管理员
         User currentUser = userMapper.selectById(userId);
@@ -724,6 +746,23 @@ public class ProjectServiceImpl implements ProjectService {
         // 状态过滤
         if (status != null) {
             queryWrapper.eq(Project::getStatus, status);
+        }
+        
+        // 添加时间范围条件
+        if (startTime != null) {
+            queryWrapper.ge(Project::getCreateTime, startTime.atStartOfDay());
+        }
+        
+        if (endTime != null) {
+            queryWrapper.le(Project::getCreateTime, endTime.atTime(23, 59, 59));
+        }
+        
+        if (dueStartTime != null) {
+            queryWrapper.ge(Project::getEndTime, dueStartTime.atStartOfDay());
+        }
+        
+        if (dueEndTime != null) {
+            queryWrapper.le(Project::getEndTime, dueEndTime.atTime(23, 59, 59));
         }
         
         // 按优先级和创建时间排序（优先级高的在前，同优先级按创建时间降序）

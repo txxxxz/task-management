@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +39,10 @@ public class ProjectController {
      * @param status 项目状态
      * @param page 页码
      * @param pageSize 每页大小
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param dueStartTime 任务开始时间
+     * @param dueEndTime 任务结束时间
      * @return 项目列表
      */
     @GetMapping
@@ -45,10 +50,15 @@ public class ProjectController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer status,
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("获取项目列表，keyword={}, status={}, page={}, pageSize={}", keyword, status, page, pageSize);
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) LocalDate startTime,
+            @RequestParam(required = false) LocalDate endTime,
+            @RequestParam(required = false) LocalDate dueStartTime,
+            @RequestParam(required = false) LocalDate dueEndTime) {
+        log.info("获取项目列表，keyword={}, status={}, page={}, pageSize={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}", 
+                keyword, status, page, pageSize, startTime, endTime, dueStartTime, dueEndTime);
         
-        PageResult<ProjectVO> result = projectService.getProjectList(keyword, status, page, pageSize);
+        PageResult<ProjectVO> result = projectService.getProjectList(keyword, status, page, pageSize, startTime, endTime, dueStartTime, dueEndTime);
         return Result.success(result);
     }
 
@@ -283,6 +293,10 @@ public class ProjectController {
      * @param status 项目状态
      * @param page 页码
      * @param pageSize 每页大小
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param dueStartTime 任务开始时间
+     * @param dueEndTime 任务结束时间
      * @return 所有项目列表
      */
     @GetMapping("/all")
@@ -290,12 +304,17 @@ public class ProjectController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer status,
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("管理员获取所有项目列表，keyword={}, status={}, page={}, pageSize={}", keyword, status, page, pageSize);
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) LocalDate startTime,
+            @RequestParam(required = false) LocalDate endTime,
+            @RequestParam(required = false) LocalDate dueStartTime,
+            @RequestParam(required = false) LocalDate dueEndTime) {
+        log.info("管理员获取所有项目列表，keyword={}, status={}, page={}, pageSize={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}", 
+                keyword, status, page, pageSize, startTime, endTime, dueStartTime, dueEndTime);
         
         // 检查当前用户是否为管理员
         Long userId = BaseContext.getCurrentId();
-        PageResult<ProjectVO> result = projectService.getAllProjects(userId, keyword, status, page, pageSize);
+        PageResult<ProjectVO> result = projectService.getAllProjects(userId, keyword, status, page, pageSize, startTime, endTime, dueStartTime, dueEndTime);
         return Result.success(result);
     }
 } 

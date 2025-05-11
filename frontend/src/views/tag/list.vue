@@ -6,7 +6,10 @@
         <div class="filter-row">
           <div class="filter-item">
             <el-form-item label="Tag Name">
-              <el-input v-model="filterForm.name" placeholder="Enter tag name" clearable />
+              <el-input v-model="filterForm.name" 
+              placeholder="Please enter tag name" 
+              clearable 
+              prefix-icon="Search"/>
             </el-form-item>
           </div>
           <div class="filter-item">
@@ -139,6 +142,17 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
+// 格式化日期为YYYY-MM-DD格式
+const formatDateForApi = (dateStr: string): string => {
+  try {
+    // 确保日期格式为YYYY-MM-DD
+    const date = new Date(dateStr);
+    return date.toISOString().split('T')[0];
+  } catch (e) {
+    return dateStr; // 出错则返回原字符串
+  }
+}
+
 // 筛选表单数据
 const filterForm = reactive({
   name: '',
@@ -169,8 +183,8 @@ const fetchTagList = async () => {
     
     // 添加日期范围（如果有）
     if (filterForm.createDateRange && filterForm.createDateRange.length === 2) {
-      params.startTime = filterForm.createDateRange[0]
-      params.endTime = filterForm.createDateRange[1]
+      params.startTime = formatDateForApi(filterForm.createDateRange[0])
+      params.endTime = formatDateForApi(filterForm.createDateRange[1])
     }
     
     const response = await getTagList(params)

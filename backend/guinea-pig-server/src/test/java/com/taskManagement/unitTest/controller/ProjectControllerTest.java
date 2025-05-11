@@ -158,7 +158,7 @@ public class ProjectControllerTest {
         PageResult<ProjectVO> pageResult = new PageResult<>(projectVOList, 1);
         
         // 模拟Service行为
-        when(projectService.getProjectList(eq(keyword), eq(status), eq(page), eq(pageSize)))
+        when(projectService.getProjectList(eq(keyword), eq(status), eq(page), eq(pageSize), isNull(), isNull(), isNull(), isNull()))
                 .thenReturn(pageResult);
         
         // 执行测试

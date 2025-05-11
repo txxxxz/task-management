@@ -27,6 +27,7 @@ public interface TaskService {
      * @param status 状态
      * @param priority 优先级
      * @param projectId 项目ID
+     * @param tags 标签（逗号分隔的标签ID）
      * @param startTime 创建开始日期
      * @param endTime 创建结束日期
      * @param dueStartTime 截止开始日期
@@ -36,7 +37,7 @@ public interface TaskService {
      * @return 任务列表和总数
      */
     Map<String, Object> getTaskList(String keyword, Integer status, Integer priority,
-                                 Long projectId, LocalDate startTime, LocalDate endTime,
+                                 Long projectId, String tags, LocalDate startTime, LocalDate endTime,
                                  LocalDate dueStartTime, LocalDate dueEndTime, Integer page, Integer pageSize);
 
     /**
@@ -73,6 +74,7 @@ public interface TaskService {
      * @param keyword 关键词
      * @param status 状态
      * @param priority 优先级
+     * @param tags 标签（逗号分隔的标签ID）
      * @param startTime 创建开始日期
      * @param endTime 创建结束日期
      * @param dueStartTime 截止开始日期
@@ -82,7 +84,7 @@ public interface TaskService {
      * @return 任务列表和总数（仅包含标签ID，不包含颜色等额外信息）
      */
     Map<String, Object> getProjectTasks(Long projectId, String keyword, Integer status,
-                                      Integer priority, LocalDate startTime, LocalDate endTime,
+                                      Integer priority, String tags, LocalDate startTime, LocalDate endTime,
                                       LocalDate dueStartTime, LocalDate dueEndTime, Integer page, Integer pageSize);
 
     /**

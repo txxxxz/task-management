@@ -17,7 +17,7 @@
           </div>
           <div class="filter-item-half">
             <el-form-item label="Status">
-              <el-select v-model="searchForm.status" placeholder="Please select the status" clearable style="width: 100%">
+              <el-select v-model="searchForm.status" placeholder="Please select the status" clearable style="width: 100%" >
                 <el-option
                   v-for="item in statusOptions"
                   :key="item.value"
@@ -130,7 +130,7 @@
                 range-separator="To"
                 start-placeholder="Start Date"
                 end-placeholder="Due Date"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD"
                 style="width: 100%"
               />
             </el-form-item>
@@ -143,7 +143,7 @@
                 range-separator="To"
                 start-placeholder="Start Date"
                 end-placeholder="Due Date"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD"
                 style="width: 100%"
               />
             </el-form-item>
@@ -437,6 +437,17 @@ const filteredProjects = computed(() => {
   })
 })
 
+// 格式化日期为YYYY-MM-DD格式
+const formatDateForApi = (dateStr: string): string => {
+  try {
+    // 确保日期格式为YYYY-MM-DD
+    const date = new Date(dateStr);
+    return date.toISOString().split('T')[0];
+  } catch (e) {
+    return dateStr; // 出错则返回原字符串
+  }
+}
+
 // 获取项目列表
 const fetchProjects = async () => {
   loading.value = true
@@ -469,17 +480,17 @@ const fetchProjects = async () => {
     
     // 添加开始时间范围
     if (searchForm.startTimeRange && searchForm.startTimeRange.length === 2) {
-      params.startTimeBegin = searchForm.startTimeRange[0]
-      params.startTimeEnd = searchForm.startTimeRange[1]
+      params.startTime = formatDateForApi(searchForm.startTimeRange[0])
+      params.endTime = formatDateForApi(searchForm.startTimeRange[1])
     }
     
     // 添加截止时间范围
     if (searchForm.endTimeRange && searchForm.endTimeRange.length === 2) {
-      params.endTimeBegin = searchForm.endTimeRange[0]
-      params.endTimeEnd = searchForm.endTimeRange[1]
+      params.dueStartTime = formatDateForApi(searchForm.endTimeRange[0])
+      params.dueEndTime = formatDateForApi(searchForm.endTimeRange[1])
     }
     
-    const response = await getProjectList()
+    const response = await getProjectList(params)
     if (response.data && (response.data.code === 1 || response.data.code === 200)) {
       projectList.value = response.data.data.items
       total.value = response.data.data.total

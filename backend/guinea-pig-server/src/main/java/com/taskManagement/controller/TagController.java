@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -88,6 +89,8 @@ public class TagController {
      * @param pageSize 每页大小
      * @param keyword 关键词
      * @param projectId 项目ID（可选，用于间接过滤与项目关联的任务的标签）
+     * @param startTime 创建开始时间
+     * @param endTime 创建结束时间
      * @return 分页标签DTO列表
      */
     @GetMapping
@@ -95,11 +98,14 @@ public class TagController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long projectId) {
-        log.info("分页查询标签列表, 页码: {}, 每页大小: {}, 关键词: {}, 项目ID: {}", page, pageSize, keyword, projectId);
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) LocalDate startTime,
+            @RequestParam(required = false) LocalDate endTime) {
+        log.info("分页查询标签列表, 页码: {}, 每页大小: {}, 关键词: {}, 项目ID: {}, 开始时间: {}, 结束时间: {}", 
+                page, pageSize, keyword, projectId, startTime, endTime);
         
         Page<Tag> pageParam = new Page<>(page, pageSize);
-        Page<Tag> tagPage = tagService.getTagList(pageParam, keyword, projectId);
+        Page<Tag> tagPage = tagService.getTagList(pageParam, keyword, projectId, startTime, endTime);
         
         // 转换为TagDTO列表
         List<TagDTO> tagDTOs = tagPage.getRecords().stream()
