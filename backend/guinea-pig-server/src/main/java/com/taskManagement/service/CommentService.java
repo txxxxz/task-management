@@ -28,4 +28,11 @@ public interface CommentService {
      * @param commentId 评论ID
      */
     void deleteComment(Long taskId, Long commentId);
+    
+    /**
+     * 根据评论ID获取评论详情
+     * @param commentId 评论ID
+     * @return 评论详情
+     */
+    CommentDTO getCommentById(Long commentId);
 }

@@ -3,11 +3,26 @@ import type { ProjectForm } from '@/types/models'
 import axios from 'axios'
 import type { Project } from '../types/task'
 
-// 获取项目列表
-export function getAllProjects() {
+// 获取项目列表（当前用户参与的项目）
+export function getAllProjects(params?: { all?: boolean }) {
   return request({
     url: '/api/projects',
-    method: 'get'
+    method: 'get',
+    params
+  })
+}
+
+// 获取所有项目（管理员专用）
+export function getAllAdminProjects(params?: {
+  keyword?: string
+  status?: number
+  page?: number
+  pageSize?: number
+}) {
+  return request({
+    url: '/api/projects/all',
+    method: 'get',
+    params
   })
 }
 

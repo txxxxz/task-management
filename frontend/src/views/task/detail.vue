@@ -123,22 +123,24 @@
           <el-col :xs="24" :sm="8" :md="8" :lg="8">
             <el-form-item label="Start Time">
               <el-date-picker
-                v-model="taskForm.startTime as string | Date"
+                :model-value="taskForm.startTime || undefined"
+                @update:model-value="(val: Date | null) => taskForm.startTime = val"
                 type="datetime"
-                :disabled="!isLeader"
                 style="width: 100%"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                :disabled="!isLeader"
+                format="YYYY-MM-DD HH:mm:ss"
               />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="8" :md="8" :lg="8">
             <el-form-item label="Due Time">
               <el-date-picker
-                v-model="taskForm.dueTime as string | Date"
+                :model-value="taskForm.dueTime || undefined"
+                @update:model-value="(val: Date | null) => taskForm.dueTime = val"
                 type="datetime"
-                :disabled="!isLeader"
                 style="width: 100%"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                :disabled="!isLeader"
+                format="YYYY-MM-DD HH:mm:ss"
               />
             </el-form-item>
           </el-col>
@@ -172,8 +174,6 @@
             multiple
             :disabled="!isLeader"
             style="width: 100%"
-            collapse-tags
-            collapse-tags-tooltip
             @change="(val: any[]) => console.log('标签选择改变:', val)"
           >
             <el-option
@@ -348,7 +348,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../../stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -659,14 +659,30 @@ const fetchTaskDetail = async () => {
       return;
     }
     
+    console.log('获取到的任务数据:', data); // 调试输出
+    
     // 处理日期时间
     const createTime = formatDate(data.startTime || data.createTime);
     let startTime = null;
     let dueTime = null;
+    
     try {
-      startTime = data.startTime ? dayjs(data.startTime).toDate() : null;
-      dueTime = data.dueTime || data.deadline ? dayjs(data.dueTime || data.deadline).toDate() : null;
+      // 处理开始时间
+      if (data.startTime) {
+        startTime = dayjs(data.startTime).toDate();
+        console.log('解析后的startTime:', startTime);
+      }
+      
+      // 处理截止时间 - 优先使用deadline字段
+      if (data.deadline) {
+        dueTime = dayjs(data.deadline).toDate();
+        console.log('从deadline解析的dueTime:', dueTime);
+      } else if (data.dueTime) {
+        dueTime = dayjs(data.dueTime).toDate();
+        console.log('从dueTime解析的dueTime:', dueTime);
+      }
     } catch (e) {
+      console.error('日期解析错误:', e);
       startTime = null;
       dueTime = null;
     }
@@ -708,6 +724,8 @@ const fetchTaskDetail = async () => {
       projectId,
       projectName
     });
+    
+    console.log('任务表单数据:', JSON.parse(JSON.stringify(taskForm))); // 调试输出
     
     // 加载评论和文件列表
     await Promise.all([
@@ -780,8 +798,16 @@ const handleSave = async () => {
   saveLoading.value = true;
   try {
     // 日期处理
-    const startTime = taskForm.startTime ? formatDate(taskForm.startTime) : undefined;
-    const deadline = taskForm.dueTime ? formatDate(taskForm.dueTime) : undefined;
+    let startTime = undefined;
+    let deadline = undefined;
+
+    if (taskForm.startTime) {
+      startTime = dayjs(taskForm.startTime).format('YYYY-MM-DD HH:mm:ss');
+    }
+
+    if (taskForm.dueTime) {
+      deadline = dayjs(taskForm.dueTime).format('YYYY-MM-DD HH:mm:ss');
+    }
     
     // 将标签ID转换为数字类型
     const tagIds = taskForm.tags
@@ -805,6 +831,8 @@ const handleSave = async () => {
       members: taskForm.members,
       tagIds
     };
+    
+    console.log('发送更新请求:', updateData); // 调试输出
     
     // 更新任务
     await updateTask(route.params.id as string, updateData);
@@ -1043,6 +1071,12 @@ const fetchComments = async () => {
     };
     
     comments.value = sortByTime(rootComments);
+    
+    // 检查URL中是否有commentId参数
+    const commentId = route.query.commentId as string | null;
+    if (commentId) {
+      highlightAndScrollToComment(commentId);
+    }
   } catch (err) {
     console.error('获取评论失败:', err);
     ElMessage.error('Get comment list failed');
@@ -1183,25 +1217,93 @@ watch(
 
 // 在组件挂载时获取数据
 onMounted(async () => {
-  // 初始化获取标签和成员
   await Promise.all([
     fetchTags(),
     fetchUsers()
-  ])
+  ]);
   
-  // 获取任务详情
-  await fetchTaskDetail()
-  await fetchComments()
-})
+  await fetchTaskDetail(); // 这个函数内部应该也获取了项目ID等信息
+  await fetchComments(); // 等待评论数据加载
 
-interface TaskAttachment {
-  id: number;
-  fileName: string;
-  filePath: string;
-  fileSize: number;
-  createUser: string;
-  createTime: string;
-}
+  // 确保在DOM更新后再尝试滚动
+  await nextTick(); 
+
+  const commentIdFromQuery = route.query.commentId as string | null;
+  if (commentIdFromQuery) {
+    console.log(`[detail.vue] Attempting to scroll to commentId from query: ${commentIdFromQuery}`);
+    highlightAndScrollToComment(commentIdFromQuery);
+  }
+});
+
+// 修改 highlightAndScrollToComment 函数
+const highlightAndScrollToComment = (commentId: string | null, maxAttempts = 10, interval = 100) => {
+  if (!commentId) {
+    console.log('[detail.vue] highlightAndScrollToComment: commentId is null or undefined.');
+    return;
+  }
+
+  let attempts = 0;
+  const elementId = `comment-${commentId}`;
+  console.log(`[detail.vue] highlightAndScrollToComment: Looking for element with ID: ${elementId}`);
+
+  const tryScroll = () => {
+    const commentElement = document.getElementById(elementId);
+    if (commentElement) {
+      console.log(`[detail.vue] Element ${elementId} found. Scrolling into view.`);
+      commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      commentElement.classList.add('highlighted-comment');
+      setTimeout(() => {
+        commentElement.classList.remove('highlighted-comment');
+      }, 3000);
+    } else {
+      attempts++;
+      if (attempts < maxAttempts) {
+        console.log(`[detail.vue] Element ${elementId} not found (attempt ${attempts}/${maxAttempts}). Retrying in ${interval}ms.`);
+        setTimeout(tryScroll, interval);
+      } else {
+        console.warn(`[detail.vue] Element ${elementId} not found after ${maxAttempts} attempts. Unable to scroll.`);
+        // ElMessage.warning(`无法定位到评论 #${commentId}，它可能已被删除或尚未完全加载。`);
+      }
+    }
+  };
+
+  tryScroll(); // 开始尝试滚动
+};
+
+// 如果你还有一个 watch 来处理评论列表变化后的滚动，也需要类似 nextTick 处理
+watch(() => comments.value, async (newComments, oldComments) => {
+  if (newComments.length > 0) {
+    const commentIdFromQuery = route.query.commentId as string | null;
+    if (commentIdFromQuery) {
+      // 等待DOM更新
+      await nextTick();
+      console.log(`[detail.vue] Comments changed, attempting to scroll to commentId: ${commentIdFromQuery}`);
+      // 检查评论是否真的在新的列表中，避免不必要的滚动
+      const targetCommentExists = newComments.some(c => findCommentByIdRecursive(c, commentIdFromQuery));
+      if (targetCommentExists) {
+         highlightAndScrollToComment(commentIdFromQuery);
+      } else {
+         console.log(`[detail.vue] Target comment ${commentIdFromQuery} not found in updated comments list.`);
+      }
+    }
+  }
+}, { deep: true });
+
+// 辅助函数，用于递归查找评论 (如果您的评论是树状结构)
+const findCommentByIdRecursive = (comment: CommentData, targetId: string): CommentData | null => {
+  if (String(comment.id) === targetId) {
+    return comment;
+  }
+  if (comment.children && comment.children.length > 0) {
+    for (const child of comment.children) {
+      const found = findCommentByIdRecursive(child, targetId);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return null;
+};
 
 // 获取文件列表
 const fetchAttachments = async (taskId: number) => {
@@ -1260,6 +1362,7 @@ const getTotalCommentCount = () => {
 
 <style scoped>
 .task-detail-container {
+  white-space: nowrap;
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
@@ -1269,6 +1372,7 @@ const getTotalCommentCount = () => {
   margin-bottom: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  --el-card-padding: 32px 60px;
 }
 
 .detail-card :deep(.el-card__header) {
@@ -1573,5 +1677,25 @@ const getTotalCommentCount = () => {
   height: 24px;
   line-height: 24px;
   transition: all 0.3s;
+}
+
+/* 添加评论高亮样式 */
+:deep(.highlighted-comment) {
+  background-color: rgba(64, 158, 255, 0.1) !important;
+  border: 1px solid #409EFF !important;
+  box-shadow: 0 0 8px rgba(64, 158, 255, 0.3) !important;
+  animation: highlight-pulse 1.5s 2;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 8px rgba(64, 158, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(64, 158, 255, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(64, 158, 255, 0.3);
+  }
 }
 </style> 

@@ -100,6 +100,8 @@ import { useNotificationStore } from '@/stores/notification'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
+import { getCommentById } from '@/api/comment'
+import axios from 'axios'
 
 const router = useRouter()
 const notificationStore = useNotificationStore()
@@ -156,9 +158,80 @@ const goToTask = (taskId: number) => {
 
 // 跳转到评论所在任务
 const goToComment = (commentId: number) => {
-  // 需要先根据评论ID获取对应的任务ID，这里简化处理
-  router.push(`/task/commentId=${commentId}`)
-  drawerVisible.value = false
+  try {
+    // 查找当前通知项（可能包含任务信息）
+    const notification = notifications.value.find(item => 
+      item.type === 'comment_mention' && item.relatedId === commentId
+    );
+    
+    // 从通知内容解析任务名称
+    if (notification) {
+      // 方法1: 提取方括号中的任务名，然后从taskUpdate通知中查找匹配项
+      const taskNameMatch = notification.content.match(/\[(.*?)\]/);
+      if (taskNameMatch && taskNameMatch[1]) {
+        const taskName = taskNameMatch[1];
+        const taskUpdateNotification = notifications.value.find(item => 
+          item.type === 'task_update' && item.content.includes(`[${taskName}]`)
+        );
+        
+        if (taskUpdateNotification) {
+          console.log(`找到任务更新通知，任务ID: ${taskUpdateNotification.relatedId}`);
+          // 使用URL片段(fragment)直接定位到评论区域
+          router.push(`/detail/${taskUpdateNotification.relatedId}?commentId=${commentId}#comment-${commentId}`);
+          drawerVisible.value = false;
+          return;
+        }
+      }
+      
+      // 方法2: 尝试从通知内容中直接提取数字，可能是任务ID
+      const idMatch = notification.content.match(/task\s+#?(\d+)|任务\s*(\d+)|\[.*?(\d+).*?\]/);
+      if (idMatch) {
+        const taskId = idMatch[1] || idMatch[2] || idMatch[3];
+        if (taskId) {
+          console.log(`从通知内容中提取到可能的任务ID: ${taskId}`);
+          router.push(`/detail/${taskId}?commentId=${commentId}#comment-${commentId}`);
+          drawerVisible.value = false;
+          return;
+        }
+      }
+      
+      // 方法3: 看现有的其他通知中是否有包含相同关键词的task_update类型
+      // 从当前通知内容中提取关键词（除了用户名和通用词汇外的部分）
+      const content = notification.content;
+      const keywords = content.split(/\s+/).filter(word => {
+        // 过滤掉常见的词汇，只保留可能与任务相关的关键词
+        return word.length > 2 && 
+               !['commented', 'mention', 'mentioned', 'you', 'task', 'in', 'on', 'the', 'your'].includes(word.toLowerCase()) &&
+               !/^[@\[\]()]/.test(word); // 过滤掉以特殊字符开头的词
+      });
+      
+      if (keywords.length > 0) {
+        // 查找包含这些关键词的任务更新通知
+        const matchingTaskNotification = notifications.value.find(item => {
+          if (item.type !== 'task_update') return false;
+          return keywords.some(keyword => item.content.toLowerCase().includes(keyword.toLowerCase()));
+        });
+        
+        if (matchingTaskNotification) {
+          console.log(`通过关键词匹配找到任务，ID: ${matchingTaskNotification.relatedId}`);
+          router.push(`/detail/${matchingTaskNotification.relatedId}?commentId=${commentId}#comment-${commentId}`);
+          drawerVisible.value = false;
+          return;
+        }
+      }
+    }
+    
+    // 如果都失败了，跳转到任务列表
+    console.log('Cannot determine the task belongs to which task, redirecting to task list');
+    ElMessage.info('Cannot determine the task belongs to which task, redirecting to task list');
+    router.push('/list');
+    drawerVisible.value = false;
+  } catch (error) {
+    console.error('处理评论跳转出错:', error);
+    ElMessage.error('Processing comment jump error, redirecting to task list');
+    router.push('/list');
+    drawerVisible.value = false;
+  }
 }
 
 // 格式化时间

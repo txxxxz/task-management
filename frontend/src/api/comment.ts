@@ -26,3 +26,11 @@ export function getCommentList(taskId: string) {
     params: { taskId }
   })
 }
+
+// 根据评论ID获取评论详情
+export function getCommentById(commentId: number) {
+  return request<TaskComment>({
+    url: `/api/comments/${commentId}`,
+    method: 'get'
+  })
+}

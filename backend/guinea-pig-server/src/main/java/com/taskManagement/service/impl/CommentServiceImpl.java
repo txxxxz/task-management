@@ -323,4 +323,36 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             }
         }
     }
+
+    /**
+     * 根据评论ID获取评论详情
+     * @param commentId 评论ID
+     * @return 评论详情
+     */
+    @Override
+    public CommentDTO getCommentById(Long commentId) {
+        log.info("根据评论ID获取评论详情: commentId={}", commentId);
+        
+        // 查询评论
+        Comment comment = commentMapper.selectById(commentId);
+        if (comment == null) {
+            throw new BusinessException("评论不存在");
+        }
+        
+        // 转换为DTO
+        CommentDTO commentDTO = new CommentDTO();
+        BeanUtils.copyProperties(comment, commentDTO);
+        
+        // 获取创建用户信息
+        User user = userMapper.selectById(comment.getCreateUser());
+        if (user != null) {
+            commentDTO.setCreateUserName(user.getUsername());
+            commentDTO.setCreateUserAvatar(user.getAvatar());
+        } else {
+            commentDTO.setCreateUserName("未知用户");
+            commentDTO.setCreateUserAvatar(null);
+        }
+        
+        return commentDTO;
+    }
 }

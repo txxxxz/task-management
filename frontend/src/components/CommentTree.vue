@@ -1,5 +1,11 @@
 <template>
-  <div class="comment-item" :style="{ marginLeft: level > 0 ? `${level * 20}px` : '0' }">
+  <div 
+    class="comment-item" 
+    :id="`comment-${comment.id}`" 
+    :data-comment-id="comment.id"
+    :data-id="comment.id"
+    :style="{ marginLeft: level > 0 ? `${level * 20}px` : '0' }"
+  >
     <div class="comment-header">
       <el-avatar 
         :size="32" 
@@ -204,5 +210,25 @@ export default defineComponent({
   margin-left: 20px;
   padding-left: 10px;
   border-left: 2px solid #eaeaea;
+}
+
+/* 高亮样式 */
+.comment-item.highlighted-comment {
+  background-color: rgba(64, 158, 255, 0.1);
+  border: 1px solid #409EFF;
+  box-shadow: 0 0 8px rgba(64, 158, 255, 0.3);
+  animation: highlight-pulse 1.5s 2;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 8px rgba(64, 158, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(64, 158, 255, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(64, 158, 255, 0.3);
+  }
 }
 </style> 

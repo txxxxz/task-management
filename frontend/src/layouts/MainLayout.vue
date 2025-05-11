@@ -19,7 +19,6 @@
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="profile">Personal Center</el-dropdown-item>
-              <el-dropdown-item command="settings">Settings</el-dropdown-item>
               <el-dropdown-item divided command="logout">Logout</el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -80,9 +79,6 @@ const handleCommand = async (command: string) => {
   switch (command) {
     case 'profile':
       router.push('/profile')
-      break
-    case 'settings':
-      router.push('/settings')
       break
     case 'logout':
       try {

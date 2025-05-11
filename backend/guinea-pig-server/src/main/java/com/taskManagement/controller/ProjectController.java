@@ -276,4 +276,26 @@ public class ProjectController {
         // Todo: 实现附件删除逻辑
         return Result.success();
     }
+
+    /**
+     * 获取所有项目（管理员专用）
+     * @param keyword 关键字搜索
+     * @param status 项目状态
+     * @param page 页码
+     * @param pageSize 每页大小
+     * @return 所有项目列表
+     */
+    @GetMapping("/all")
+    public Result<PageResult<ProjectVO>> getAllProjects(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        log.info("管理员获取所有项目列表，keyword={}, status={}, page={}, pageSize={}", keyword, status, page, pageSize);
+        
+        // 检查当前用户是否为管理员
+        Long userId = BaseContext.getCurrentId();
+        PageResult<ProjectVO> result = projectService.getAllProjects(userId, keyword, status, page, pageSize);
+        return Result.success(result);
+    }
 } 

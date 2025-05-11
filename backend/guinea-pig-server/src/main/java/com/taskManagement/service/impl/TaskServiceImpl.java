@@ -288,6 +288,32 @@ public class TaskServiceImpl implements TaskService {
             sendTaskStatusUpdateNotifications(task, oldStatus);
         }
         
+        // 需要增加的代码:
+        if (taskDTO.getMembers() != null) {
+            // 获取当前成员
+            List<String> currentMembers = getTaskMembers(id);
+            
+            // 计算需要添加的成员
+            List<String> membersToAdd = taskDTO.getMembers().stream()
+                    .filter(username -> !currentMembers.contains(username))
+                    .collect(Collectors.toList());
+            
+            // 计算需要移除的成员
+            List<String> membersToRemove = currentMembers.stream()
+                    .filter(username -> !taskDTO.getMembers().contains(username))
+                    .collect(Collectors.toList());
+            
+            // 添加新成员
+            for (String username : membersToAdd) {
+                addTaskMember(id, username);
+            }
+            
+            // 移除旧成员
+            for (String username : membersToRemove) {
+                removeTaskMember(id, username);
+            }
+        }
+        
         // 查询更新后的完整任务信息
         return getTaskDetail(task.getId());
     }

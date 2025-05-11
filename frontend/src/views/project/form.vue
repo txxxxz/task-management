@@ -710,6 +710,7 @@ watch(memberOptions, (newVal) => {
 
 <style scoped>
 .project-form-container {
+  white-space: nowrap;
   padding: 24px;
   background: #fff;
   border-radius: 8px;
@@ -820,7 +821,7 @@ watch(memberOptions, (newVal) => {
 .form-group {
   background: #f8f9fa;
   border-radius: 8px;
-  padding: 20px;
+  padding: 30px;
   margin-bottom: 24px;
 }
 
@@ -828,7 +829,7 @@ watch(memberOptions, (newVal) => {
   font-size: 16px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   padding-left: 8px;
   border-left: 4px solid var(--el-color-primary);
 }
@@ -845,6 +846,7 @@ watch(memberOptions, (newVal) => {
 
 :deep(.el-form-item) {
   margin-bottom: 18px;
+  padding: 0 20px;
 }
 
 :deep(.el-form-item__label) {

@@ -690,4 +690,71 @@ public class ProjectServiceImpl implements ProjectService {
             return dto;
         }).collect(Collectors.toList());
     }
+
+    /**
+     * 获取所有项目（管理员专用）
+     */
+    @Override
+    public PageResult<ProjectVO> getAllProjects(Long userId, String keyword, Integer status, Integer page, Integer pageSize) {
+        log.info("管理员查询所有项目列表参数: userId={}, keyword={}, status={}, page={}, pageSize={}", userId, keyword, status, page, pageSize);
+        
+        // 首先检查用户是否为管理员
+        User currentUser = userMapper.selectById(userId);
+        if (currentUser == null) {
+            log.warn("用户ID{}不存在", userId);
+            return new PageResult<>(new ArrayList<>(), 0);
+        }
+        
+        // 检查用户角色 (假设2为管理员角色)
+        if (currentUser.getRole() != 2) {
+            log.warn("用户{}不是管理员，无权查看所有项目", userId);
+            return new PageResult<>(new ArrayList<>(), 0);
+        }
+        
+        // 构建查询条件
+        LambdaQueryWrapper<Project> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 关键字搜索 - 同时匹配项目名称或描述
+        if (StringUtils.isNotBlank(keyword)) {
+            queryWrapper.and(wrapper -> wrapper.like(Project::getName, keyword)
+                    .or()
+                    .like(Project::getDescription, keyword));
+        }
+        
+        // 状态过滤
+        if (status != null) {
+            queryWrapper.eq(Project::getStatus, status);
+        }
+        
+        // 按优先级和创建时间排序（优先级高的在前，同优先级按创建时间降序）
+        queryWrapper.orderByDesc(Project::getPriority)
+                   .orderByDesc(Project::getCreateTime);
+        
+        // 分页参数处理 - MyBatis-Plus页码从0开始，前端从1开始，需要减1
+        int pageIndex = Math.max(0, page - 1);
+        Page<Project> pageParam = new Page<>(pageIndex, pageSize);
+        
+        // 执行分页查询
+        Page<Project> pageResult = projectMapper.selectPage(pageParam, queryWrapper);
+        
+        // 转换为VO列表并填充关联数据
+        List<ProjectVO> projectVOList = new ArrayList<>();
+        for (Project project : pageResult.getRecords()) {
+            ProjectVO vo = convertToVO(project);
+            
+            // 获取项目成员数量
+            LambdaQueryWrapper<ProjectMember> countWrapper = new LambdaQueryWrapper<>();
+            countWrapper.eq(ProjectMember::getProjectId, project.getId());
+            long memberCount = projectMemberMapper.selectCount(countWrapper);
+            vo.setMemberCount((int)memberCount);
+            
+            // 设置当前用户是否是创建者
+            vo.setIsCreator(userId.equals(project.getCreateUser()));
+            
+            projectVOList.add(vo);
+        }
+        
+        // 返回分页结果
+        return new PageResult<>(projectVOList, pageResult.getTotal());
+    }
 } 

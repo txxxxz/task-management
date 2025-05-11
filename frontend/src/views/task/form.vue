@@ -51,7 +51,7 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="Project" prop="projectId" required>
+                <el-form-item label="Project Name" prop="projectId" required>
                   <el-select
                     v-model="taskForm.projectId"
                     placeholder="Please select the project"
@@ -106,7 +106,7 @@
             <div class="group-title">Time Setting</div>
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="Start Time" prop="startTime">
+                <el-form-item label="Start Time" prop="startTime" required>
                   <el-date-picker
                     v-model="taskForm.startTime"
                     type="datetime"
@@ -165,7 +165,7 @@
                       <span class="tag-text">{{ typeof tag === 'string' ? tag : tag.name }}</span>
                     </el-tag>
                     <span v-if="typeof tag === 'object' && tag.isNew" class="tag-new-hint">
-                      (新建)
+                      (New)
                     </span>
                   </div>
                 </el-option>
@@ -1131,6 +1131,7 @@ onMounted(async () => {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
 }
 
 .upload-container {
@@ -1240,7 +1241,7 @@ onMounted(async () => {
 .form-group {
   background: #f8f9fa;
   border-radius: 8px;
-  padding: 20px;
+  padding: 30px;
   margin-bottom: 24px;
 }
 
@@ -1255,6 +1256,7 @@ onMounted(async () => {
 
 :deep(.el-form-item) {
   margin-bottom: 18px;
+  padding: 0 20px;
 }
 
 :deep(.el-form-item__label) {

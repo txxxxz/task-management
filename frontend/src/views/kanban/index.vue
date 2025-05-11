@@ -2,12 +2,24 @@
   <div class="kanban-container">
     <!-- 顶部搜索和标签页 -->
     <div class="kanban-header">
-      <el-tabs v-model="activeTab" class="kanban-tabs">
-        <el-tab-pane label="All" name="all" />
-        <el-tab-pane label="Pending" name="pending" />
-        <el-tab-pane label="In progress" name="in-process" />
-        <el-tab-pane label="Completed" name="completed" />
-      </el-tabs>
+      <div class="tabs-container">
+        <el-tabs v-model="activeTab" class="kanban-tabs">
+          <el-tab-pane label="All" name="all" />
+          <el-tab-pane label="Pending" name="pending" />
+          <el-tab-pane label="In progress" name="in-process" />
+          <el-tab-pane label="Completed" name="completed" />
+        </el-tabs>
+        <!-- Admin全局视图开关 -->
+        <div v-if="isAdmin" class="admin-switch">
+          <el-switch
+            v-model="showAllTasks"
+            active-text="All Tasks"
+            inactive-text="My Tasks"
+            inline-prompt
+            @change="fetchTasks"
+          />
+        </div>
+      </div>
       <div class="header-right" >
         <el-select
           v-model="selectedProject"
@@ -64,16 +76,16 @@
                 <div class="project-info">
                   <el-tag size="small" effect="plain" class="project-tag">
                     <el-icon><Folder /></el-icon>
-                    {{ task.projectName || '未知项目' }}
+                    {{ task.projectName || 'Unknown Project' }}
                   </el-tag>
                 </div>
               </div>
             </template>
             <div class="card-content">
-              <p>create time: {{ task.createTime }}</p>
-              <p>start time: {{ task.startTime }}</p>
+              <p>Create time: {{ task.createTime }}</p>
+              <p>Start time: {{ task.startTime }}</p>
               <p>
-                <span>due time: </span>
+                <span>Due time: </span>
                 <span :class="{ 'expired-date': isTaskExpired(task) }">{{ task.deadline || task.dueTime }}</span>
               </p>
               <div class="tags-container">
@@ -109,7 +121,13 @@
                 />
               </div>
               <div class="task-actions">
-                <el-button type="primary" size="small" @click.stop="handleProcess(task)">
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click.stop="handleProcess(task)"
+                  :disabled="isAdmin.value && !canUserModifyTask(task)"
+                  :title="isAdmin.value && !canUserModifyTask(task) ? 'Only task members can modify this task' : ''"
+                >
                   Go to process
                 </el-button>
                 <el-button type="primary" plain size="small" @click.stop="handleComments(task)">
@@ -153,10 +171,10 @@
               </div>
             </template>
             <div class="task-info">
-              <p><span class="label">create time:</span> {{ task.createTime }}</p>
-              <p><span class="label">start time:</span> {{ task.startTime }}</p>
+              <p><span class="label">Create time:</span> {{ task.createTime }}</p>
+              <p><span class="label">Start time:</span> {{ task.startTime }}</p>
               <p>
-                <span class="label">due time:</span> 
+                <span class="label">Due time:</span> 
                 <span :class="{ 'expired-date': isTaskExpired(task) }">{{ task.deadline || task.dueTime }}</span>
               </p>
             </div>
@@ -199,7 +217,13 @@
               />
             </div>
             <div class="task-actions">
-              <el-button type="primary" size="small" @click.stop="handleFinish(task)">
+              <el-button 
+                type="success" 
+                size="small" 
+                @click.stop="handleFinish(task)"
+                :disabled="isAdmin.value && !canUserModifyTask(task)"
+                :title="isAdmin.value && !canUserModifyTask(task) ? 'Only task members can modify this task' : ''"
+              >
                 Complete
               </el-button>
               <el-button type="primary" plain size="small" @click.stop="handleComments(task)">
@@ -236,16 +260,16 @@
                 <div class="project-info">
                   <el-tag size="small" effect="plain" class="project-tag">
                     <el-icon><Folder /></el-icon>
-                    {{ task.projectName || '未知项目' }}
+                    {{ task.projectName || 'Unknown Project' }}
                   </el-tag>
                 </div>
               </div>
             </template>
             <div class="task-info">
-              <p><span class="label">create time:</span> {{ task.createTime }}</p>
-              <p><span class="label">start time:</span> {{ task.startTime }}</p>
+              <p><span class="label">Create time:</span> {{ task.createTime }}</p>
+              <p><span class="label">Start time:</span> {{ task.startTime }}</p>
               <p>
-                <span class="label">due time:</span> 
+                <span class="label">Due time:</span> 
                 <span :class="{ 'expired-date': isTaskExpired(task) }">{{ task.deadline || task.dueTime }}</span>
               </p>
             </div>
@@ -278,7 +302,7 @@
               </el-tooltip>
             </div>
             <div class="task-actions">
-              <el-button type="info" size="small" @click.stop="handleCheck(task)">
+              <el-button type="default" size="small" @click.stop="handleCheck(task)">
                 <el-icon><View /></el-icon>
                 <span>View</span>
               </el-button>
@@ -300,7 +324,7 @@ import { Search, Plus, Check, ChatLineRound, View, Folder } from '@element-plus/
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../../stores/user'
 import { useRouter } from 'vue-router'
-import { getAllProjects } from '../../api/project'
+import { getAllProjects, getAllAdminProjects } from '../../api/project'
 import { getTaskList, getProjectTasks, updateTask, getTaskComments, getAllUserTasks, getUserTasksByStatus, getCurrentUserTaskStats } from '../../api/task'
 import type { TaskDetail, Project } from '../../types/task'
 import dayjs from 'dayjs'
@@ -308,6 +332,10 @@ import dayjs from 'dayjs'
 const userStore = useUserStore()
 const isLeader = computed(() => {
   return userStore.userInfo?.role === 1
+})
+
+const isAdmin = computed(() => {
+  return userStore.userInfo?.role === 2
 })
 
 const router = useRouter()
@@ -325,10 +353,25 @@ const selectedProject = ref('')
 const tasks = ref<TaskDetail[]>([])
 const loading = ref(false)
 
+// 添加一个显示全局任务的开关（仅管理员可见）
+const showAllTasks = ref(false)
+
 // 获取项目列表
 const fetchProjects = async () => {
   try {
-    const res = await getAllProjects()
+    // 针对管理员视图使用不同的API
+    let res;
+    
+    if (isAdmin.value && showAllTasks.value) {
+      console.log('管理员全局视图: 使用getAllAdminProjects API');
+      res = await getAllAdminProjects();
+    } else {
+      console.log('普通用户视图: 使用getAllProjects API');
+      res = await getAllProjects();
+    }
+    
+    console.log('项目列表API响应:', res);
+    
     if (res && res.data) {
       let tempProjectList: Project[] = [];
       
@@ -364,6 +407,41 @@ const fetchProjects = async () => {
       }
       
       console.log('获取到的项目列表:', projectList.value)
+      
+      // 如果是管理员且项目列表为空，可以考虑强制获取所有项目
+      if (isAdmin.value && showAllTasks.value && projectList.value.length === 0) {
+        console.warn('管理员项目列表为空，尝试强制获取所有项目');
+        try {
+          // 使用直接的API调用而不是添加force参数
+          const forceRes = await getAllAdminProjects();
+          if (forceRes && forceRes.data) {
+            let forceProjectList: Project[] = [];
+            
+            // 以下逻辑与上面相同，处理不同的返回格式
+            if (forceRes.data.code === 1 && forceRes.data.data) {
+              if (Array.isArray(forceRes.data.data)) {
+                forceProjectList = forceRes.data.data;
+              } else if (forceRes.data.data.items && Array.isArray(forceRes.data.data.items)) {
+                forceProjectList = forceRes.data.data.items;
+              }
+            } else if (Array.isArray(forceRes.data)) {
+              forceProjectList = forceRes.data;
+            } else if (forceRes.data.items && Array.isArray(forceRes.data.items)) {
+              forceProjectList = forceRes.data.items;
+            }
+            
+            if (Array.isArray(forceProjectList) && forceProjectList.length > 0) {
+              projectList.value = forceProjectList.map(project => ({
+                ...project,
+                id: String(project.id)
+              })) as any;
+              console.log('强制获取的项目列表:', projectList.value);
+            }
+          }
+        } catch (forceError) {
+          console.error('强制获取项目列表失败:', forceError);
+        }
+      }
     }
   } catch (error) {
     console.error('获取项目列表失败:', error)
@@ -371,56 +449,91 @@ const fetchProjects = async () => {
   }
 }
 
-// 获取当前用户的任务列表
+// 获取当前用户或全部任务列表
 const fetchTasks = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    let taskData: TaskDetail[] = []
+    // 确保先加载项目列表
+    if (projectList.value.length === 0) {
+      console.log('任务加载前确保项目列表已加载');
+      await fetchProjects();
+    }
+    
+    let taskData: TaskDetail[] = [];
     
     if (selectedProject.value) {
       // 获取特定项目的任务
       const res = await getProjectTasks(selectedProject.value, {
         keyword: searchText.value || undefined
-      })
-      console.log('项目任务API响应:', res)
+      });
+      console.log('项目任务API响应:', res);
       
       if (res && res.data) {
         // 统一处理项目任务数据
-        const responseData = res.data as any
+        const responseData = res.data as any;
         
         // 标准响应格式：res.data.data.items
         if (responseData.data && responseData.data.items) {
-          taskData = responseData.data.items
+          taskData = responseData.data.items;
         } 
         // 直接返回items格式
         else if (responseData.items) {
-          taskData = responseData.items
+          taskData = responseData.items;
         }
         // 直接返回数组格式
         else if (Array.isArray(responseData)) {
-          taskData = responseData
+          taskData = responseData;
+        }
+      }
+    } else if (isAdmin.value && showAllTasks.value) {
+      // 管理员查看所有任务
+      const res = await getTaskList({
+        keyword: searchText.value || undefined
+      });
+      console.log('全部任务API响应:', res);
+      
+      if (res && res.data) {
+        // 统一处理全部任务数据
+        const responseData = res.data as any;
+        
+        // 标准响应格式：res.data.data.items
+        if (responseData.data && responseData.data.items) {
+          taskData = responseData.data.items;
+        } 
+        // 直接返回items格式
+        else if (responseData.items) {
+          taskData = responseData.items;
+        }
+        // 直接返回数组格式
+        else if (Array.isArray(responseData)) {
+          taskData = responseData;
+        }
+        
+        // 为管理员全局视图处理项目关联
+        if (taskData.length > 0 && projectList.value.length > 0) {
+          taskData = processAdminGlobalTasks(taskData);
         }
       }
     } else {
       // 获取当前用户的所有任务
-      const res = await getAllUserTasks()
-      console.log('用户任务API响应:', res)
+      const res = await getAllUserTasks();
+      console.log('用户任务API响应:', res);
       
       if (res && res.data) {
         // 统一处理用户任务数据
-        const responseData = res.data as any
+        const responseData = res.data as any;
         
         // 标准响应格式：res.data.data.items
         if (responseData.data && responseData.data.items) {
-          taskData = responseData.data.items
+          taskData = responseData.data.items;
         } 
         // 直接返回items格式
         else if (responseData.items) {
-          taskData = responseData.items
+          taskData = responseData.items;
         }
         // 直接返回数组格式
         else if (Array.isArray(responseData)) {
-          taskData = responseData
+          taskData = responseData;
         }
       }
     }
@@ -428,8 +541,13 @@ const fetchTasks = async () => {
     // 确保任务数据是数组
     tasks.value = Array.isArray(taskData) ? taskData : []
     
-    // 为任务补充项目名称
-    enrichTasksWithProjectNames();
+    try {
+      // 为任务补充项目名称
+      enrichTasksWithProjectNames();
+    } catch (enrichError) {
+      console.error('补充项目名称时出错:', enrichError);
+      // 即使补充名称失败，也继续处理其他逻辑
+    }
     
     console.log('处理后的任务数据:', tasks.value)
     
@@ -447,21 +565,49 @@ const fetchTasks = async () => {
 const enrichTasksWithProjectNames = () => {
   // 创建项目ID到项目名称的映射
   const projectMap = new Map<string, string>();
+  
+  if (projectList.value.length === 0) {
+    console.warn('项目列表为空，无法补充项目名称');
+    // 仍然继续处理任务，只是使用默认的项目名称
+    tasks.value.forEach(task => {
+      if (!task.projectName || task.projectName === '') {
+        task.projectName = 'Unknown Project';
+      }
+    });
+    return;
+  }
+  
+  console.log('开始为任务补充项目名称，项目列表长度:', projectList.value.length);
+  
+  // 确保所有项目ID都转换为字符串
   projectList.value.forEach(project => {
-    projectMap.set(String(project.id), project.name);
+    const projectId = String(project.id);
+    projectMap.set(projectId, project.name);
+    console.log(`项目映射: ID ${projectId} -> ${project.name}`);
   });
   
   // 为每个任务补充项目名称
   tasks.value.forEach(task => {
-    if (task.projectId && (!task.projectName || task.projectName === '')) {
-      const projectName = projectMap.get(String(task.projectId));
+    // 确保将projectId转换为字符串再比较
+    const taskProjectId = task.projectId ? String(task.projectId) : '';
+    
+    console.log(`处理任务: ${task.id}, 项目ID: ${taskProjectId}, 当前项目名称: ${task.projectName || '无'}`);
+    
+    if (taskProjectId && (!task.projectName || task.projectName === '' || task.projectName === 'Unknown Project')) {
+      const projectName = projectMap.get(taskProjectId);
       if (projectName) {
+        console.log(`-> 找到匹配项目: ${projectName}`);
         task.projectName = projectName;
       } else {
-        task.projectName = '未知项目';
+        console.log(`-> 未找到匹配项目, 设为Unknown Project`);
+        task.projectName = 'Unknown Project';
       }
+    } else if (!taskProjectId) {
+      console.log(`-> 任务无项目ID`);
     }
   });
+  
+  console.log('项目名称补充完成');
 }
 
 // 获取所有任务的评论数量
@@ -513,10 +659,29 @@ watch(searchText, () => {
   fetchTasks()
 })
 
+// 监听全局任务视图开关变化
+watch(showAllTasks, async (newValue) => {
+  console.log('全局任务视图切换:', newValue);
+  if (newValue && isAdmin.value) {
+    // 重新获取项目列表，确保有最新数据
+    await fetchProjects();
+  }
+  // 重新获取任务列表
+  fetchTasks();
+})
+
 // 在组件挂载时初始化数据
 onMounted(async () => {
-  await fetchProjects() // 先获取项目列表
-  fetchTasks()          // 再获取当前用户的任务列表
+  console.log('组件挂载，用户角色:', userStore.userInfo?.role);
+  
+  // 初始化管理员全局任务视图
+  if (isAdmin.value) {
+    console.log('管理员用户，初始化全局视图设置');
+    showAllTasks.value = true; // 默认为管理员开启全局视图
+  }
+  
+  await fetchProjects(); // 先获取项目列表
+  await fetchTasks();    // 再获取当前用户的任务列表
 })
 
 // 按状态分组的任务列表
@@ -531,6 +696,21 @@ const inProcessTasks = computed(() => {
 const completedTasks = computed(() => {
   return tasks.value.filter(task => task.status === 2)
 })
+
+// 检查当前用户是否可以操作此任务
+const canUserModifyTask = (task: TaskDetail): boolean => {
+  // 如果是项目负责人，可以操作任务
+  if (isLeader.value) return true;
+  
+  // 对于管理员用户，默认规则是：仅有任务所属项目的成员才能修改任务
+  // 判断当前用户是否在任务成员列表中
+  const currentUsername = userStore.userInfo?.username;
+  if (currentUsername && task.members.includes(currentUsername)) {
+    return true;
+  }
+  
+  return false;
+}
 
 // 获取优先级名称
 const getPriorityName = (priority: number): string => {
@@ -557,9 +737,9 @@ const getPriorityType = (priority: number): 'success' | 'warning' | 'info' | 'pr
 // 处理任务操作
 const handleFinish = async (task: TaskDetail) => {
   try {
-    await ElMessageBox.confirm('确认将任务标记为已完成？', '提示', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm('Are you sure to mark the task as completed?', 'Tips', {
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
       type: 'warning'
     })
     
@@ -657,6 +837,54 @@ const isTaskExpired = (task: TaskDetail): boolean => {
   // 如果任务未完成且已过截止日期，则认为已过期
   return task.status !== 2 && deadline < now;
 }
+
+// 处理Admin全局视图特殊逻辑
+const processAdminGlobalTasks = (taskData: TaskDetail[]) => {
+  // 从任务中提取所有的项目ID
+  const projectIdsFromTasks = new Set<string>();
+  taskData.forEach(task => {
+    if (task.projectId) {
+      projectIdsFromTasks.add(String(task.projectId));
+    }
+  });
+  
+  console.log('从任务中提取的唯一项目ID:', Array.from(projectIdsFromTasks));
+  
+  // 检查是否有项目ID不在当前项目列表中
+  const projectIdsInList = new Set<string>();
+  projectList.value.forEach(project => {
+    projectIdsInList.add(String(project.id));
+  });
+  
+  // 找出缺失的项目ID
+  const missingProjectIds = Array.from(projectIdsFromTasks).filter(id => !projectIdsInList.has(id));
+  
+  if (missingProjectIds.length > 0) {
+    console.log('缺失的项目ID:', missingProjectIds);
+    
+    // 为缺失的项目创建临时项目对象
+    const temporaryProjects: Project[] = missingProjectIds.map(id => ({
+      id: parseInt(id), // 确保id是数字类型
+      name: `Project #${id}`,
+      description: 'Auto-generated placeholder for missing project',
+      status: 1, // 活跃状态
+      priority: 2, // 中等优先级
+      startTime: new Date().toISOString(),
+      endTime: new Date().toISOString(),
+      createTime: new Date().toISOString(),
+      createUser: 0, // 系统用户
+      updateTime: new Date().toISOString(),
+      updateUser: 0,
+      members: []
+    }));
+    
+    // 添加到项目列表中
+    projectList.value = [...projectList.value, ...temporaryProjects];
+    console.log('添加临时项目后的项目列表:', projectList.value);
+  }
+  
+  return taskData;
+};
 </script>
 
 <style scoped>
@@ -678,6 +906,8 @@ const isTaskExpired = (task: TaskDetail): boolean => {
   padding: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   border-radius: 8px;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .search-input {
@@ -1184,6 +1414,27 @@ const isTaskExpired = (task: TaskDetail): boolean => {
   margin-right: 16px;
 }
 
+/* 管理员全局视图开关样式 */
+.admin-switch {
+  display: flex;
+  align-items: center;
+  margin-left: 20px;
+  padding: 0 10px;
+  height: 40px;
+  gap: 24px;     
+}
+
+.admin-switch span {
+  font-size: 14px;
+  color: #409EFF;
+  font-weight: 500;
+}
+
+.admin-switch :deep(.el-switch) {
+  --el-switch-on-color: #409EFF;
+  --el-switch-off-color: #909399;
+}
+
 /* 优化滚动条样式 */
 .task-card :deep(.el-card__body)::-webkit-scrollbar {
   width: 4px;
@@ -1217,5 +1468,30 @@ const isTaskExpired = (task: TaskDetail): boolean => {
 .expired-date {
   color: #f56c6c;
   font-weight: 600;
+}
+
+.kanban-tabs {
+  flex-grow: 0;
+  min-width: 300px;
+  max-width: 450px;
+}
+
+.tabs-container {
+  display: flex;
+  align-items: center;
+  width: auto;
+}
+
+/* 适应不同屏幕宽度 */
+@media (max-width: 768px) {
+  .kanban-tabs {
+    min-width: 250px;
+    max-width: 100%;
+  }
+  
+  .tabs-container {
+    width: 100%;
+    margin-bottom: 10px;
+  }
 }
 </style>

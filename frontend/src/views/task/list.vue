@@ -199,7 +199,7 @@
           </el-empty>
         </div>
       </template>
-      <el-table-column label="Number" width="60" align="center">
+      <el-table-column label="No." width="60" align="center">
         <template #default="scope">
           <span class="index-cell">{{ getRowIndex(scope.$index) }}</span>
         </template>
@@ -261,7 +261,7 @@
           {{ formatDate(row.startTime) }}
         </template>
       </el-table-column>
-      <el-table-column prop="deadline" label="Deadline" width="160">
+      <el-table-column prop="deadline" label="Due Time" width="160">
         <template #default="{ row }">
           {{ formatDate(row.deadline || row.dueTime) }}
         </template>
@@ -375,7 +375,7 @@ const filterForm = reactive<FilterForm>({
 
 // 选项数据
 const priorityOptions = [
-  { label: 'Emergency', value: 4 },
+  { label: 'Critical', value: 4 },
   { label: 'High', value: 3 },
   { label: 'Medium', value: 2 },
   { label: 'Low', value: 1 }

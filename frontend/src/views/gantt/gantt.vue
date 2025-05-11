@@ -11,12 +11,13 @@
         <!-- 靠左展示 -->
         <div class="gantt-controls" style="text-align: left;">
           
-          
+          <el-label style="font-size: 14px; ">Show Completed Tasks</el-label>
           <!-- 添加显示已完成任务的开关 -->
           <el-switch
             v-model="showCompletedTasks"
-            active-text="Show completed tasks"
-            inactive-text="Hide completed tasks"
+            active-text="Show"
+            inactive-text="Hide"
+            inline-prompt
             class="task-switch"
             @change="updateGanttWithTaskFilter"
           />
@@ -149,7 +150,7 @@ const customPopupHtml = (task: any) => {
   const progressText = `${task.progress || 0}%`
   const startDate = dayjs(task.start).format('YYYY-MM-DD HH:mm:ss')
   const endDate = dayjs(task.end).format('YYYY-MM-DD HH:mm:ss')
-  const description = task.description || '暂无描述'
+  const description = task.description || 'No description'
 
   // 根据不同优先级设置颜色
   const priorityColors: Record<string, string> = {
@@ -1136,6 +1137,17 @@ onActivated(() => {
 
 .task-switch :deep(.el-switch__core) {
   width: 50px !important;
+}
+
+/* 修改为系统标准色系 */
+.task-switch :deep(.el-switch.is-checked .el-switch__core) {
+  background-color: #409EFF !important; /* 蓝色 - Element Plus 默认主色 */
+  border-color: #409EFF !important;
+}
+
+.task-switch :deep(.el-switch:not(.is-checked) .el-switch__core) {
+  background-color: #909399 !important; /* 灰色 - Element Plus 默认灰色 */
+  border-color: #909399 !important;
 }
 
 .gantt-chart {

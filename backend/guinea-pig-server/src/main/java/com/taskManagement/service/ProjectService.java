@@ -106,4 +106,15 @@ public interface ProjectService {
      * @return 附件列表
      */
     List<ProjectAttachmentDTO> getProjectAttachments(Long projectId);
+    
+    /**
+     * 获取所有项目（管理员专用）
+     * @param userId 当前用户ID
+     * @param keyword 关键字
+     * @param status 状态
+     * @param page 页码
+     * @param pageSize 每页大小
+     * @return 分页结果
+     */
+    PageResult<ProjectVO> getAllProjects(Long userId, String keyword, Integer status, Integer page, Integer pageSize);
 } 

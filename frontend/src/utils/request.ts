@@ -92,16 +92,16 @@ service.interceptors.response.use(
       if (status === 401) {
         localStorage.removeItem('token')
         router.push('/login')
-        errorMsg = '登录已过期，请重新登录'
+        errorMsg = 'Login expired, please log in again'
       } else if (status === 403) {
-        errorMsg = '没有权限访问该资源'
+        errorMsg = 'No permission to access this resource'
       } else if (status === 500) {
-        errorMsg = '服务器错误，请联系管理员'
+        errorMsg = 'Server error, please contact the administrator'
       }
     } else if (error.request) {
       // 请求已发送但没有收到响应
       console.error('未收到响应:', error.request)
-      errorMsg = '服务器未响应，请检查网络连接'
+      errorMsg = 'Server did not respond, please check your network connection'
     } else {
       // 请求配置错误
       console.error('请求配置错误:', error.message)

@@ -69,13 +69,12 @@
                 :active-value="1"
                 :inactive-value="0"
                 :loading="row.statusLoading"
+                active-text="Enabled"
+                inactive-text="Disabled"
+                inline-prompt
+                class="status-switch"
                 @change="handleStatusChange(row, $event)"
               />
-              <span
-                class="status-text"
-                :class="{ 'status-enabled': row.status === 1, 'status-disabled': row.status === 0 }" >
-                {{ row.status === 1 ? 'Enabled' : 'Disabled' }}
-              </span>
             </div>
           </template>
         </el-table-column>
@@ -136,10 +135,15 @@
           <el-input v-model="form.password" type="password" placeholder="Please enter the password" show-password />
         </el-form-item>
         <el-form-item label="Status" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio :label="1">Enabled</el-radio>
-            <el-radio :label="0">Disabled</el-radio>
-          </el-radio-group>
+          <el-switch
+            v-model="form.status"
+            :active-value="1"
+            :inactive-value="0"
+            active-text="Enabled"
+            inactive-text="Disabled"
+            inline-prompt
+            class="status-switch"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -200,23 +204,23 @@ const form = reactive<UserForm>({
 // 表单验证规则
 const rules: FormRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the username', trigger: 'blur' },
+    { min: 2, max: 20, message: 'Length must be between 2 and 20 characters', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+    { required: true, message: 'Please enter the email', trigger: 'blur' },
+    { type: 'email', message: 'Please enter a valid email address', trigger: 'blur' }
   ],
   phone: [
-    { required: true, message: '请输入电话号码', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+    { required: true, message: 'Please enter the phone number', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: 'Please enter a valid phone number', trigger: 'blur' }
   ],
   role: [
-    { required: true, message: '请选择角色', trigger: 'change' }
+    { required: true, message: 'Please select the role', trigger: 'change' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter the password', trigger: 'blur' },
+    { min: 6, max: 20, message: 'Length must be between 6 and 20 characters', trigger: 'blur' }
   ]
 }
 
@@ -545,14 +549,33 @@ onMounted(() => {
   color: #F56C6C;
 }
 
+/* 修改为系统标准色系 - 表格中的状态开关 */
 :deep(.status-switch.el-switch.is-checked .el-switch__core) {
-  background-color: #13ce66;
-  border-color: #13ce66;
+  background-color: #409EFF !important; /* 蓝色 - Element Plus 默认主色 */
+  border-color: #409EFF !important;
 }
 
 :deep(.status-switch.el-switch:not(.is-checked) .el-switch__core) {
-  background-color: #ff4949;
-  border-color: #ff4949;
+  background-color: #909399 !important; /* 灰色 - Element Plus 默认灰色 */
+  border-color: #909399 !important;
+}
+
+/* 表单中的状态开关样式 */
+:deep(.el-form .el-switch.is-checked .el-switch__core) {
+  background-color: #409EFF !important;
+  border-color: #409EFF !important;
+}
+
+:deep(.el-form .el-switch:not(.is-checked) .el-switch__core) {
+  background-color: #909399 !important;
+  border-color: #909399 !important;
+}
+
+/* 增加switch-label样式 */
+.switch-label {
+  margin-left: 10px;
+  color: #606266;
+  font-size: 14px;
 }
 
 /* 确保表单项标签对齐 */

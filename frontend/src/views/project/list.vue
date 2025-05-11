@@ -211,12 +211,12 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Start Date" width="180">
+      <el-table-column label="Start Time" width="180">
         <template #default="{ row }">
           {{ formatDate(row.startTime) || '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="Due Date" width="180">
+      <el-table-column label="Due Time" width="180">
         <template #default="{ row }">
           {{ formatDate(row.endTime) || '-' }}
         </template>
@@ -377,7 +377,7 @@ const searchForm = reactive({
 
 // 选项数据
 const statusOptions = [
-  { label: 'Preparation', value: 0 },
+  { label: 'Pending', value: 0 },
   { label: 'In Progress', value: 1 },
   { label: 'Completed', value: 2 },
   { label: 'Archived', value: 3 }

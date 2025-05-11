@@ -1,6 +1,8 @@
 package com.taskManagement.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -30,6 +32,8 @@ public class TaskDTO {
     private LocalDateTime startTime;
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonAlias({"dueTime"})
+    @JsonProperty("dueTime")
     private LocalDateTime deadline;
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
