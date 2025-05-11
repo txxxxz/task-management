@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -20,6 +23,8 @@ import springfox.documentation.service.ApiInfo;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -68,6 +73,46 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
                 .allowCredentials(false)  // 修改为false，因为我们不需要发送凭证
                 .maxAge(3600);
     }
+    
+    /**
+     * 添加格式化转换器
+     * @param registry
+     */
+    @Override
+    protected void addFormatters(FormatterRegistry registry) {
+        log.info("注册LocalDate日期转换器...");
+        // 1. 注册ISO标准日期格式转换器
+        DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
+        registrar.setDateFormatter(DateTimeFormatter.ISO_DATE); // 设置为ISO标准日期格式 yyyy-MM-dd
+        registrar.registerFormatters(registry);
+        
+        // 2. 添加自定义String到LocalDate转换器，支持多种格式
+        registry.addConverter(new Converter<String, LocalDate>() {
+            @Override
+            public LocalDate convert(String source) {
+                if (source == null || source.trim().isEmpty()) {
+                    return null;
+                }
+                
+                try {
+                    // 标准ISO格式 yyyy-MM-dd
+                    return LocalDate.parse(source, DateTimeFormatter.ISO_DATE);
+                } catch (Exception e1) {
+                    try {
+                        // 斜杠格式 yyyy/MM/dd
+                        return LocalDate.parse(source, DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+                    } catch (Exception e2) {
+                        // 如果依然失败，记录错误并抛出异常
+                        log.error("无法将字符串 [{}] 转换为LocalDate", source);
+                        throw new IllegalArgumentException("Invalid date format: " + source);
+                    }
+                }
+            }
+        });
+        
+        log.info("LocalDate日期转换器注册完成");
+    }
+    
     /**
      * 通过knife4j生成接口文档
      * @return

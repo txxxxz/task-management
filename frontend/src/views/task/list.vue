@@ -490,59 +490,67 @@ const updateUrlParams = (params: Record<string, any>) => {
   router.push({ query })
 }
 
+// 格式化日期为YYYY-MM-DD格式
+const formatDateForApi = (dateStr: string): string => {
+  try {
+    // 确保日期格式为YYYY-MM-DD
+    const date = new Date(dateStr);
+    return date.toISOString().split('T')[0];
+  } catch (e) {
+    return dateStr; // 出错则返回原字符串
+  }
+}
+
 // get task list from backend
 const fetchTaskList = async () => {
   loadingCount.value++
   loading.value = true
   try {
-    // clear empty value parameters
-    const cleanParams: Record<string, any> = {}
+    // 构建查询参数对象
+    const cleanParams: TaskQueryParams = {}
     
-    // basic parameters
+    // 基本查询参数
     if (filterForm.name) cleanParams.keyword = filterForm.name
     if (typeof filterForm.status === 'number') cleanParams.status = filterForm.status
     if (typeof filterForm.priority === 'number') cleanParams.priority = filterForm.priority
     
-    // member filter
+    // 成员筛选
     if (filterForm.members && filterForm.members.length > 0) {
-      cleanParams.member = filterForm.members[0] // use the first member as search condition
-      // print search condition
+      cleanParams.member = filterForm.members[0] // 使用第一个成员作为搜索条件
       console.log(`Search tasks by member[${filterForm.members[0]}]`)
     }
     
-    // tag filter
+    // 标签筛选
     if (filterForm.tags && filterForm.tags.length > 0) {
       cleanParams.tags = filterForm.tags.join(',')
     }
     
-    // date range
+    // 创建时间范围处理
     if (filterForm.createDateRange && filterForm.createDateRange.length === 2) {
-      cleanParams.startTime = filterForm.createDateRange[0]
-      cleanParams.endTime = filterForm.createDateRange[1]
+      cleanParams.startTime = formatDateForApi(filterForm.createDateRange[0])
+      cleanParams.endTime = formatDateForApi(filterForm.createDateRange[1])
+      console.log(`使用创建时间范围: ${cleanParams.startTime} 至 ${cleanParams.endTime}`)
     }
     
-    // 截止日期范围
+    // 截止时间范围处理
     if (filterForm.dueDateRange && filterForm.dueDateRange.length === 2) {
-      cleanParams.dueStartTime = filterForm.dueDateRange[0]
-      cleanParams.dueEndTime = filterForm.dueDateRange[1]
+      cleanParams.dueStartTime = formatDateForApi(filterForm.dueDateRange[0])
+      cleanParams.dueEndTime = formatDateForApi(filterForm.dueDateRange[1])
+      console.log(`使用截止时间范围: ${cleanParams.dueStartTime} 至 ${cleanParams.dueEndTime}`)
     }
     
     // 特殊处理今日到期参数
     if (route.query.todayExpired === 'true') {
-      // 不再使用专用API标志，改为直接使用日期范围
       const today = new Date().toISOString().split('T')[0]; // 格式: YYYY-MM-DD
-      cleanParams.dueStartTime = today;
-      cleanParams.dueEndTime = today;
+      cleanParams.dueStartTime = today
+      cleanParams.dueEndTime = today
+      console.log(`使用今日到期条件: ${today}`)
       
-      console.log(`使用今日到期条件: ${today}`);
-      
-      // 同时更新过滤表单以保持一致
-      if (!filterForm.dueDateRange || filterForm.dueDateRange.length !== 2) {
-        filterForm.dueDateRange = [today, today];
-      }
+      // 同步更新表单状态
+      filterForm.dueDateRange = [today, today]
     }
     
-    // 项目ID
+    // 项目ID处理
     if (route.query.projectId) {
       cleanParams.projectId = route.query.projectId as string
     }
@@ -551,11 +559,10 @@ const fetchTaskList = async () => {
     cleanParams.page = currentPage.value
     cleanParams.pageSize = pageSize.value
     
-    // 打印详细日志
-    console.log('原始表单数据:', JSON.stringify(filterForm))
-    console.log('处理后的请求参数:', JSON.stringify(cleanParams))
+    // 打印最终请求参数
+    console.log('最终请求参数:', JSON.stringify(cleanParams))
     
-    // 使用处理过的参数发起请求
+    // 发送请求
     const response = await getTaskList(cleanParams)
     console.log('API响应状态:', response.status)
     console.log('API响应头部:', response.headers)

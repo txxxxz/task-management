@@ -186,9 +186,9 @@ public class TaskControllerTest {
         resultMap.put("items", taskList);
         resultMap.put("total", 1);
         
-        // 模拟Service行为
+        // 模拟Service行为 - 使用null代替缺失的日期参数
         when(taskService.getTaskList(eq(keyword), eq(status), eq(priority), 
-                eq(TEST_PROJECT_ID), eq(page), eq(pageSize)))
+                eq(TEST_PROJECT_ID), isNull(), isNull(), isNull(), isNull(), eq(page), eq(pageSize)))
                 .thenReturn(resultMap);
         
         // 执行测试
@@ -280,9 +280,9 @@ public class TaskControllerTest {
         resultMap.put("items", taskList);
         resultMap.put("total", 1);
         
-        // 模拟Service行为
+        // 模拟Service行为 - 添加日期参数，使用isNull()表示参数为null
         when(taskService.getProjectTasks(eq(projectId), eq(keyword), eq(status), 
-                eq(priority), eq(page), eq(pageSize)))
+                eq(priority), isNull(), isNull(), isNull(), isNull(), eq(page), eq(pageSize)))
                 .thenReturn(resultMap);
         
         // 执行测试

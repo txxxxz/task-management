@@ -31,6 +31,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -144,24 +146,31 @@ public class TaskServiceImpl implements TaskService {
      * @param status 状态
      * @param priority 优先级
      * @param projectId 项目ID
+     * @param startTime 创建开始日期
+     * @param endTime 创建结束日期
+     * @param dueStartTime 截止开始日期
+     * @param dueEndTime 截止结束日期
      * @param page 页码
      * @param pageSize 每页数量
      * @return 任务列表和总数
      */
     @Override
     public Map<String, Object> getTaskList(String keyword, Integer status, Integer priority,
-                                          Long projectId, Integer page, Integer pageSize) {
-        log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, page={}, pageSize={}",
-                keyword, status, priority, projectId, page, pageSize);
+                                          Long projectId, LocalDate startTime, LocalDate endTime,
+                                          LocalDate dueStartTime, LocalDate dueEndTime, Integer page, Integer pageSize) {
+        log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}, page={}, pageSize={}",
+                keyword, status, priority, projectId, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
         
         // 使用LambdaQuery构建查询条件
         LambdaQueryWrapper<Task> queryWrapper = new LambdaQueryWrapper<>();
         
         // 添加关键词查询条件
         if (StringUtils.isNotEmpty(keyword)) {
-            queryWrapper.like(Task::getName, keyword)
-                    .or()
-                    .like(Task::getDescription, keyword);
+            queryWrapper.and(wrapper -> wrapper
+                .like(Task::getName, keyword)
+                .or()
+                .like(Task::getDescription, keyword)
+            );
         }
         
         // 添加状态过滤条件
@@ -177,6 +186,36 @@ public class TaskServiceImpl implements TaskService {
         // 添加项目ID过滤条件
         if (projectId != null) {
             queryWrapper.eq(Task::getProjectId, projectId);
+        }
+        
+        // 添加创建时间范围条件
+        if (startTime != null) {
+            // 转换为当日开始时间: 00:00:00
+            LocalDateTime startDateTime = LocalDateTime.of(startTime, LocalTime.MIN);
+            queryWrapper.ge(Task::getCreateTime, startDateTime);
+        }
+        
+        if (endTime != null) {
+            // 转换为当日结束时间: 23:59:59.999999999
+            LocalDateTime endDateTime = LocalDateTime.of(endTime, LocalTime.MIN)
+                                                     .plusDays(1)
+                                                     .minusNanos(1);
+            queryWrapper.le(Task::getCreateTime, endDateTime);
+        }
+        
+        // 添加截止时间范围条件
+        if (dueStartTime != null) {
+            // 转换为当日开始时间: 00:00:00
+            LocalDateTime dueStartDateTime = LocalDateTime.of(dueStartTime, LocalTime.MIN);
+            queryWrapper.ge(Task::getDeadline, dueStartDateTime);
+        }
+        
+        if (dueEndTime != null) {
+            // 转换为当日结束时间: 23:59:59.999999999
+            LocalDateTime dueEndDateTime = LocalDateTime.of(dueEndTime, LocalTime.MIN)
+                                                         .plusDays(1)
+                                                         .minusNanos(1);
+            queryWrapper.le(Task::getDeadline, dueEndDateTime);
         }
         
         // 排序（按优先级降序，更新时间降序）
@@ -485,15 +524,20 @@ public class TaskServiceImpl implements TaskService {
      * @param keyword 关键词
      * @param status 状态
      * @param priority 优先级
+     * @param startTime 创建开始日期
+     * @param endTime 创建结束日期
+     * @param dueStartTime 截止开始日期
+     * @param dueEndTime 截止结束日期
      * @param page 页码
      * @param pageSize 每页数量
      * @return 任务列表和总数（仅包含标签ID，不包含颜色等额外信息）
      */
     @Override
     public Map<String, Object> getProjectTasks(Long projectId, String keyword, Integer status,
-                                             Integer priority, Integer page, Integer pageSize) {
-        log.info("获取项目任务列表: projectId={}, keyword={}, status={}, priority={}, page={}, pageSize={}",
-                projectId, keyword, status, priority, page, pageSize);
+                                             Integer priority, LocalDate startTime, LocalDate endTime,
+                                             LocalDate dueStartTime, LocalDate dueEndTime, Integer page, Integer pageSize) {
+        log.info("获取项目任务列表: projectId={}, keyword={}, status={}, priority={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}, page={}, pageSize={}",
+                projectId, keyword, status, priority, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
         
         // 检查项目是否存在
         Project project = projectMapper.selectById(projectId);
@@ -524,6 +568,36 @@ public class TaskServiceImpl implements TaskService {
         // 添加优先级过滤条件
         if (priority != null) {
             queryWrapper.eq(Task::getPriority, priority);
+        }
+        
+        // 添加创建时间范围条件
+        if (startTime != null) {
+            // 转换为当日开始时间: 00:00:00
+            LocalDateTime startDateTime = LocalDateTime.of(startTime, LocalTime.MIN);
+            queryWrapper.ge(Task::getCreateTime, startDateTime);
+        }
+        
+        if (endTime != null) {
+            // 转换为当日结束时间: 23:59:59.999999999
+            LocalDateTime endDateTime = LocalDateTime.of(endTime, LocalTime.MIN)
+                                                     .plusDays(1)
+                                                     .minusNanos(1);
+            queryWrapper.le(Task::getCreateTime, endDateTime);
+        }
+        
+        // 添加截止时间范围条件
+        if (dueStartTime != null) {
+            // 转换为当日开始时间: 00:00:00
+            LocalDateTime dueStartDateTime = LocalDateTime.of(dueStartTime, LocalTime.MIN);
+            queryWrapper.ge(Task::getDeadline, dueStartDateTime);
+        }
+        
+        if (dueEndTime != null) {
+            // 转换为当日结束时间: 23:59:59.999999999
+            LocalDateTime dueEndDateTime = LocalDateTime.of(dueEndTime, LocalTime.MIN)
+                                                         .plusDays(1)
+                                                         .minusNanos(1);
+            queryWrapper.le(Task::getDeadline, dueEndDateTime);
         }
         
         // 排序（按优先级降序，更新时间降序）
@@ -992,7 +1066,7 @@ public class TaskServiceImpl implements TaskService {
         }
         
         // 获取项目任务列表（不分页，获取所有任务）
-        Map<String, Object> result = getProjectTasks(projectId, null, null, null, 1, 1000);
+        Map<String, Object> result = getProjectTasks(projectId, null, null, null, null, null, null, null, 1, 1000);
         
         List<TaskVO> taskVOList = new ArrayList<>();
         if (result.containsKey("items")) {

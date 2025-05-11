@@ -5,6 +5,7 @@ import com.taskManagement.dto.TaskDTO;
 import com.taskManagement.vo.TaskVO;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -26,12 +27,17 @@ public interface TaskService {
      * @param status 状态
      * @param priority 优先级
      * @param projectId 项目ID
+     * @param startTime 创建开始日期
+     * @param endTime 创建结束日期
+     * @param dueStartTime 截止开始日期
+     * @param dueEndTime 截止结束日期
      * @param page 页码
      * @param pageSize 每页数量
      * @return 任务列表和总数
      */
-    Map<String, Object> getTaskList(String keyword, Integer status, Integer priority, 
-                                   Long projectId, Integer page, Integer pageSize);
+    Map<String, Object> getTaskList(String keyword, Integer status, Integer priority,
+                                 Long projectId, LocalDate startTime, LocalDate endTime,
+                                 LocalDate dueStartTime, LocalDate dueEndTime, Integer page, Integer pageSize);
 
     /**
      * 获取任务详情
@@ -67,12 +73,17 @@ public interface TaskService {
      * @param keyword 关键词
      * @param status 状态
      * @param priority 优先级
+     * @param startTime 创建开始日期
+     * @param endTime 创建结束日期
+     * @param dueStartTime 截止开始日期
+     * @param dueEndTime 截止结束日期
      * @param page 页码
      * @param pageSize 每页数量
-     * @return 任务列表和总数
+     * @return 任务列表和总数（仅包含标签ID，不包含颜色等额外信息）
      */
-    Map<String, Object> getProjectTasks(Long projectId, String keyword, Integer status, 
-                                       Integer priority, Integer page, Integer pageSize);
+    Map<String, Object> getProjectTasks(Long projectId, String keyword, Integer status,
+                                      Integer priority, LocalDate startTime, LocalDate endTime,
+                                      LocalDate dueStartTime, LocalDate dueEndTime, Integer page, Integer pageSize);
 
     /**
      * 根据项目ID获取任务VO列表

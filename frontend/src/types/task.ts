@@ -96,7 +96,10 @@ export interface TaskQueryParams {
   projectId?: string
   startTime?: string
   endTime?: string
+  dueStartTime?: string // 截止时间开始
+  dueEndTime?: string  // 截止时间结束
   member?: string // 成员用户名
+  tags?: string   // 标签IDs，逗号分隔
   page?: number
   pageSize?: number
 } 

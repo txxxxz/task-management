@@ -43,16 +43,18 @@ service.interceptors.request.use(
 
     // get请求参数处理
     if (config.method === 'get' && config.params) {
-      let url = config.url + '?';
-      for (const propName of Object.keys(config.params)) {
-        const value = config.params[propName];
-        if (value !== null && typeof value !== 'undefined') {
-          url += `${encodeURIComponent(propName)}=${encodeURIComponent(value)}&`;
+      // 不再手动拼接URL，让axios自动处理参数
+      // 只需要清理undefined和null值
+      const cleanParams: Record<string, any> = {};
+      
+      for (const key in config.params) {
+        const value = config.params[key];
+        if (value !== null && value !== undefined) {
+          cleanParams[key] = value;
         }
       }
-      url = url.slice(0, -1);
-      config.params = {};
-      config.url = url;
+      
+      config.params = cleanParams;
     }
 
     return config

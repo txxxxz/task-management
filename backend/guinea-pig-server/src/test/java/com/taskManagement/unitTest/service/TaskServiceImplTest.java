@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -150,6 +151,11 @@ public class TaskServiceImplTest {
         Long projectId = TEST_PROJECT_ID;
         Integer page = 1;
         Integer pageSize = 10;
+        // 添加日期参数，默认为null
+        LocalDate startTime = null;
+        LocalDate endTime = null;
+        LocalDate dueStartTime = null;
+        LocalDate dueEndTime = null;
         
         List<Task> taskList = new ArrayList<>();
         taskList.add(createTestTask());
@@ -166,7 +172,9 @@ public class TaskServiceImplTest {
         when(taskMapper.selectPage(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(taskPage);
         
         // 执行测试
-        Map<String, Object> result = taskService.getTaskList(keyword, status, priority, projectId, page, pageSize);
+        Map<String, Object> result = taskService.getTaskList(keyword, status, priority, projectId, 
+                                                           startTime, endTime, dueStartTime, dueEndTime, 
+                                                           page, pageSize);
         
         // 验证结果
         assertNotNull(result);

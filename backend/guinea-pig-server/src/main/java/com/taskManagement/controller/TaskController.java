@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/tasks")
@@ -61,6 +62,10 @@ public class TaskController {
      * @param priority 优先级
      * @param projectId 项目ID
      * @param member 成员
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param dueStartTime 截止开始时间
+     * @param dueEndTime 截止结束时间
      * @param page 页码
      * @param pageSize 每页数量
      * @return 任务列表
@@ -73,10 +78,14 @@ public class TaskController {
             @RequestParam(required = false) Integer priority,
             @RequestParam(required = false) Long projectId,
             @RequestParam(required = false) String member,
+            @RequestParam(required = false) LocalDate startTime,
+            @RequestParam(required = false) LocalDate endTime,
+            @RequestParam(required = false) LocalDate dueStartTime,
+            @RequestParam(required = false) LocalDate dueEndTime,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, member={}, page={}, pageSize={}",
-                keyword, status, priority, projectId, member, page, pageSize);
+        log.info("获取任务列表: keyword={}, status={}, priority={}, projectId={}, member={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}, page={}, pageSize={}",
+                keyword, status, priority, projectId, member, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
         
         Map<String, Object> result;
         
@@ -84,7 +93,7 @@ public class TaskController {
         if (StringUtils.isNotBlank(member)) {
             result = taskService.getTasksByMember(member, page, pageSize);
         } else {
-            result = taskService.getTaskList(keyword, status, priority, projectId, page, pageSize);
+            result = taskService.getTaskList(keyword, status, priority, projectId, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
         }
 
         return Result.success(result);
@@ -139,6 +148,10 @@ public class TaskController {
      * @param keyword 关键词
      * @param status 状态
      * @param priority 优先级
+     * @param startTime 创建开始日期
+     * @param endTime 创建结束日期
+     * @param dueStartTime 截止开始日期
+     * @param dueEndTime 截止结束日期
      * @param page 页码
      * @param pageSize 每页数量
      * @return 任务列表
@@ -150,13 +163,17 @@ public class TaskController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) Integer priority,
+            @RequestParam(required = false) LocalDate startTime,
+            @RequestParam(required = false) LocalDate endTime,
+            @RequestParam(required = false) LocalDate dueStartTime,
+            @RequestParam(required = false) LocalDate dueEndTime,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("获取项目任务列表: projectId={}, keyword={}, status={}, priority={}, page={}, pageSize={}",
-                projectId, keyword, status, priority, page, pageSize);
+        log.info("获取项目任务列表: projectId={}, keyword={}, status={}, priority={}, startTime={}, endTime={}, dueStartTime={}, dueEndTime={}, page={}, pageSize={}",
+                projectId, keyword, status, priority, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
         
         // 调用service
-        Map<String, Object> projectTasks = taskService.getProjectTasks(projectId, keyword, status, priority, page, pageSize);
+        Map<String, Object> projectTasks = taskService.getProjectTasks(projectId, keyword, status, priority, startTime, endTime, dueStartTime, dueEndTime, page, pageSize);
         return Result.success(projectTasks);
     }
     
