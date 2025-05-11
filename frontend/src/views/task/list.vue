@@ -529,11 +529,17 @@ const fetchTaskList = async () => {
     
     // 特殊处理今日到期参数
     if (route.query.todayExpired === 'true') {
-      // 如果使用专用API则替换其他参数
-      cleanParams.todayExpired = true
-      // 清除可能冲突的参数
-      delete cleanParams.dueStartTime
-      delete cleanParams.dueEndTime
+      // 不再使用专用API标志，改为直接使用日期范围
+      const today = new Date().toISOString().split('T')[0]; // 格式: YYYY-MM-DD
+      cleanParams.dueStartTime = today;
+      cleanParams.dueEndTime = today;
+      
+      console.log(`使用今日到期条件: ${today}`);
+      
+      // 同时更新过滤表单以保持一致
+      if (!filterForm.dueDateRange || filterForm.dueDateRange.length !== 2) {
+        filterForm.dueDateRange = [today, today];
+      }
     }
     
     // 项目ID
