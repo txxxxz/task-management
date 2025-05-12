@@ -43,6 +43,9 @@ import { useUserStore } from '@/stores/user'
 // 是否显示已完成的任务
 const showCompletedTasks = ref(false)
 
+// 用于存储事件处理函数的引用
+const resizeHandler = ref<(() => void) | null>(null)
+
 // 计算当前一周的开始（周一）和结束（周日）日期
 const weekStart = computed(() => {
   // 从当天开始往前找到最近的周一
@@ -625,7 +628,7 @@ const customizeHeader = () => {
             todayHighlight.setAttribute('y', '0')
             todayHighlight.setAttribute('width', '4')
             todayHighlight.setAttribute('height', `${height}`)
-            todayHighlight.setAttribute('fill', 'rgba(24, 144, 255, 0.15)')
+            todayHighlight.setAttribute('fill', 'rgba(24, 144, 255, 0.4)')
             todayHighlight.setAttribute('stroke', '#1890ff')
             todayHighlight.setAttribute('stroke-width', '2')
             
@@ -779,20 +782,19 @@ const injectTodayHighlightStyles = () => {
   const styleElement = document.createElement('style')
   styleElement.id = 'custom-gantt-today-styles'
   styleElement.innerHTML = `
-    /* 今日高亮SVG元素样式 - 使用深蓝色系 */
+    /* 今日高亮SVG元素样式 - 使用深蓝色系，去掉边框 */
     .gantt rect.today-highlight {
-      fill: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
-      stroke: #1890ff !important; /* 蓝色边框 */
-      stroke-width: 2px !important; /* 边框宽度 */
-      filter: drop-shadow(0 0 3px rgba(24, 144, 255, 0.4)) !important; /* 蓝色阴影效果 */
+      fill: rgba(24, 144, 255, 0.4) !important; /* 加深的蓝色背景 */
+      stroke: transparent !important; /* 透明边框 */
+      stroke-width: 0 !important; /* 无边框宽度 */
     }
     
-    /* 表头样式（非SVG部分） */
+    /* 表头样式（非SVG部分），去掉边框 */
     .gantt .grid-header .grid-header-cell.today-highlight,
     .gantt .grid-header .today-highlight {
-      background-color: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
-      border-top: 3px solid #1890ff !important; /* 蓝色顶部边框 */
-      box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2) !important; /* 柔和阴影 */
+      background-color: rgba(24, 144, 255, 0.4) !important; /* 加深的蓝色背景 */
+      border-top: none !important; /* 去掉顶部边框 */
+      box-shadow: none !important; /* 去掉阴影 */
     }
     
     /* 表头内的文字样式 */
@@ -814,62 +816,128 @@ const injectTodayHighlightStyles = () => {
       font-size: 12px !important;
       margin-left: 4px !important;
       font-weight: bold !important;
-      box-shadow: 0 2px 4px rgba(24, 144, 255, 0.4) !important;
+      box-shadow: none !important; /* 去掉阴影 */
     }
     
-    /* 优先级颜色 - 直接针对SVG元素设置fill属性 */
+    /* 优先级颜色 - 任务条使用浅色，去掉边框 */
     .gantt .bar-wrapper.priority-urgent .bar {
-      fill: #F56C6C !important; /* 紧急 - 深红色 */
+      fill: rgba(245, 108, 108, 0.35) !important; /* 浅紧急色 - 淡红色 */
+      stroke: transparent !important; /* 透明边框 */
+      stroke-width: 0 !important; /* 无边框宽度 */
     }
     
     .gantt .bar-wrapper.priority-high .bar {
-      fill: #FAAD14 !important; /* 高 - 阿里系黄色 */
+      fill: rgba(250, 173, 20, 0.35) !important; /* 浅高优先级色 - 淡黄色 */
+      stroke: transparent !important; /* 透明边框 */
+      stroke-width: 0 !important; /* 无边框宽度 */
     }
     
     .gantt .bar-wrapper.priority-medium .bar {
-      fill: #5B8FF9 !important; /* 中 - AntV蓝色 */
+      fill: rgba(91, 143, 249, 0.35) !important; /* 浅中优先级色 - 淡蓝色 */
+      stroke: transparent !important; /* 透明边框 */
+      stroke-width: 0 !important; /* 无边框宽度 */
     }
     
     .gantt .bar-wrapper.priority-low .bar {
-      fill: #36CFC9 !important; /* 低 - 绿色+青蓝 */
+      fill: rgba(54, 207, 201, 0.35) !important; /* 浅低优先级色 - 淡青色 */
+      stroke: transparent !important; /* 透明边框 */
+      stroke-width: 0 !important; /* 无边框宽度 */
     }
     
-    /* 进度条颜色匹配任务颜色 */
+    /* 进度条颜色 - 使用深色显示已完成部分，去掉边框 */
     .gantt .bar-wrapper.priority-urgent .bar-progress {
-      fill: #F56C6C !important;
-      stroke: #F56C6C !important;
+      fill: #F56C6C !important; /* 深紧急色 - 红色 */
+      stroke: transparent !important; /* 透明边框 */
       opacity: 1 !important;
       visibility: visible !important;
+      display: block !important;
+      z-index: 999 !important;
+      pointer-events: auto !important;
     }
     
     .gantt .bar-wrapper.priority-high .bar-progress {
-      fill: #FAAD14 !important;
-      stroke: #FAAD14 !important;
+      fill: #FAAD14 !important; /* 深高优先级色 - 黄色 */
+      stroke: transparent !important; /* 透明边框 */
       opacity: 1 !important;
       visibility: visible !important;
+      display: block !important;
+      z-index: 999 !important;
+      pointer-events: auto !important;
     }
     
     .gantt .bar-wrapper.priority-medium .bar-progress {
-      fill: #5B8FF9 !important;
-      stroke: #5B8FF9 !important;
+      fill: #5B8FF9 !important; /* 深中优先级色 - 蓝色 */
+      stroke: transparent !important; /* 透明边框 */
       opacity: 1 !important;
       visibility: visible !important;
+      display: block !important;
+      z-index: 999 !important;
+      pointer-events: auto !important;
     }
     
     .gantt .bar-wrapper.priority-low .bar-progress {
-      fill: #36CFC9 !important;
-      stroke: #36CFC9 !important;
+      fill: #36CFC9 !important; /* 深低优先级色 - 青色 */
+      stroke: transparent !important; /* 透明边框 */
       opacity: 1 !important;
       visibility: visible !important;
+      display: block !important;
+      z-index: 999 !important;
+      pointer-events: auto !important;
     }
     
     /* 进度条增强可见性 */
     .gantt .bar-wrapper .bar-progress {
-      fill-opacity: 0.85 !important;
-      stroke-width: 0.5 !important;
+      fill-opacity: 1 !important; /* 完全不透明 */
+      stroke-width: 0 !important; /* 无边框 */
       opacity: 1 !important;
       visibility: visible !important;
       display: block !important;
+      z-index: 999 !important;
+      pointer-events: auto !important;
+    }
+    
+    /* 进度条handle元素样式 */
+    .gantt .bar-wrapper .handle.progress {
+      visibility: visible !important;
+      display: block !important;
+      opacity: 1 !important;
+      z-index: 1000 !important;
+      pointer-events: auto !important;
+      fill: #fff !important;
+      stroke: #ddd !important;
+      stroke-width: 1px !important;
+      box-shadow: none !important; /* 去掉阴影 */
+    }
+    
+    /* 移除frappe-gantt库中可能隐藏handle的CSS */
+    .gantt .bar-wrapper .bar-group {
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    .gantt .bar-wrapper .bar-group .handle {
+      visibility: visible !important;
+      opacity: 1 !important;
+      display: block !important;
+      z-index: 1000 !important;
+    }
+    
+    /* 确保鼠标悬停时handle也显示 */
+    .gantt .bar-wrapper:hover .handle,
+    .gantt .bar-wrapper:hover .bar-progress,
+    .gantt .bar-wrapper:hover .handle.progress {
+      visibility: visible !important;
+      opacity: 1 !important;
+      display: block !important;
+    }
+    
+    /* 任务条内文字颜色 */
+    .gantt .bar-wrapper .bar-label {
+      fill: #161722 !important; /* 墨蓝色 */
+      font-weight: 500 !important;
+      font-size: 12px !important;
+      dominant-baseline: middle !important; /* 垂直居中 */
+      text-anchor: middle !important; /* 水平居中 */
     }
   `
   
@@ -1022,8 +1090,12 @@ const initGantt = () => {
       language: 'en', // 修改为英文
       start_date: startDate,
       end_date: endDate,
+      // 设置进度条始终可见 - 由于类型问题，使用类型断言
+      // show_progress: true,
       on_click: (task: any) => {
         console.log('任务点击:', task)
+        // 点击任务后强制显示进度条
+        setTimeout(() => ensureProgressBarDisplay(), 50)
       },
       on_date_change: (task: any, start: string, end: string) => {
         console.log('日期变更:', task, start, end)
@@ -1036,13 +1108,17 @@ const initGantt = () => {
         setTimeout(() => {
           customizeHeader()
           injectTodayHighlightStyles() // 在视图变更后重新注入SVG样式
+          ensureProgressBarDisplay() // 确保进度条正确显示
         }, 100) // 增加延迟确保DOM渲染完成
       }
     })
 
+    // 先注入样式，确保有正确的CSS规则
+    injectTodayHighlightStyles()
+    
     // 增加延迟确保DOM完全渲染后执行滚动
     // 使用多个延迟尝试，确保在DOM完全渲染后执行
-    const delays: number[] = [300, 600, 1000]
+    const delays: number[] = [100, 300, 600, 1000]
     delays.forEach((delay: number) => {
       setTimeout(() => {
         customizeHeader()
@@ -1054,6 +1130,18 @@ const initGantt = () => {
         }, 100)
       }, delay)
     })
+    
+    // 添加窗口大小变化监听器，确保在窗口调整大小后进度条仍然可见
+    const handleResize = () => {
+      setTimeout(() => {
+        ensureProgressBarDisplay() // 窗口大小变化后确保进度条可见
+      }, 200)
+    }
+    
+    // 保存事件处理函数到ref中
+    resizeHandler.value = handleResize
+    
+    window.addEventListener('resize', handleResize)
   } catch (error) {
     console.error('初始化甘特图失败:', error)
     ElMessage.error('初始化甘特图失败')
@@ -1064,6 +1152,62 @@ const initGantt = () => {
 const ensureProgressBarDisplay = () => {
   try {
     console.log('确保进度条正确显示...')
+    
+    // 获取所有任务条元素
+    const taskBars = document.querySelectorAll('.gantt .bar-wrapper .bar')
+    taskBars.forEach((barElement: Element) => {
+      const bar = barElement as SVGElement
+      const barWrapper = bar.closest('.bar-wrapper')
+      if (!barWrapper) return
+      
+      // 获取任务的优先级信息
+      let priority = 'medium'
+      for (const className of barWrapper.classList) {
+        if (className.startsWith('priority-')) {
+          priority = className.replace('priority-', '')
+          break
+        }
+      }
+      
+      // 为任务条设置浅色背景
+      let backgroundColor
+      switch (priority) {
+        case 'urgent': 
+          backgroundColor = 'rgba(245, 108, 108, 0.35)' 
+          break
+        case 'high': 
+          backgroundColor = 'rgba(250, 173, 20, 0.35)'
+          break
+        case 'medium': 
+          backgroundColor = 'rgba(91, 143, 249, 0.35)'
+          break
+        case 'low': 
+          backgroundColor = 'rgba(54, 207, 201, 0.35)'
+          break
+        default: 
+          backgroundColor = 'rgba(91, 143, 249, 0.35)'
+      }
+      
+      bar.setAttribute('fill', backgroundColor)
+      bar.setAttribute('stroke', 'transparent')
+      bar.setAttribute('stroke-width', '0')
+      
+      // 查找并设置任务条内的文字颜色，移除白色轮廓
+      const barLabels = barWrapper.querySelectorAll('.bar-label')
+      if (barLabels && barLabels.length > 0) {
+        barLabels.forEach((labelElement: Element) => {
+          const label = labelElement as SVGElement
+          label.setAttribute('fill', '#161722') // 墨蓝色
+          label.style.fontWeight = '500'
+          // 移除轮廓相关的属性
+          label.style.paintOrder = ''
+          label.removeAttribute('stroke')
+          label.removeAttribute('stroke-width')
+          label.removeAttribute('stroke-linecap')
+          label.removeAttribute('stroke-linejoin')
+        })
+      }
+    })
     
     // 获取所有进度条元素
     const progressBars = document.querySelectorAll('.gantt .bar-wrapper .bar-progress')
@@ -1083,6 +1227,8 @@ const ensureProgressBarDisplay = () => {
       progressBar.style.display = 'block'
       progressBar.style.visibility = 'visible'
       progressBar.style.opacity = '1'
+      progressBar.style.pointerEvents = 'auto'
+      progressBar.style.zIndex = '999'
       
       // 获取父元素
       const barWrapper = progressBar.closest('.bar-wrapper')
@@ -1109,7 +1255,7 @@ const ensureProgressBarDisplay = () => {
       
       // 直接设置进度条的颜色和可见性
       progressBar.setAttribute('fill', color)
-      progressBar.setAttribute('fill-opacity', '0.85')
+      progressBar.setAttribute('fill-opacity', '1') // 完全不透明的进度条
       progressBar.setAttribute('stroke', color)
       progressBar.setAttribute('stroke-width', '0.5')
       
@@ -1117,7 +1263,63 @@ const ensureProgressBarDisplay = () => {
       progressBar.setAttribute('visibility', 'visible')
       progressBar.setAttribute('display', 'block')
       progressBar.setAttribute('opacity', '1')
+      progressBar.setAttribute('pointer-events', 'auto')
+      progressBar.setAttribute('z-index', '999')
+      
+      // 查找并修改进度条的handle元素
+      const handleElement = barWrapper.querySelector('.handle.progress')
+      if (handleElement) {
+        const handle = handleElement as SVGElement
+        handle.style.display = 'block'
+        handle.style.visibility = 'visible'
+        handle.style.opacity = '1'
+        handle.style.pointerEvents = 'auto'
+        handle.style.zIndex = '1000'
+        
+        handle.setAttribute('visibility', 'visible')
+        handle.setAttribute('display', 'block')
+        handle.setAttribute('opacity', '1')
+        handle.setAttribute('pointer-events', 'auto')
+        handle.setAttribute('z-index', '1000')
+      }
     })
+    
+    // 也查找所有进度条的handle元素
+    const progressHandles = document.querySelectorAll('.gantt .bar-wrapper .handle.progress')
+    if (progressHandles && progressHandles.length > 0) {
+      console.log(`找到 ${progressHandles.length} 个进度条handle元素`)
+      progressHandles.forEach((handleElement: Element) => {
+        const handle = handleElement as SVGElement
+        handle.style.display = 'block'
+        handle.style.visibility = 'visible'
+        handle.style.opacity = '1'
+        handle.style.pointerEvents = 'auto'
+        handle.style.zIndex = '1000'
+        
+        handle.setAttribute('visibility', 'visible')
+        handle.setAttribute('display', 'block')
+        handle.setAttribute('opacity', '1')
+        handle.setAttribute('pointer-events', 'auto')
+        handle.setAttribute('z-index', '1000')
+      })
+    }
+    
+    // 查找并设置任务条内的文字颜色，移除白色轮廓
+    const barLabels = document.querySelectorAll('.gantt .bar-wrapper .bar-label, .gantt text.bar-label')
+    if (barLabels && barLabels.length > 0) {
+      console.log(`找到 ${barLabels.length} 个任务标签元素`)
+      barLabels.forEach((labelElement: Element) => {
+        const label = labelElement as SVGElement
+        label.setAttribute('fill', '#161722') // 墨蓝色
+        label.style.fontWeight = '500'
+        // 移除轮廓相关的属性
+        label.style.paintOrder = ''
+        label.removeAttribute('stroke')
+        label.removeAttribute('stroke-width')
+        label.removeAttribute('stroke-linecap')
+        label.removeAttribute('stroke-linejoin')
+      })
+    }
     
     console.log('进度条显示设置完成')
   } catch (error) {
@@ -1142,6 +1344,14 @@ const scrollTodayWithRetry = () => {
 onMounted(() => {
   fetchTasks() // 组件挂载后获取任务数据
   
+  // 添加对document点击事件的监听，以确保进度条始终可见
+  const ensureProgressOnClick = () => {
+    // 无论点击任何地方，都重新确保进度条可见
+    setTimeout(() => ensureProgressBarDisplay(), 100)
+  }
+  
+  document.addEventListener('click', ensureProgressOnClick)
+  
   // 监听页面可见性变化，当用户从其他标签页切换回来时，重新定位到今天
   const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible' && ganttChart) {
@@ -1149,6 +1359,8 @@ onMounted(() => {
       // 延迟执行，确保DOM已更新
       setTimeout(() => {
         customizeHeader()
+        injectTodayHighlightStyles() // 重新注入样式
+        ensureProgressBarDisplay() // 确保进度条正确显示
         scrollToToday()
       }, 300)
     }
@@ -1170,6 +1382,8 @@ onMounted(() => {
       // 完全刷新甘特图和今日高亮
       if (ganttChart) {
         customizeHeader()
+        injectTodayHighlightStyles() // 重新注入样式
+        ensureProgressBarDisplay() // 确保进度条正确显示
         scrollToToday()
       }
     }
@@ -1178,6 +1392,14 @@ onMounted(() => {
   // 保存引用以便在组件卸载时移除
   onUnmounted(() => {
     document.removeEventListener('visibilitychange', handleVisibilityChange)
+    document.removeEventListener('click', ensureProgressOnClick)
+    
+    // 使用保存的引用移除resize事件监听器
+    if (resizeHandler.value) {
+      window.removeEventListener('resize', resizeHandler.value)
+      resizeHandler.value = null
+    }
+    
     clearInterval(dateCheckTimer) // 清除定时器
   })
 })
@@ -1277,64 +1499,81 @@ onActivated(() => {
 /* 优先级相关样式 - 应用推荐的颜色系统 */
 /* 注意：SVG元素的颜色通过动态注入的CSS控制，确保覆盖库的默认样式 */
 .gantt .bar-wrapper.priority-urgent .bar {
-  fill: #F56C6C; /* 紧急 - 深红色 */
+  fill: rgba(245, 108, 108, 0.35); /* 浅红色 */
+  stroke: transparent; /* 透明边框 */
+  stroke-width: 0; /* 无边框 */
 }
 
 .gantt .bar-wrapper.priority-high .bar {
-  fill: #FAAD14; /* 高 - 阿里系黄色 */
+  fill: rgba(250, 173, 20, 0.35); /* 浅黄色 */
+  stroke: transparent; /* 透明边框 */
+  stroke-width: 0; /* 无边框 */
 }
 
 .gantt .bar-wrapper.priority-medium .bar {
-  fill: #5B8FF9; /* 中 - AntV蓝色 */
+  fill: rgba(91, 143, 249, 0.35); /* 浅蓝色 */
+  stroke: transparent; /* 透明边框 */
+  stroke-width: 0; /* 无边框 */
 }
 
 .gantt .bar-wrapper.priority-low .bar {
-  fill: #36CFC9; /* 低 - 绿色+青蓝 */
+  fill: rgba(54, 207, 201, 0.35); /* 浅青色 */
+  stroke: transparent; /* 透明边框 */
+  stroke-width: 0; /* 无边框 */
 }
 
 /* 进度条颜色匹配任务颜色 */
 .gantt .bar-wrapper.priority-urgent .bar-progress {
-  fill: #F56C6C;
-  stroke: #F56C6C;
+  fill: #F56C6C; /* 紧急 - 深红色 */
+  stroke: transparent; /* 透明边框 */
   opacity: 1 !important;
   visibility: visible !important;
+  /* 进度条边缘添加发光效果 */
+  filter: drop-shadow(0 0 2px rgba(245, 108, 108, 0.8)) !important;
 }
 
 .gantt .bar-wrapper.priority-high .bar-progress {
-  fill: #FAAD14;
-  stroke: #FAAD14;
+  fill: #FAAD14; /* 高 - 阿里系黄色 */
+  stroke: transparent; /* 透明边框 */
   opacity: 1 !important;
   visibility: visible !important;
+  /* 进度条边缘添加发光效果 */
+  filter: drop-shadow(0 0 2px rgba(250, 173, 20, 0.8)) !important;
 }
 
 .gantt .bar-wrapper.priority-medium .bar-progress {
-  fill: #5B8FF9;
-  stroke: #5B8FF9;
+  fill: #5B8FF9; /* 中 - AntV蓝色 */
+  stroke: transparent; /* 透明边框 */
   opacity: 1 !important;
   visibility: visible !important;
+  /* 进度条边缘添加发光效果 */
+  filter: drop-shadow(0 0 2px rgba(91, 143, 249, 0.8)) !important;
 }
 
 .gantt .bar-wrapper.priority-low .bar-progress {
-  fill: #36CFC9;
-  stroke: #36CFC9;
+  fill: #36CFC9; /* 低 - 绿色+青蓝 */
+  stroke: transparent; /* 透明边框 */
   opacity: 1 !important;
   visibility: visible !important;
+  /* 进度条边缘添加发光效果 */
+  filter: drop-shadow(0 0 2px rgba(54, 207, 201, 0.8)) !important;
 }
 
 /* 进度条增强可见性 */
 .gantt .bar-wrapper .bar-progress {
-  fill-opacity: 0.85;
-  stroke-width: 0.5;
+  fill-opacity: 1; /* 完全不透明 */
+  stroke-width: 0; /* 无边框 */
   opacity: 1 !important;
   visibility: visible !important;
   display: block !important;
+  z-index: 999 !important;
 }
 
 /* 状态修饰 */
 .gantt .bar.status-completed {
   fill-opacity: 0.9;
-  stroke: #67C23A;
-  stroke-width: 1px;
+  stroke: transparent; /* 透明边框 */
+  stroke-width: 0; /* 无边框 */
 }
 
 .gantt .bar.status-in-progress {
@@ -1347,9 +1586,9 @@ onActivated(() => {
 
 .gantt .bar.status-cancelled {
   fill-opacity: 0.4;
-  stroke: #909399;
-  stroke-width: 1px;
-  stroke-dasharray: 4;
+  stroke: transparent; /* 透明边框 */
+  stroke-width: 0; /* 无边框 */
+  stroke-dasharray: 0; /* 移除虚线 */
 }
 
 /* 表头样式 */
@@ -1372,9 +1611,9 @@ onActivated(() => {
 /* 使用SVG属性fill和stroke，而非CSS的background-color和border */
 /* 今日列的背景和边框 */
 .gantt .tick.today rect {
-  fill: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
-  stroke: #1890ff !important; /* 蓝色描边 */
-  stroke-width: 2px !important; /* 描边宽度 */
+  fill: rgba(24, 144, 255, 0.4) !important; /* 加深的蓝色背景 */
+  stroke: transparent !important; /* 透明边框 */
+  stroke-width: 0 !important; /* 无边框 */
 }
 
 /* 今日列的文本 */
@@ -1386,8 +1625,8 @@ onActivated(() => {
 /* 表头样式（非SVG部分，使用普通CSS属性） */
 .gantt .grid-header .grid-header-cell.today-highlight,
 .gantt .grid-header .today-highlight {
-  background-color: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
-  border-top: 3px solid #1890ff !important; /* 顶部边框 */
+  background-color: rgba(24, 144, 255, 0.4) !important; /* 加深的蓝色背景 */
+  border-top: none !important; /* 无边框 */
 }
 
 /* 表头内的文字样式 */
@@ -1409,7 +1648,7 @@ onActivated(() => {
   font-size: 12px !important;
   margin-left: 4px !important;
   font-weight: bold !important;
-  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.4) !important;
+  box-shadow: none !important; /* 去掉阴影 */
 }
 
 /* 弹窗样式 */
@@ -1419,7 +1658,7 @@ onActivated(() => {
   border-radius: 4px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   min-width: 200px;
-  border-top: 3px solid #5B8FF9;
+  border-top: none; /* 去掉边框 */
 }
 
 .popup-container .task-title {
@@ -1445,5 +1684,46 @@ onActivated(() => {
   .gantt-chart {
     height: 300px;
   }
+}
+
+/* 进度条handle元素全局样式 */
+.gantt .bar-wrapper .handle.progress {
+  visibility: visible !important;
+  display: block !important;
+  opacity: 1 !important;
+  z-index: 1000 !important;
+  pointer-events: auto !important;
+  fill: #fff !important;
+  stroke: #ddd !important;
+  stroke-width: 1px !important;
+  box-shadow: none !important; /* 去掉阴影 */
+}
+
+/* 确保bar-group和handle元素可见 */
+.gantt .bar-wrapper .bar-group {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.gantt .bar-wrapper .bar-group .handle {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  z-index: 1000 !important;
+}
+
+/* 确保鼠标悬停时handle也显示 */
+.gantt .bar-wrapper:hover .handle,
+.gantt .bar-wrapper:hover .bar-progress,
+.gantt .bar-wrapper:hover .handle.progress {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+/* 额外加强任务标签背景，使文字更加清晰可见 - 移除白色轮廓 */
+.gantt text.bar-label {
+  fill: #161722 !important; /* 墨蓝色 */
+  font-weight: 500 !important;
 }
 </style>
