@@ -685,22 +685,71 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public List<String> batchUploadTaskAttachments(Long taskId, List<MultipartFile> files, Long userId) {
-        log.info("批量上传任务附件: taskId={}, fileCount={}, userId={}", taskId, files.size(), userId);
-        
-        // 1. 检查任务是否存在
+        // 1. 验证任务是否存在
         Task task = taskMapper.selectById(taskId);
         if (task == null) {
             throw new BusinessException("任务不存在");
         }
         
-        // 2. 使用FileService批量上传文件，重复利用已有逻辑
-        List<String> fileUrls = fileService.uploadTaskFiles(files, taskId, userId);
+        // 2. 验证用户是否有权限上传附件（可选，根据业务需要）
+        boolean hasPermission = checkUserPermissionForTask(taskId, userId);
+        if (!hasPermission) {
+            throw new BusinessException("您没有权限为此任务上传附件");
+        }
         
-        // 不再更新Task的attachmentCount，改为使用动态计算
+        List<String> fileUrls = new ArrayList<>();
+        
+        // 3. 处理每个文件
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) {
+                continue;
+            }
+            
+            try {
+                // 3.1 上传文件到存储系统（使用 FileService）
+                String fileUrl = fileService.uploadTaskFile(file, taskId, userId);
+                fileUrls.add(fileUrl);
+                
+                // 3.2 保存附件信息到数据库
+                TaskAttachment attachment = new TaskAttachment();
+                attachment.setTaskId(taskId);
+                attachment.setFileName(file.getOriginalFilename());
+                attachment.setFileSize(file.getSize());
+                attachment.setFileType(file.getContentType());
+                attachment.setFilePath(fileUrl);
+                attachment.setCreateUser(userId);
+                attachment.setCreateTime(LocalDateTime.now());
+                
+                taskAttachmentMapper.insert(attachment);
+            } catch (Exception e) {
+                log.error("任务附件上传失败: {}", e.getMessage());
+                // 可以选择继续处理其他文件，或者抛出异常中断整个过程
+            }
+        }
         
         return fileUrls;
     }
     
+    /**
+     * 检查用户是否有权限对任务进行操作
+     * @param taskId 任务ID
+     * @param userId 用户ID
+     * @return 是否有权限
+     */
+    private boolean checkUserPermissionForTask(Long taskId, Long userId) {
+        // 这里可以实现权限检查逻辑，例如：
+        // 1. 用户是任务的成员
+        // 2. 用户是项目的管理员
+        // 3. 用户是系统管理员
+        
+        // 简单示例，检查该用户是否是任务成员
+        Integer count = taskMemberMapper.countByTaskIdAndUserId(taskId, userId);
+        return count > 0;
+        
+        // 或者更简单的实现 - 允许所有用户
+        // return true;
+    }
+
     /**
      * 上传任务附件 (无需用户ID的重载方法，自动获取当前用户)
      * @param taskId 任务ID

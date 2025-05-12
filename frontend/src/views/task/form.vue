@@ -349,6 +349,7 @@ import { batchUploadTaskFiles } from '../../api/file'
 import { useUserStore } from '../../stores/user'
 import StepForm from '../../components/StepForm.vue'
 import dayjs from 'dayjs'
+import axios from 'axios'
 import 'animate.css'
 
 const router = useRouter()
@@ -634,74 +635,45 @@ const handleNext = async () => {
       await formRef.value.validate()
       // 验证成功后，进入第二步
     } catch (error) {
-      ElMessage.error('Please complete the required information')
+      ElMessage.error('请完成必填信息')
       return
     }
   } else if (currentStep.value === 1) {
-    // 处理文件上传
+    // 第二步只进行文件验证，不上传
+    loading.value = true
     try {
-      loading.value = true
+      // 验证文件是否符合要求
+      const files = taskForm.attachments.filter(item => 
+        typeof item !== 'string' && (item.raw || item instanceof File)
+      )
       
-      // 如果有文件，先上传文件
-      if (taskForm.attachments.length > 0) {
-        console.log('准备上传文件，数量:', taskForm.attachments.length)
-        
-        // 确保获取原始文件对象
-        const files = taskForm.attachments.map(item => {
-          if (typeof item === 'string') {
-            // 如果是字符串（URL），跳过
-            return null;
-          }
-          console.log('处理文件:', item.name, item)
-          return item.raw || item
-        }).filter(Boolean) as File[]; // 过滤掉 null 值并断言为 File[]
-        
-        console.log('处理后的文件对象:', files)
-        
-        try {
-          const { data } = await batchUploadTaskFiles(files)
-          console.log('文件上传响应:', data)
-          
-          if (data.code === 0 || data.code === 1 || data.code === 200) {
-            // 上传成功，保存文件URL
-            const fileUrls = data.data;
-            // 将原始文件对象替换为上传后的URL
-            taskForm.attachments = fileUrls;
-            console.log('文件上传成功，URLs:', taskForm.attachments)
-          } else {
-            ElMessage.error(data.message || '文件上传失败')
-            return
-          }
-        } catch (uploadError: any) {
-          console.error('文件上传请求失败:', uploadError)
-          console.error('错误详情:', uploadError.response?.data || uploadError.message)
-          ElMessage.error(`File upload failed: ${uploadError.response?.data?.message || uploadError.message}`)
-          return
-        }
+      if (files.length > 0) {
+        // 这里可以添加文件大小、类型等验证
+        console.log('文件已验证，将在提交时上传', files.length, '个文件')
       }
       
-    } catch (error: any) {
-      console.error('文件上传失败:', error)
-      ElMessage.error(error.message || 'File upload failed')
+      // 直接进入第三步，不执行上传
+    } catch (error) {
+      console.error('文件验证失败:', error)
+      ElMessage.error('文件验证失败')
       return
     } finally {
       loading.value = false
     }
   } else if (currentStep.value === 2) {
-    // 当在最后一步点击完成按钮时，提交表单
-    await handleSubmit();
+    // 第三步点击完成按钮时，提交表单
+    await handleSubmit()
   }
 }
 
 // 提交表单
 const handleSubmit = async () => {
+  loading.value = true
   try {
-    loading.value = true
-    
     // 处理标签，将新创建的标签保存到数据库
     const processedTags = await processTags(taskForm.tags, taskForm.projectId)
     
-    // 准备提交的数据
+    // 1. 先创建任务（不包含附件）
     const submitData = {
       name: taskForm.name,
       description: taskForm.description,
@@ -711,36 +683,107 @@ const handleSubmit = async () => {
       dueTime: taskForm.dueTime,
       tagIds: processedTags,
       members: taskForm.members,
-      projectId: taskForm.projectId,
-      attachments: Array.isArray(taskForm.attachments) 
-        ? taskForm.attachments.map(item => typeof item === 'string' ? item : item.url || item.response?.data)
-        : []
+      projectId: taskForm.projectId
+      // 不包含 attachments 字段
     }
     
-    console.log('准备提交的数据:', submitData)
+    console.log('提交任务基本信息:', submitData)
     
     const taskId = route.params.id as string
+    let newTaskId = null
     
     if (taskId) {
       // 更新任务
-      await updateTask(taskId, submitData)
-      ElMessage.success('Update successfully')
-      // 更新成功后跳转到任务列表
-      router.push('/list')
+      try {
+        await updateTask(taskId, submitData)
+        newTaskId = taskId
+        console.log('任务更新成功')
+      } catch (updateError: any) {
+        console.error('更新任务失败:', updateError)
+        ElMessage.error('更新失败: ' + (updateError.message || '未知错误'))
+        return
+      }
     } else {
       // 创建任务
-      await createTask(submitData)
-      ElMessage.success('Create successfully')
-      // 创建成功后跳转到任务列表
-      router.push('/list')
+      try {
+        const response = await createTask(submitData) as any
+        if (response && response.data) {
+          const responseData = response.data
+          if (responseData.code === 0 || responseData.code === 1 || responseData.code === 200) {
+            newTaskId = responseData.data.id
+            console.log('任务创建成功，ID:', newTaskId)
+          } else {
+            ElMessage.error(responseData.message || '创建失败')
+            return
+          }
+        } else {
+          ElMessage.error('创建失败')
+          return
+        }
+      } catch (createError: any) {
+        console.error('创建任务失败:', createError)
+        ElMessage.error('创建失败: ' + (createError.message || '未知错误'))
+        return
+      }
     }
+    
+    // 2. 如果有文件，使用批量上传接口上传并关联
+    if (taskForm.attachments.length > 0) {
+      // 处理新上传的文件
+      const newFiles = taskForm.attachments.filter(file => 
+        typeof file !== 'string' && (file.raw || file instanceof File)
+      )
+      
+      if (newFiles.length > 0 && newTaskId) {
+        console.log('开始上传新附件，数量:', newFiles.length)
+        
+        try {
+          // 循环调用单文件上传接口
+          for (const file of newFiles) {
+            const formData = new FormData()
+            formData.append('file', file.raw || file)
+            
+            const response = await axios.post(
+              `/api/tasks/${newTaskId}/attachments`,
+              formData,
+              { 
+                headers: { 
+                  ...getAuthHeaders()
+                  // 不手动设置Content-Type，让浏览器自动处理
+                } 
+              }
+            )
+            
+            console.log('单文件上传响应:', response.data)
+          }
+          
+          ElMessage.success('附件上传成功')
+        } catch (uploadError) {
+          console.error('附件上传失败:', uploadError)
+          ElMessage.warning('任务已创建，但部分附件上传失败')
+        }
+      }
+    }
+    
+    ElMessage.success(taskId ? '更新成功' : '创建成功')
+    router.push('/list')
+    
   } catch (error: any) {
-    console.error('Operation failed:', error)
-    ElMessage.error(error.message || 'Operation failed')
+    console.error('操作失败:', error)
+    ElMessage.error('操作失败: ' + (error.message || ''))
   } finally {
     loading.value = false
   }
 }
+
+// 获取请求头信息（用于授权）
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Authorization': `Bearer ${token}`,
+    'token': token
+  };
+};
 
 // 处理标签，将新创建的标签保存到数据库
 const processTags = async (tags: (string)[], projectId?: string): Promise<string[]> => {

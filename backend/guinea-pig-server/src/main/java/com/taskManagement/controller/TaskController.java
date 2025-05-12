@@ -351,6 +351,29 @@ public class TaskController {
             return Result.error("上传失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 批量上传任务附件
+     * @param taskId 任务ID
+     * @param files 文件列表
+     * @return 上传后的附件信息
+     */
+    @PostMapping("/{taskId}/attachments/batch")
+    @ApiOperation("批量上传任务附件")
+    public Result<List<String>> batchUploadTaskAttachments(
+            @PathVariable Long taskId,
+            @RequestParam("files") List<MultipartFile> files) {
+
+        if (files == null || files.isEmpty()) {
+            return Result.error("上传文件不能为空");
+        }
+        Long userId = BaseContext.getCurrentId();
+        if (userId == null) userId = 1L;
+
+        List<String> urls = taskService.batchUploadTaskAttachments(taskId, files, userId);
+        return Result.success(urls);
+    }
+
     
     /**
      * 删除任务附件

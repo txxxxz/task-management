@@ -452,59 +452,28 @@ const handleNext = async () => {
     try {
       await formRef.value.validate()
       // 验证成功后，进入第二步
-      // 不需要手动增加步骤，StepForm 组件会自动处理
     } catch (error) {
-      ElMessage.error('Please complete the required information')
+      ElMessage.error('请完成必填信息')
       return
     }
   } else if (currentStep.value === 1) {
-    // 第二步验证文件上传，然后进入第三步
+    // 第二步只进行文件验证，不上传
+    loading.value = true
     try {
-      loading.value = true
+      // 验证文件是否符合要求
+      const files = projectForm.attachments.filter(item => 
+        typeof item !== 'string' && (item.raw || item instanceof File)
+      )
       
-      // 如果有文件，先上传文件
-      if (projectForm.attachments.length > 0) {
-        console.log('Preparing to upload files, count:', projectForm.attachments.length)
-        
-        // 确保获取原始文件对象
-        const files = projectForm.attachments.map(item => {
-          if (typeof item === 'string') {
-            // 如果是字符串（URL），跳过
-            return null;
-          }
-          console.log('Processing file:', item.name, item)
-          return item.raw || item
-        }).filter(Boolean) as File[]; // 过滤掉 null 值并断言为 File[]
-        
-        console.log('Processed file objects:', files)
-        
-        try {
-          const { data } = await batchUploadProjectFiles(files)
-          console.log('File upload response:', data)
-          
-          if (data.code === 0 || data.code === 1 || data.code === 200) {
-            // 上传成功，保存文件URL
-            const fileUrls = data.data;
-            // 将原始文件对象替换为上传后的URL
-            projectForm.attachments = fileUrls;
-            console.log('File upload successful, URLs:', projectForm.attachments)
-          } else {
-            ElMessage.error(data.message || 'File upload failed')
-            return
-          }
-        } catch (uploadError: any) {
-          console.error('File upload request failed:', uploadError)
-          console.error('Error details:', uploadError.response?.data || uploadError.message)
-          ElMessage.error(`File upload failed: ${uploadError.response?.data?.message || uploadError.message}`)
-          return
-        }
+      if (files.length > 0) {
+        // 这里可以添加文件大小、类型等验证
+        console.log('文件已验证，将在提交时上传', files.length, '个文件')
       }
       
-      // 文件上传成功后，进入第三步（确认页面）
-      // 不需要手动增加步骤，StepForm 组件会自动处理
-    } catch (error: any) {
-      console.error('File upload failed:', error)
-      ElMessage.error(error.message || 'File upload failed')
+      // 直接进入第三步，不执行上传
+    } catch (error) {
+      console.error('文件验证失败:', error)
+      ElMessage.error('文件验证失败')
       return
     } finally {
       loading.value = false
@@ -517,51 +486,89 @@ const handleNext = async () => {
 
 // 处理提交
 const handleSubmit = async () => {
+  loading.value = true
   try {
-    loading.value = true
-    
-    // 准备提交的数据
-    const submitData = {
+    // 1. 先创建项目（不包含附件）
+    const projectData = {
       name: projectForm.name,
       description: projectForm.description,
       startTime: projectForm.startTime,
       endTime: projectForm.endTime,
       members: projectForm.members,
       status: projectForm.status,
-      priority: projectForm.priority,
-      attachments: Array.isArray(projectForm.attachments) 
-        ? projectForm.attachments.map(item => typeof item === 'string' ? item : item.url || item.response?.data)
-        : []
+      priority: projectForm.priority
+      // 不包含 attachments 字段
     }
     
-    console.log('Preparing to submit data:', submitData)
+    console.log('提交项目基本信息:', projectData)
     
     const projectId = Number(route.params.id)
+    let newProjectId = projectId
     
     if (projectId) {
       // 更新项目
-      const { data } = await updateProject(projectId.toString(), submitData)
+      const { data } = await updateProject(projectId.toString(), projectData)
       if (data.code === 0 || data.code === 1 || data.code === 200) {
-        ElMessage.success('Update successful')
-        // 更新成功后跳转到项目列表
-        router.push('/project/list')
+        // 更新成功
+        console.log('项目更新成功')
       } else {
-        ElMessage.error(data.message || 'Update failed')
+        ElMessage.error(data.message || '更新失败')
+        return
       }
     } else {
       // 创建项目
-      const { data } = await createProject(submitData)
+      const { data } = await createProject(projectData)
       if (data.code === 0 || data.code === 1 || data.code === 200) {
-        ElMessage.success('Create successful')
-        // 创建成功后跳转到项目列表
-        router.push('/project/list')
+        newProjectId = data.data.id
+        console.log('项目创建成功，ID:', newProjectId)
       } else {
-        ElMessage.error(data.message || 'Create failed')
+        ElMessage.error(data.message || '创建失败')
+        return
       }
     }
-  } catch (error: any) {
-    console.error('Operation failed:', error)
-    ElMessage.error(error.message || 'Operation failed')
+    
+    // 2. 如果有文件，使用批量上传接口上传并关联
+    if (projectForm.attachments.length > 0) {
+      // 处理新上传的文件
+      const newFiles = projectForm.attachments.filter(file => 
+        typeof file !== 'string' && (file.raw || file instanceof File)
+      )
+      
+      if (newFiles.length > 0) {
+        console.log('开始上传新附件，数量:', newFiles.length)
+        const formData = new FormData()
+        
+        newFiles.forEach(file => {
+          formData.append('files', file.raw || file)
+        })
+        
+        try {
+          const response = await axios.post(
+            `/api/projects/${newProjectId}/attachments/batch`,
+            formData,
+            { 
+              headers: { 
+                ...getAuthHeaders(),
+                'Content-Type': 'multipart/form-data' 
+              } 
+            }
+          )
+          
+          console.log('批量上传附件响应:', response.data)
+          ElMessage.success('Attachments uploaded successfully')
+        } catch (uploadError) {
+          console.error('附件上传失败:', uploadError)
+          ElMessage.warning('Project created, but attachment upload failed')
+        }
+      }
+    }
+    
+    ElMessage.success(projectId ? 'update successfully' : 'create successfully')
+    router.push('/project/list')
+    
+  } catch (error) {
+    console.error('操作失败:', error)
+    ElMessage.error('operation failed')
   } finally {
     loading.value = false
   }
@@ -679,6 +686,50 @@ const handleFileRemove = (file: any) => {
   )
   if (index !== -1) {
     projectForm.attachments.splice(index, 1)
+  }
+}
+
+// 获取请求头信息（用于授权）
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Authorization': `Bearer ${token}`,
+    'token': token
+  };
+};
+
+// 新增函数：关联文件到项目
+const linkFilesToProject = async (projectId: number | string, fileUrls: string[]) => {
+  try {
+    console.log('开始关联文件到项目, 项目ID:', projectId, '文件数量:', fileUrls.length)
+    
+    // 逐个关联文件
+    for (const fileUrl of fileUrls) {
+      if (!fileUrl) continue
+      
+      console.log('正在关联文件:', fileUrl)
+      const formData = new FormData()
+      
+      // 创建一个简单的Blob对象作为文件
+      // 这是一个变通方法，我们主要是为了利用已有的文件URL
+      const dummyFile = new Blob([''], { type: 'application/octet-stream' })
+      formData.append('file', dummyFile, 'dummy-file.txt')
+      formData.append('attachment', fileUrl)
+      
+      // 调用API关联文件
+      const response = await axios.post(
+        `/api/projects/${projectId}/attachments`,
+        formData,
+        { headers: { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' } }
+      )
+      
+      console.log('文件关联响应:', response.data)
+    }
+    
+    console.log('文件关联成功')
+  } catch (error) {
+    console.error('文件关联失败:', error)
+    // 不影响主流程，所以只记录错误不抛出
   }
 }
 
