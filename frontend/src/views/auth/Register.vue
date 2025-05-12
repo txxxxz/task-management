@@ -55,8 +55,8 @@
 
         <el-form-item prop="role">
           <el-radio-group v-model="registerForm.role" class="role-select">
-            <el-radio :label="0">Normal member</el-radio>
-            <el-radio :label="1">Project manager</el-radio>
+            <el-radio :label="0">Member</el-radio>
+            <el-radio :label="1">Leader</el-radio>
             <el-radio :label="2">Admin</el-radio>
           </el-radio-group>
         </el-form-item>

@@ -167,8 +167,8 @@ const customPopupHtml = (task: any) => {
       <p><strong style="color: ${priorityColor}">Priority:</strong> ${priorityText}</p>
       <p><strong style="color: ${priorityColor}">Status:</strong> ${statusText}</p>
       <p><strong style="color: ${priorityColor}">Progress:</strong> ${progressText}</p>
-      <p><strong style="color: ${priorityColor}">Start Date:</strong> ${startDate}</p>
-      <p><strong style="color: ${priorityColor}">End Date:</strong> ${endDate}</p>
+      <p><strong style="color: ${priorityColor}">Start Time:</strong> ${startDate}</p>
+      <p><strong style="color: ${priorityColor}">End Time:</strong> ${endDate}</p>
       <p><strong style="color: ${priorityColor}">Description:</strong> ${description}</p>
     </div>
   `
@@ -218,6 +218,21 @@ const fetchTasks = async () => {
       
       tasks.value = taskItems
       console.log('解析后的任务数据:', tasks.value)
+      
+      // 添加详细的字段调试信息
+      if (tasks.value.length > 0) {
+        const sampleTask = tasks.value[0];
+        console.log('示例任务字段结构:', {
+          id: sampleTask.id,
+          name: sampleTask.name,
+          startTime: sampleTask.startTime,
+          deadline: sampleTask.deadline,
+          dueTime: sampleTask.dueTime,
+          status: sampleTask.status,
+          priority: sampleTask.priority,
+          所有字段: Object.keys(sampleTask)
+        });
+      }
       
       if (ganttChart && tasks.value.length > 0) {
         // 如果甘特图已经初始化且有数据，则更新数据
@@ -283,16 +298,33 @@ const convertTasksToGanttFormat = () => {
       startTime = defaultStartDate
     }
     
-    // 尝试解析deadline
+    // 尝试解析deadline - 同时检查deadline和dueTime字段
     if (task.deadline) {
       endTime = new Date(task.deadline)
       if (!isValidDate(endTime)) {
-        console.warn(`任务 #${id} 的截止时间无效:`, task.deadline)
+        console.warn(`任务 #${id} 的截止时间(deadline)无效:`, task.deadline)
+        endTime = defaultEndDate
+      }
+    } else if (task.dueTime) {
+      // 增加对dueTime字段的支持
+      endTime = new Date(task.dueTime)
+      if (!isValidDate(endTime)) {
+        console.warn(`任务 #${id} 的截止时间(dueTime)无效:`, task.dueTime)
         endTime = defaultEndDate
       }
     } else {
+      console.log(`任务 #${id} 没有设置截止时间，使用默认值`)
       endTime = defaultEndDate
     }
+    
+    // 添加日志，方便调试
+    console.log(`任务 #${id} 的日期信息:`, {
+      原始开始时间: task.startTime,
+      原始截止时间deadline: task.deadline,
+      原始截止时间dueTime: task.dueTime,
+      处理后开始时间: startTime,
+      处理后结束时间: endTime
+    });
     
     // 如果开始时间晚于结束时间，使用默认结束时间
     if (startTime > endTime) {

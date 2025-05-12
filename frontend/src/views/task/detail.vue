@@ -77,7 +77,13 @@
           <el-col :xs="12" :sm="8" :md="8" :lg="8">
             <el-form-item label="Status">
               <template v-if="isLeader">
-                <el-select v-model="taskForm.status" style="width: 100%">
+                <el-select 
+                  v-model="taskForm.status" 
+                  style="width: 100%"
+                  @change="(val: string) => { 
+                    console.log('状态选择变更为:', val); 
+                  }"
+                >
                   <el-option label="Pending" value="PENDING" />
                   <el-option label="In Progress" value="IN_PROGRESS" />
                   <el-option label="Completed" value="COMPLETED" />
@@ -123,24 +129,26 @@
           <el-col :xs="24" :sm="8" :md="8" :lg="8">
             <el-form-item label="Start Time">
               <el-date-picker
-                :model-value="taskForm.startTime || undefined"
-                @update:model-value="(val: Date | null) => taskForm.startTime = val"
+                v-model="taskForm.startTime"
                 type="datetime"
                 style="width: 100%"
                 :disabled="!isLeader"
                 format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                :clearable="true"
               />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="8" :md="8" :lg="8">
             <el-form-item label="Due Time">
               <el-date-picker
-                :model-value="taskForm.dueTime || undefined"
-                @update:model-value="(val: Date | null) => taskForm.dueTime = val"
+                v-model="taskForm.dueTime"
                 type="datetime"
                 style="width: 100%"
                 :disabled="!isLeader"
                 format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                :clearable="true"
               />
             </el-form-item>
           </el-col>
@@ -241,6 +249,11 @@
                   <el-icon><View /></el-icon>
                 </el-button>
               </el-tooltip>
+              <el-tooltip content="Download File" placement="top">
+                <el-button type="success" link @click="handleDownloadFile(row)">
+                  <el-icon><Download /></el-icon>
+                </el-button>
+              </el-tooltip>
               <el-tooltip content="Delete File" placement="top">
                 <el-button 
                   type="danger" 
@@ -284,7 +297,7 @@
           <span class="dialog-footer">
             <el-button @click="uploadDialogVisible = false">Cancel</el-button>
             <el-button type="primary" @click="handleManualUpload" :loading="uploadLoading">
-              Start Upload
+              Upload
             </el-button>
           </span>
         </template>
@@ -393,7 +406,7 @@ interface UpdateData {
   name: string;
   description: string;
   startTime?: string;
-  deadline?: string;
+  dueTime?: string;
   priority: number;
   status: number;
   members: string[];
@@ -447,8 +460,8 @@ const PRIORITY_TYPES = {
 const STATUS_TYPES = {
   PENDING: 'info',
   IN_PROGRESS: 'warning',
-  REVIEW: 'info',
-  COMPLETED: 'success'
+  COMPLETED: 'success',
+  CANCELLED: 'danger'
 } as const;
 
 // 工具函数
@@ -530,10 +543,10 @@ const taskForm = reactive({
   number: '',
   name: '',
   createTime: '',
-  startTime: '' as string | Date | null,
-  dueTime: '' as string | Date | null,
+  startTime: null as string | Date | null,
+  dueTime: null as string | Date | null,
   priority: 'MEDIUM' as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
-  status: 'PENDING' as 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'COMPLETED',
+  status: 'PENDING' as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
   members: [] as string[],
   tags: [] as Array<string | { id: string, name: string }>,
   description: '',
@@ -669,18 +682,17 @@ const fetchTaskDetail = async () => {
     try {
       // 处理开始时间
       if (data.startTime) {
-        startTime = dayjs(data.startTime).toDate();
-        console.log('解析后的startTime:', startTime);
+        startTime = data.startTime; // 保持原始格式
       }
       
       // 处理截止时间 - 优先使用deadline字段
       if (data.deadline) {
-        dueTime = dayjs(data.deadline).toDate();
-        console.log('从deadline解析的dueTime:', dueTime);
+        dueTime = data.deadline; // 保持原始格式
       } else if (data.dueTime) {
-        dueTime = dayjs(data.dueTime).toDate();
-        console.log('从dueTime解析的dueTime:', dueTime);
+        dueTime = data.dueTime; // 保持原始格式
       }
+      
+      console.log('解析后的时间:', { startTime, dueTime });
     } catch (e) {
       console.error('日期解析错误:', e);
       startTime = null;
@@ -690,6 +702,11 @@ const fetchTaskDetail = async () => {
     // 确保数据类型正确
     const priority = typeof data.priority === 'number' ? data.priority : parseInt(data.priority) || 2;
     const status = typeof data.status === 'number' ? data.status : parseInt(data.status) || 1;
+    
+    // 记录状态映射过程的详细日志
+    console.log('原始状态值:', data.status);
+    console.log('解析后的状态数值:', status);
+    console.log('状态映射到字符串:', STATUS_MAP_REVERSE[status as keyof typeof STATUS_MAP_REVERSE]);
     
     // 获取项目ID
     const projectId = data.projectId ? Number(data.projectId) : undefined;
@@ -709,8 +726,8 @@ const fetchTaskDetail = async () => {
       }
     }
     
-    // 更新任务表单数据
-    Object.assign(taskForm, {
+    // 创建新的表单数据对象，而不是直接修改现有对象
+    const newFormData = {
       number: data.id?.toString() || data.number || '',
       name: data.name || data.title || '',
       description: data.description || '',
@@ -723,9 +740,12 @@ const fetchTaskDetail = async () => {
       tags: processTags(data),
       projectId,
       projectName
-    });
+    };
     
-    console.log('任务表单数据:', JSON.parse(JSON.stringify(taskForm))); // 调试输出
+    // 使用Object.assign更新表单数据
+    Object.assign(taskForm, newFormData);
+    
+    console.log('更新后的表单数据:', JSON.parse(JSON.stringify(taskForm))); // 调试输出
     
     // 加载评论和文件列表
     await Promise.all([
@@ -799,14 +819,26 @@ const handleSave = async () => {
   try {
     // 日期处理
     let startTime = undefined;
-    let deadline = undefined;
+    let dueTime = undefined;
 
     if (taskForm.startTime) {
-      startTime = dayjs(taskForm.startTime).format('YYYY-MM-DD HH:mm:ss');
+      // 如果已经是字符串格式且符合要求，直接使用
+      if (typeof taskForm.startTime === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(taskForm.startTime)) {
+        startTime = taskForm.startTime;
+      } else {
+        // 否则转换为所需格式
+        startTime = dayjs(taskForm.startTime).format('YYYY-MM-DD HH:mm:ss');
+      }
     }
 
     if (taskForm.dueTime) {
-      deadline = dayjs(taskForm.dueTime).format('YYYY-MM-DD HH:mm:ss');
+      // 如果已经是字符串格式且符合要求，直接使用
+      if (typeof taskForm.dueTime === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(taskForm.dueTime)) {
+        dueTime = taskForm.dueTime;
+      } else {
+        // 否则转换为所需格式
+        dueTime = dayjs(taskForm.dueTime).format('YYYY-MM-DD HH:mm:ss');
+      }
     }
     
     // 将标签ID转换为数字类型
@@ -820,29 +852,45 @@ const handleSave = async () => {
       .filter((id): id is number => id !== null);
     
     // 构建更新数据
+    const mappedStatus = STATUS_MAP[taskForm.status as keyof typeof STATUS_MAP];
+    console.log('当前状态字符串:', taskForm.status);
+    console.log('状态映射结果:', mappedStatus);
+    
+    // 确保状态值是整数类型
+    let statusValue = mappedStatus;
+    if (statusValue === undefined) {
+      console.warn('状态映射失败，使用默认值1');
+      statusValue = 1;
+    }
+    
     const updateData: UpdateData = {
       id: parseInt(taskForm.number) || undefined,
       name: taskForm.name,
       description: taskForm.description,
       startTime,
-      deadline,
+      dueTime,
       priority: PRIORITY_MAP[taskForm.priority] || 2,
-      status: STATUS_MAP[taskForm.status as keyof typeof STATUS_MAP] || 1,
+      status: statusValue,
       members: taskForm.members,
       tagIds
     };
     
-    console.log('发送更新请求:', updateData); // 调试输出
+    console.log('发送更新请求:', updateData);
     
     // 更新任务
     await updateTask(route.params.id as string, updateData);
     ElMessage.success('Save successfully');
     
-    // 刷新数据
-    setTimeout(async () => {
+    // 使用await直接刷新数据，不再使用setTimeout
+    console.log('更新成功，立即刷新数据');
+    try {
       await fetchTags(route.query.projectId as string);
       await fetchTaskDetail();
-    }, 500);
+      // 检查刷新后的状态
+      console.log('刷新后的状态:', taskForm.status, '对应的数值:', STATUS_MAP[taskForm.status as keyof typeof STATUS_MAP]);
+    } catch (refreshErr) {
+      console.error('刷新数据失败:', refreshErr);
+    }
   } catch (err: any) {
     // 精简错误处理
     if (err.response) {
@@ -1358,6 +1406,16 @@ const getTotalCommentCount = () => {
   
   return countComments(comments.value);
 };
+
+// 添加status监听器
+watch(() => taskForm.status, (newStatus, oldStatus) => {
+  console.log(`状态从 ${oldStatus} 变为 ${newStatus}`);
+  
+  // 确保状态值正确，防止PENDING被意外改变
+  if (newStatus === 'PENDING') {
+    console.log('检测到PENDING状态，确保映射正确');
+  }
+});
 </script>
 
 <style scoped>

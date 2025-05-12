@@ -181,8 +181,9 @@
         <div class="empty-table">
           <el-empty description="No task data" :image-size="100">
             <template #image>
-              <img src="https://cdn.jsdelivr.net/npm/@element-plus/icons-svg/dist/svg/tickets.svg" 
-                   style="width: 80px; height: 80px; opacity: 0.1;" />
+              <el-icon :size="80" style="opacity: 1;">
+                <Document />
+              </el-icon>
             </template>
             <template #description>
               <p>No task data</p>
@@ -329,7 +330,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch, computed } from 'vue'
-import { Search, Refresh, Plus, Download, View, Edit, Delete, Loading } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Download, View, Edit, Delete, Loading, Document } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'

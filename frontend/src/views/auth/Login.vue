@@ -30,8 +30,8 @@
 
         <el-form-item prop="role">
           <el-radio-group v-model="loginForm.role" class="role-select">
-            <el-radio :label="0">Normal member</el-radio>
-            <el-radio :label="1">Project manager</el-radio>
+            <el-radio :label="0">Member</el-radio>
+            <el-radio :label="1">Leader</el-radio>
             <el-radio :label="2">Admin</el-radio>
           </el-radio-group>
         </el-form-item>
@@ -123,14 +123,18 @@ onMounted(() => {
   align-items: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+  /* background-image: url('@/assets/login background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat; */
 }
 
 .login-box {
   width: 420px;
   padding: 40px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .title {

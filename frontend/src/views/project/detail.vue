@@ -393,19 +393,19 @@ const PRIORITY_MAP_REVERSE = {
 };
 
 const STATUS_MAP = {
-  PENDING: 1,
-  IN_PROGRESS: 2,
-  REVIEW: 3,
-  COMPLETED: 4
+  IN_PREPARATION: 0,
+  IN_PROGRESS: 1,
+  COMPLETED: 2,
+  ARCHIVED: 3
 };
 
 const STATUS_MAP_REVERSE = {
-  0: 'In preparation',
-  1: 'In progress',
-  2: 'Completed',
-  3: 'Archived'
+  0: 'IN_PREPARATION',
+  1: 'IN_PROGRESS',
+  2: 'COMPLETED',
+  3: 'ARCHIVED'
 };
-//0-筹备中，1-进行中，2-已完成，3-已归档
+
 const STATUS_LABELS = {
   IN_PREPARATION: 'In preparation',
   IN_PROGRESS: 'In progress',
@@ -486,7 +486,7 @@ const projectForm = reactive({
   endTime: '',
   createTime: '' as string,
   priority: 'MEDIUM' as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
-  status: 'PENDING' as 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'COMPLETED',
+  status: 'IN_PREPARATION' as 'IN_PREPARATION' | 'IN_PROGRESS' | 'COMPLETED' | 'ARCHIVED',
   creatorName: '',
   members: [] as string[],
   description: ''
@@ -614,12 +614,15 @@ const fetchProjectDetail = async () => {
       endTime,
       createTime: formatDate(createTime),
       priority: PRIORITY_MAP_REVERSE[priority as keyof typeof PRIORITY_MAP_REVERSE] || 'MEDIUM',
-      status: STATUS_MAP_REVERSE[status as keyof typeof STATUS_MAP_REVERSE] || 'PENDING',
+      status: STATUS_MAP_REVERSE[status as keyof typeof STATUS_MAP_REVERSE] || 'IN_PREPARATION',
       creatorName: data.creator?.username || '',
       members: Array.isArray(data.members) ? data.members.map((m: any) => 
         typeof m === 'string' ? m : m?.username || ''
       ).filter(Boolean) : []
     });
+    
+    console.log('Received project data:', data); // 添加日志
+    console.log('Processed project form:', projectForm); // 添加日志
     
     // 加载文件列表
     await fetchAttachments(parseInt(projectId));
@@ -648,12 +651,14 @@ const handleSave = async () => {
       id: parseInt(projectForm.id) || undefined,
       name: projectForm.name,
       description: projectForm.description,
-      startTime: projectForm.startTime || undefined, // 字符串类型，YYYY-MM-DD HH:mm:ss格式
-      endTime: projectForm.endTime || undefined,     // 使用endTime字段
+      startTime: projectForm.startTime || undefined,
+      endTime: projectForm.endTime || undefined,
       priority: PRIORITY_MAP[projectForm.priority] || 2,
-      status: STATUS_MAP[projectForm.status] || 1,
+      status: STATUS_MAP[projectForm.status],
       members: projectForm.members
     };
+
+    console.log('Sending update data:', updateData); // 添加日志以便调试
     
     // 更新项目
     await updateProject(route.params.id as string, updateData);

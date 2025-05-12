@@ -708,7 +708,7 @@ const handleSubmit = async () => {
       priority: taskForm.priority,
       status: taskForm.status,
       startTime: taskForm.startTime,
-      deadline: taskForm.dueTime,
+      dueTime: taskForm.dueTime,
       tagIds: processedTags,
       members: taskForm.members,
       projectId: taskForm.projectId,
@@ -876,7 +876,8 @@ const fetchTaskDetail = async (taskId: string) => {
       taskForm.priority = typeof taskData.priority === 'number' ? taskData.priority : 2 // 默认中等优先级
       taskForm.status = typeof taskData.status === 'number' ? taskData.status : 0 // 默认待办状态
       taskForm.startTime = taskData.startTime || ''
-      taskForm.dueTime = taskData.deadline || ''
+      // 先尝试使用dueTime字段，如果没有则尝试使用deadline字段
+      taskForm.dueTime = taskData.dueTime || taskData.deadline || ''
       
       // 特殊处理标签数据
       if (taskData.tags && Array.isArray(taskData.tags)) {

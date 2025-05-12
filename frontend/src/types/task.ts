@@ -65,7 +65,7 @@ export interface TaskComment {
 export interface CreateTaskParams {
   name: string
   description: string
-  deadline: string // ISO格式：YYYY-MM-DDTHH:mm:ss
+  dueTime: string // ISO格式：YYYY-MM-DDTHH:mm:ss (原deadline字段)
   startTime?: string // ISO格式：YYYY-MM-DDTHH:mm:ss
   priority: number // 1-低，2-中，3-高，4-紧急
   members: string[]
