@@ -396,6 +396,8 @@ const updateGanttChart = () => {
     // 增加延迟确保DOM完全渲染
     setTimeout(() => {
       customizeHeader()
+      // 确保进度条正确显示
+      ensureProgressBarDisplay()
     }, 100)
   } catch (error) {
     console.error('更新甘特图失败:', error)
@@ -765,6 +767,117 @@ const getWeekdayLabel = (dateObj: dayjs.Dayjs) => {
   return weekDayMap[dateObj.day()] || ''
 }
 
+// 动态注入样式，特别针对SVG元素使用fill和stroke
+const injectTodayHighlightStyles = () => {
+  // 移除可能已存在的样式元素
+  const existingStyles = document.getElementById('custom-gantt-today-styles')
+  if (existingStyles) {
+    existingStyles.remove()
+  }
+  
+  // 创建新的样式元素，包含任务条优先级颜色样式和SVG属性
+  const styleElement = document.createElement('style')
+  styleElement.id = 'custom-gantt-today-styles'
+  styleElement.innerHTML = `
+    /* 今日高亮SVG元素样式 - 使用深蓝色系 */
+    .gantt rect.today-highlight {
+      fill: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
+      stroke: #1890ff !important; /* 蓝色边框 */
+      stroke-width: 2px !important; /* 边框宽度 */
+      filter: drop-shadow(0 0 3px rgba(24, 144, 255, 0.4)) !important; /* 蓝色阴影效果 */
+    }
+    
+    /* 表头样式（非SVG部分） */
+    .gantt .grid-header .grid-header-cell.today-highlight,
+    .gantt .grid-header .today-highlight {
+      background-color: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
+      border-top: 3px solid #1890ff !important; /* 蓝色顶部边框 */
+      box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2) !important; /* 柔和阴影 */
+    }
+    
+    /* 表头内的文字样式 */
+    .gantt .grid-header .today-highlight .weekday,
+    .gantt .grid-header .grid-header-cell.today-highlight .weekday,
+    .gantt .grid-header .today-highlight .date,
+    .gantt .grid-header .grid-header-cell.today-highlight .date {
+      color: #1890ff !important; /* 蓝色文字 */
+      font-weight: 800 !important;
+    }
+    
+    /* Today标签 */
+    .gantt .date-header .today-mark {
+      display: inline-block !important;
+      padding: 0 6px !important;
+      background-color: #1890ff !important; /* 蓝色背景 */
+      color: white !important;
+      border-radius: 4px !important;
+      font-size: 12px !important;
+      margin-left: 4px !important;
+      font-weight: bold !important;
+      box-shadow: 0 2px 4px rgba(24, 144, 255, 0.4) !important;
+    }
+    
+    /* 优先级颜色 - 直接针对SVG元素设置fill属性 */
+    .gantt .bar-wrapper.priority-urgent .bar {
+      fill: #F56C6C !important; /* 紧急 - 深红色 */
+    }
+    
+    .gantt .bar-wrapper.priority-high .bar {
+      fill: #FAAD14 !important; /* 高 - 阿里系黄色 */
+    }
+    
+    .gantt .bar-wrapper.priority-medium .bar {
+      fill: #5B8FF9 !important; /* 中 - AntV蓝色 */
+    }
+    
+    .gantt .bar-wrapper.priority-low .bar {
+      fill: #36CFC9 !important; /* 低 - 绿色+青蓝 */
+    }
+    
+    /* 进度条颜色匹配任务颜色 */
+    .gantt .bar-wrapper.priority-urgent .bar-progress {
+      fill: #F56C6C !important;
+      stroke: #F56C6C !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    
+    .gantt .bar-wrapper.priority-high .bar-progress {
+      fill: #FAAD14 !important;
+      stroke: #FAAD14 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    
+    .gantt .bar-wrapper.priority-medium .bar-progress {
+      fill: #5B8FF9 !important;
+      stroke: #5B8FF9 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    
+    .gantt .bar-wrapper.priority-low .bar-progress {
+      fill: #36CFC9 !important;
+      stroke: #36CFC9 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    
+    /* 进度条增强可见性 */
+    .gantt .bar-wrapper .bar-progress {
+      fill-opacity: 0.85 !important;
+      stroke-width: 0.5 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: block !important;
+    }
+  `
+  
+  // 将样式添加到文档末尾
+  document.head.appendChild(styleElement)
+  console.log('动态注入SVG今日高亮样式和任务优先级颜色样式')
+}
+
 // 更新甘特图，应用任务过滤
 const updateGanttWithTaskFilter = () => {
   if (!ganttChart) {
@@ -795,11 +908,7 @@ const updateGanttWithTaskFilter = () => {
       // 延迟处理表头和定位到今天
       setTimeout(() => {
         customizeHeader()
-        
-        // 在任务过滤后，延迟执行滚动到今天的操作
-        setTimeout(() => {
-          scrollToToday()
-        }, 150)
+        scrollToToday()
       }, 100)
     } else {
       console.warn('过滤后没有可显示的任务')
@@ -931,110 +1040,6 @@ const initGantt = () => {
       }
     })
 
-    // 动态注入样式，特别针对SVG元素使用fill和stroke
-    const injectTodayHighlightStyles = () => {
-      // 移除可能已存在的样式元素
-      const existingStyles = document.getElementById('custom-gantt-today-styles')
-      if (existingStyles) {
-        existingStyles.remove()
-      }
-      
-      // 创建新的样式元素，使用SVG属性 - 使用深蓝色系替代红色系
-      const styleElement = document.createElement('style')
-      styleElement.id = 'custom-gantt-today-styles'
-      styleElement.innerHTML = `
-        /* 今日高亮SVG元素样式 - 使用深蓝色系 */
-        .gantt rect.today-highlight {
-          fill: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
-          stroke: #1890ff !important; /* 蓝色边框 */
-          stroke-width: 2px !important; /* 边框宽度 */
-          filter: drop-shadow(0 0 3px rgba(24, 144, 255, 0.4)) !important; /* 蓝色阴影效果 */
-        }
-        
-        /* 表头样式（非SVG部分） */
-        .gantt .grid-header .grid-header-cell.today-highlight,
-        .gantt .grid-header .today-highlight {
-          background-color: rgba(24, 144, 255, 0.15) !important; /* 淡蓝色背景 */
-          border-top: 3px solid #1890ff !important; /* 蓝色顶部边框 */
-          box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2) !important; /* 柔和阴影 */
-        }
-        
-        /* 表头内的文字样式 */
-        .gantt .grid-header .today-highlight .weekday,
-        .gantt .grid-header .grid-header-cell.today-highlight .weekday,
-        .gantt .grid-header .today-highlight .date,
-        .gantt .grid-header .grid-header-cell.today-highlight .date {
-          color: #1890ff !important; /* 蓝色文字 */
-          font-weight: 800 !important;
-        }
-        
-        /* Today标签 */
-        .gantt .date-header .today-mark {
-          display: inline-block !important;
-          padding: 0 6px !important;
-          background-color: #1890ff !important; /* 蓝色背景 */
-          color: white !important;
-          border-radius: 4px !important;
-          font-size: 12px !important;
-          margin-left: 4px !important;
-          font-weight: bold !important;
-          box-shadow: 0 2px 4px rgba(24, 144, 255, 0.4) !important;
-        }
-      `
-      
-      // 将样式添加到文档末尾
-      document.head.appendChild(styleElement)
-      console.log('动态注入SVG今日高亮样式 - 深蓝色系')
-      
-      // 直接修改SVG元素
-      setTimeout(() => {
-        try {
-          // 使用确定有效的选择器
-          const todayTicks = document.querySelectorAll('.gantt rect.today-highlight')
-          
-          if (todayTicks && todayTicks.length > 0) {
-            console.log(`找到今日高亮SVG元素，数量: ${todayTicks.length}`)
-            
-            // 修改SVG元素样式为深蓝色
-            todayTicks.forEach((tick: Element) => {
-              const svgRect = tick as SVGElement
-              svgRect.setAttribute('fill', 'rgba(24, 144, 255, 0.15)')
-              svgRect.setAttribute('stroke', '#1890ff')
-              svgRect.setAttribute('stroke-width', '2')
-            })
-            
-            console.log('成功修改了今日高亮SVG元素样式为深蓝色系')
-          }
-        } catch (error) {
-          console.error('修改SVG元素失败:', error)
-        }
-      }, 100)
-    }
-    
-    // 大幅精简调试函数，只保留核心功能
-    const debugGanttDomStructure = () => {
-      // 检查样式表是否被正确添加
-      const styleElement = document.getElementById('custom-gantt-today-styles')
-      if (!styleElement) {
-        console.warn('未找到自定义样式元素')
-      }
-    }
-
-    // 确保直接定位到今天的日期
-    // 使用滚动到今天的直接方法 - 参考GitHub issue中的解决方案
-    const scrollTodayWithRetry = () => {
-      // 添加延迟以确保DOM渲染完成
-      setTimeout(() => {
-        customizeHeader() // 首先确保添加today-highlight等标记
-        injectTodayHighlightStyles() // 注入SVG样式
-        
-        // 再延迟一点执行滚动
-        setTimeout(() => {
-          scrollToToday() // 尝试滚动到今天
-        }, 100)
-      }, 200)
-    }
-
     // 增加延迟确保DOM完全渲染后执行滚动
     // 使用多个延迟尝试，确保在DOM完全渲染后执行
     const delays: number[] = [300, 600, 1000]
@@ -1042,19 +1047,96 @@ const initGantt = () => {
       setTimeout(() => {
         customizeHeader()
         injectTodayHighlightStyles() // 每次都注入SVG样式
+        ensureProgressBarDisplay() // 确保进度条正确显示
         // 每次自定义表头后尝试滚动到今天
         setTimeout(() => {
           scrollToToday()
         }, 100)
       }, delay)
     })
-    
-    // 首次加载立即尝试执行一次
-    scrollTodayWithRetry()
   } catch (error) {
     console.error('初始化甘特图失败:', error)
     ElMessage.error('初始化甘特图失败')
   }
+}
+
+// 确保进度条正确显示
+const ensureProgressBarDisplay = () => {
+  try {
+    console.log('确保进度条正确显示...')
+    
+    // 获取所有进度条元素
+    const progressBars = document.querySelectorAll('.gantt .bar-wrapper .bar-progress')
+    
+    if (!progressBars || progressBars.length === 0) {
+      console.warn('未找到任何进度条元素')
+      return
+    }
+    
+    console.log(`找到 ${progressBars.length} 个进度条元素`)
+    
+    // 遍历所有进度条并确保其正确显示
+    progressBars.forEach((progressElement: Element) => {
+      const progressBar = progressElement as SVGElement
+      
+      // 确保元素可见
+      progressBar.style.display = 'block'
+      progressBar.style.visibility = 'visible'
+      progressBar.style.opacity = '1'
+      
+      // 获取父元素
+      const barWrapper = progressBar.closest('.bar-wrapper')
+      if (!barWrapper) return
+      
+      // 获取任务的优先级信息
+      let priority = 'medium'
+      for (const className of barWrapper.classList) {
+        if (className.startsWith('priority-')) {
+          priority = className.replace('priority-', '')
+          break
+        }
+      }
+      
+      // 获取对应优先级的颜色
+      let color
+      switch (priority) {
+        case 'urgent': color = '#F56C6C'; break;
+        case 'high': color = '#FAAD14'; break;
+        case 'medium': color = '#5B8FF9'; break;
+        case 'low': color = '#36CFC9'; break;
+        default: color = '#5B8FF9'; // 默认蓝色
+      }
+      
+      // 直接设置进度条的颜色和可见性
+      progressBar.setAttribute('fill', color)
+      progressBar.setAttribute('fill-opacity', '0.85')
+      progressBar.setAttribute('stroke', color)
+      progressBar.setAttribute('stroke-width', '0.5')
+      
+      // 强制显示
+      progressBar.setAttribute('visibility', 'visible')
+      progressBar.setAttribute('display', 'block')
+      progressBar.setAttribute('opacity', '1')
+    })
+    
+    console.log('进度条显示设置完成')
+  } catch (error) {
+    console.error('确保进度条显示时出错:', error)
+  }
+}
+
+// 确保直接定位到今天的日期
+const scrollTodayWithRetry = () => {
+  // 添加延迟以确保DOM渲染完成
+  setTimeout(() => {
+    customizeHeader() // 首先确保添加today-highlight等标记
+    injectTodayHighlightStyles() // 注入SVG样式
+    
+    // 再延迟一点执行滚动
+    setTimeout(() => {
+      scrollToToday() // 尝试滚动到今天
+    }, 100)
+  }, 200)
 }
 
 onMounted(() => {
@@ -1193,20 +1275,59 @@ onActivated(() => {
 }
 
 /* 优先级相关样式 - 应用推荐的颜色系统 */
-.gantt .bar.priority-urgent {
+/* 注意：SVG元素的颜色通过动态注入的CSS控制，确保覆盖库的默认样式 */
+.gantt .bar-wrapper.priority-urgent .bar {
   fill: #F56C6C; /* 紧急 - 深红色 */
 }
 
-.gantt .bar.priority-high {
+.gantt .bar-wrapper.priority-high .bar {
   fill: #FAAD14; /* 高 - 阿里系黄色 */
 }
 
-.gantt .bar.priority-medium {
+.gantt .bar-wrapper.priority-medium .bar {
   fill: #5B8FF9; /* 中 - AntV蓝色 */
 }
 
-.gantt .bar.priority-low {
+.gantt .bar-wrapper.priority-low .bar {
   fill: #36CFC9; /* 低 - 绿色+青蓝 */
+}
+
+/* 进度条颜色匹配任务颜色 */
+.gantt .bar-wrapper.priority-urgent .bar-progress {
+  fill: #F56C6C;
+  stroke: #F56C6C;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.gantt .bar-wrapper.priority-high .bar-progress {
+  fill: #FAAD14;
+  stroke: #FAAD14;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.gantt .bar-wrapper.priority-medium .bar-progress {
+  fill: #5B8FF9;
+  stroke: #5B8FF9;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.gantt .bar-wrapper.priority-low .bar-progress {
+  fill: #36CFC9;
+  stroke: #36CFC9;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* 进度条增强可见性 */
+.gantt .bar-wrapper .bar-progress {
+  fill-opacity: 0.85;
+  stroke-width: 0.5;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
 }
 
 /* 状态修饰 */
@@ -1229,20 +1350,6 @@ onActivated(() => {
   stroke: #909399;
   stroke-width: 1px;
   stroke-dasharray: 4;
-}
-
-/* 修改进度条颜色为系统蓝色 */
-.gantt .bar-progress {
-  fill: #5B8FF9 !important; /* 使用系统标准蓝色 */
-}
-
-/* 鼠标悬停时进度条颜色 */
-.gantt .bar-wrapper:hover .bar-progress {
-  fill: #4a7fe0 !important; /* 稍深一点的蓝色 */
-}
-
-.gantt .bar-wrapper.active .bar-progress {
-  fill: #4a7fe0 !important; /* 稍深一点的蓝色 */
 }
 
 /* 表头样式 */
