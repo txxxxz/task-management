@@ -87,4 +87,28 @@ export function getAllTags() {
     url: '/api/tags/all',
     method: 'get'
   })
+}
+
+// 获取任务的标签列表
+export function getTagsByTaskId(taskId: number | string) {
+  return request<ApiResponse<PagedResponse<Tag>>>({
+    url: `/api/tags/task/${taskId}`,
+    method: 'get'
+  })
+}
+
+// 为任务添加标签
+export function addTaskTag(taskId: number | string, tagId: number | string) {
+  return request<ApiResponse<boolean>>({
+    url: `/api/tags/task/${taskId}/tag/${tagId}`,
+    method: 'post'
+  })
+}
+
+// 从任务移除标签
+export function removeTaskTag(taskId: number | string, tagId: number | string) {
+  return request<ApiResponse<boolean>>({
+    url: `/api/tags/task/${taskId}/tag/${tagId}`,
+    method: 'delete'
+  })
 } 

@@ -58,7 +58,7 @@
           <el-col :xs="12" :sm="8" :md="8" :lg="8">
             <el-form-item label="Priority">
               <template v-if="isLeader">
-                <el-select v-model="taskForm.priority" style="width: 100%">
+                <el-select v-model="taskForm.priority" style="width: 100%" v-loading="isLoadingTask">
                   <el-option
                     v-for="item in priorityOptions"
                     :key="item.value"
@@ -161,18 +161,26 @@
             multiple
             :disabled="!isLeader"
             style="width: 100%"
+            :loading="membersLoading"
+            v-loading="isLoadingTask"
+            element-loading-text="Loading members..."
           >
-            <el-option
-              v-for="member in memberOptions"
-              :key="member.value"
-              :label="member.label"
-              :value="member.value"
-            >
-              <div class="member-option">
-                <el-avatar :size="24" :src="member.avatar">{{ member.label.charAt(0) }}</el-avatar>
-                <span>{{ member.label }}</span>
-              </div>
-            </el-option>
+            <template v-if="memberOptions.length > 0">
+              <el-option
+                v-for="member in memberOptions"
+                :key="member.value"
+                :label="member.label"
+                :value="member.value"
+              >
+                <div class="member-option">
+                  <el-avatar :size="24" :src="member.avatar">{{ member.label.charAt(0) }}</el-avatar>
+                  <span>{{ member.label }}</span>
+                </div>
+              </el-option>
+            </template>
+            <template v-else>
+              <el-empty description="No members available" />
+            </template>
           </el-select>
         </el-form-item>
 
@@ -182,27 +190,35 @@
             multiple
             :disabled="!isLeader"
             style="width: 100%"
-            @change="(val: any[]) => console.log('标签选择改变:', val)"
+            :loading="tagsLoading"
+            v-loading="isLoadingTask && !tagsLoaded"
+            element-loading-text="Loading tags..."
           >
-            <el-option
-              v-for="tag in tagOptions"
-              :key="tag.id"
-              :label="tag.name"
-              :value="tag.id"
-            >
-              <div class="tag-option">
-                <el-tag 
-                  :style="{
-                    backgroundColor: tag.color ? tag.color + '22' : '#409EFF22',
-                    borderColor: tag.color || '#409EFF',
-                    color: tag.color || '#409EFF'
-                  }"
-                  size="small"
-                >
-                  <span class="tag-text">{{ tag.name }}</span>
-                </el-tag>
-              </div>
-            </el-option>
+            <template v-if="tagOptions.length > 0">
+              <el-option
+                v-for="tag in tagOptions"
+                :key="tag.id"
+                :label="tag.name"
+                :value="tag.id"
+              >
+                <div class="tag-option">
+                  <el-tag 
+                    :style="{
+                      backgroundColor: tag.color ? tag.color + '22' : '#409EFF22',
+                      borderColor: tag.color || '#409EFF',
+                      color: tag.color || '#409EFF',
+                      
+                    }"
+                    size="small"
+                  >
+                    {{ tag.name }}
+                  </el-tag>
+                </div>
+              </el-option>
+            </template>
+            <template v-else>
+              <el-empty description="No tags available" />
+            </template>
           </el-select>
         </el-form-item>
 
@@ -382,7 +398,7 @@ import type { TaskDetail, TaskFile, TaskComment } from '../../types/task'
 import type { Comment } from '../../types/models'
 import { getTaskDetail, updateTask, deleteTask, getTaskComments, createComment, deleteComment, getTaskAttachments, deleteAttachment } from '../../api/task'
 import { getAllUsers } from '../../api/user'
-import { getTagList, getAllTags } from '@/api/tag'
+import { getTagList, getAllTags, getTagsByTaskId, addTaskTag, removeTaskTag } from '@/api/tag'
 import { getAllProjects, getProjectDetail } from '@/api/project'
 import axios from 'axios'
 import CommentTree from '../../components/CommentTree.vue'
@@ -548,7 +564,7 @@ const taskForm = reactive({
   priority: 'MEDIUM' as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
   status: 'PENDING' as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
   members: [] as string[],
-  tags: [] as Array<string | { id: string, name: string }>,
+  tags: [] as string[],
   description: '',
   projectId: undefined as number | undefined,
   projectName: ''
@@ -596,27 +612,37 @@ const getAuthHeaders = () => {
 };
 
 // 获取标签选项
-const fetchTags = async (projectId?: string) => {
+const fetchTags = async () => {
   tagsLoading.value = true
   try {
-    const response = projectId 
-      ? await getTagList({ projectId }) 
-      : await getAllTags();
+    // 不再按项目筛选，始终获取所有标签
+    const response = await getAllTags();
     
     const tagsData = extractDataFromResponse(response);
     const items = Array.isArray(tagsData) 
       ? tagsData 
       : (tagsData?.items || []);
     
+    // 确保所有标签ID都是字符串格式
     tagOptions.value = items.map((tag: any) => ({
       id: String(tag.id),
       name: tag.name,
       color: tag.color || '#409EFF',
-      projectId: tag.projectId
+      projectId: tag.projectId ? String(tag.projectId) : undefined
     }));
+    
+    console.log('获取到的标签选项:', tagOptions.value);
+    
+    // 如果有标签选项，标记为已加载
+    if (tagOptions.value.length > 0) {
+      tagsLoaded.value = true;
+    }
+    
+    return tagOptions.value;
   } catch (error) {
     ElMessage.error('Get tag list failed');
     tagOptions.value = [];
+    return [];
   } finally {
     tagsLoading.value = false;
   }
@@ -662,6 +688,8 @@ const fetchTaskDetail = async () => {
 
   loading.value = true;
   error.value = null;
+  // 标记为加载中
+  isLoadingTask.value = true;
 
   try {
     const response = await getTaskDetail(taskId);
@@ -726,6 +754,11 @@ const fetchTaskDetail = async () => {
       }
     }
     
+    // 如果我们已经有了标签选项，标记标签为已加载
+    if (tagOptions.value.length > 0) {
+      tagsLoaded.value = true;
+    }
+    
     // 创建新的表单数据对象，而不是直接修改现有对象
     const newFormData = {
       number: data.id?.toString() || data.number || '',
@@ -746,6 +779,7 @@ const fetchTaskDetail = async () => {
     Object.assign(taskForm, newFormData);
     
     console.log('更新后的表单数据:', JSON.parse(JSON.stringify(taskForm))); // 调试输出
+    console.log('当前标签IDs:', taskForm.tags);
     
     // 加载评论和文件列表
     await Promise.all([
@@ -757,6 +791,8 @@ const fetchTaskDetail = async () => {
     ElMessage.error(error.value || 'Get task details failed');
   } finally {
     loading.value = false;
+    // 标记加载完成
+    isLoadingTask.value = false;
   }
 }
 
@@ -771,40 +807,47 @@ const processMembers = (members: any[] | undefined): string[] => {
 
 // 处理标签数据
 const processTags = (data: any): string[] => {
-  // 首先检查tagIds字段
+  console.log('处理原始标签数据:', JSON.stringify(data.tagIds || data.tags));
+  
+  let tagIds: string[] = [];
+  
+  // 情况1: 直接提供的tagIds数组
   if (Array.isArray(data.tagIds)) {
-    return data.tagIds
-      .map((tagId: any) => tagId?.toString() || '')
-      .filter(Boolean);
+    tagIds = data.tagIds.map((id: any) => String(id)).filter(Boolean);
+    console.log('从tagIds提取的标签IDs:', tagIds);
+    return tagIds;
   }
   
-  // 如果没有tagIds字段，再使用tags字段
+  // 情况2: 提供的tags数组包含对象
   if (Array.isArray(data.tags)) {
-    return data.tags
-      .map((tag: any) => {
-        if (typeof tag === 'object' && tag !== null) {
-          return tag.id?.toString() || '';
-        }
-        return tag?.toString() || '';
-      })
-      .filter(Boolean);
+    tagIds = data.tags.map((tag: any) => {
+      // 对象类型的tag，提取id属性
+      if (tag && typeof tag === 'object' && 'id' in tag) {
+        return String(tag.id);
+      }
+      // 单纯的id值（字符串或数字）
+      if (tag && (typeof tag === 'string' || typeof tag === 'number')) {
+        return String(tag);
+      }
+      return '';
+    }).filter(Boolean);
+    
+    console.log('从tags提取的标签IDs:', tagIds);
+    return tagIds;
   }
   
+  console.log('未找到有效的标签数据，返回空数组');
   return [];
 }
 
 // 添加一个函数，用于调试和刷新任务标签
 const refreshTaskTags = async () => {
   try {
-    // 先重新获取标签列表
-    await fetchTags(route.query.projectId as string);
-    
-    // 然后重新获取任务详情
-    await fetchTaskDetail();
-    
-    ElMessage.success('Tags refreshed');
+    // 只刷新标签选项，不清除缓存
+    await fetchTags();
+    ElMessage.success('Task details refreshed');
   } catch (err: any) {
-    ElMessage.error('Refresh tags failed');
+    ElMessage.error('Refresh task details failed');
   }
 }
 
@@ -841,17 +884,25 @@ const handleSave = async () => {
       }
     }
     
-    // 将标签ID转换为数字类型
+    // 保存标签ID，供后续处理
+    console.log('保存前的标签数据(原始):', taskForm.tags);
+    
+    // 确保所有标签ID都是数字格式
     const tagIds = taskForm.tags
-      .map(tag => {
-        const tagId = typeof tag === 'object' && tag !== null 
-          ? tag.id
-          : tag;
-        return tagId ? Number(tagId) : null;
+      .map(id => {
+        const numId = Number(id);
+        // 检查是否为有效数字
+        if (isNaN(numId)) {
+          console.warn(`无效的标签ID: ${id}, 将被忽略`);
+          return null;
+        }
+        return numId;
       })
       .filter((id): id is number => id !== null);
     
-    // 构建更新数据
+    console.log('转换后的标签ID(数字格式):', tagIds);
+    
+    // 构建更新数据 - 不包含标签
     const mappedStatus = STATUS_MAP[taskForm.status as keyof typeof STATUS_MAP];
     console.log('当前状态字符串:', taskForm.status);
     console.log('状态映射结果:', mappedStatus);
@@ -863,7 +914,7 @@ const handleSave = async () => {
       statusValue = 1;
     }
     
-    const updateData: UpdateData = {
+    const updateData = {
       id: parseInt(taskForm.number) || undefined,
       name: taskForm.name,
       description: taskForm.description,
@@ -871,36 +922,62 @@ const handleSave = async () => {
       dueTime,
       priority: PRIORITY_MAP[taskForm.priority] || 2,
       status: statusValue,
-      members: taskForm.members,
-      tagIds
+      members: taskForm.members
+      // 不再包含tagIds字段，将通过单独的API更新
     };
     
-    console.log('发送更新请求:', updateData);
+    console.log('发送更新请求:', JSON.stringify(updateData));
     
-    // 更新任务
-    await updateTask(route.params.id as string, updateData);
-    ElMessage.success('Save successfully');
-    
-    // 使用await直接刷新数据，不再使用setTimeout
-    console.log('更新成功，立即刷新数据');
+    // 1. 首先更新任务基本信息
     try {
-      await fetchTags(route.query.projectId as string);
-      await fetchTaskDetail();
-      // 检查刷新后的状态
-      console.log('刷新后的状态:', taskForm.status, '对应的数值:', STATUS_MAP[taskForm.status as keyof typeof STATUS_MAP]);
+      const response = await updateTask(route.params.id as string, updateData);
+      console.log('任务基本信息更新成功:', response.data);
+      
+      // 2. 然后单独更新标签信息
+      console.log('开始更新标签信息...');
+      const tagUpdateSuccess = await updateTaskTagsDirectly(route.params.id as string, tagIds);
+      
+      if (tagUpdateSuccess) {
+        console.log('标签更新成功');
+        
+        // 乐观更新本地状态：直接更新taskForm.tags为最新的标签ID列表
+        taskForm.tags = tagIds.map(id => String(id));
+        console.log('已乐观更新本地标签状态:', taskForm.tags);
+        
+        // 显示成功消息
+        ElMessage.success('Saved successfully');
+        
+        // 后台异步刷新标签选项，不等待结果
+        fetchTags().catch(err => {
+          console.warn('后台刷新标签选项失败，但不影响当前操作:', err);
+        });
+      } else {
+        console.warn('标签更新失败，但任务基本信息已更新');
+        
+        // 标签更新失败时需要重新加载以保持数据一致
+        await fetchTags();
+        await fetchTaskDetail();
+      }
     } catch (refreshErr) {
-      console.error('刷新数据失败:', refreshErr);
+      console.error('保存或刷新数据失败:', refreshErr);
+      ElMessage.error('Failed to update task. Please try again later.');
+      
+      // 出错时需要恢复数据一致性
+      await fetchTags();
+      await fetchTaskDetail();
+    } finally {
+      saveLoading.value = false;
     }
   } catch (err: any) {
     // 精简错误处理
     if (err.response) {
+      console.error('保存失败详情:', err.response.data);
       ElMessage.error(`Save failed: ${err.response.status} - ${err.response.data?.message || 'Server error'}`);
     } else if (err.request) {
       ElMessage.error('Save failed: Server not responding');
     } else {
       ElMessage.error(err.message || 'Save failed');
     }
-  } finally {
     saveLoading.value = false;
   }
 }
@@ -1252,26 +1329,33 @@ const handleBack = () => {
   router.back();
 };
 
-// 监听路由参数变化
-watch(
-  () => route.params.id,
-  (newId) => {
-    if (newId) {
-      fetchTaskDetail()
-    }
-  },
-  { immediate: true }
-)
+// 标签加载状态和预加载处理
+const tagsLoaded = ref(false)
+const isLoadingTask = ref(true)
 
 // 在组件挂载时获取数据
 onMounted(async () => {
-  await Promise.all([
-    fetchTags(),
-    fetchUsers()
-  ]);
+  // 标记为加载中
+  isLoadingTask.value = true;
   
-  await fetchTaskDetail(); // 这个函数内部应该也获取了项目ID等信息
-  await fetchComments(); // 等待评论数据加载
+  try {
+    // 并行加载标签和用户列表
+    const [tagsResult, usersResult] = await Promise.all([
+      fetchTags(),
+      fetchUsers()
+    ]);
+    
+    // 标记标签已加载
+    tagsLoaded.value = true;
+    
+    // 加载任务详情
+    await fetchTaskDetail();
+  } finally {
+    isLoadingTask.value = false;
+  }
+  
+  // 加载评论
+  await fetchComments();
 
   // 确保在DOM更新后再尝试滚动
   await nextTick(); 
@@ -1416,6 +1500,89 @@ watch(() => taskForm.status, (newStatus, oldStatus) => {
     console.log('检测到PENDING状态，确保映射正确');
   }
 });
+
+// 使用专门的标签API更新任务标签
+const updateTaskTagsDirectly = async (taskId: string | number, tagIds: number[]) => {
+  console.log(`开始使用专门API更新任务${taskId}的标签:`, tagIds);
+  
+  try {
+    // 1. 获取当前任务的标签
+    const response = await getTagsByTaskId(taskId);
+    const tagsData = extractDataFromResponse(response);
+    const items = Array.isArray(tagsData) ? tagsData : (tagsData?.items || []);
+    
+    // 提取当前标签ID
+    const currentTagIds = items.map((tag: { id: string | number }) => Number(tag.id));
+    console.log('当前任务标签IDs:', currentTagIds);
+    
+    // 2. 计算需要添加和删除的标签
+    const tagsToAdd = tagIds.filter((id: number) => !currentTagIds.includes(id));
+    const tagsToRemove = currentTagIds.filter((id: number) => !tagIds.includes(id));
+    
+    console.log('需要添加的标签:', tagsToAdd);
+    console.log('需要移除的标签:', tagsToRemove);
+    
+    // 如果没有变化，提前返回成功
+    if (tagsToAdd.length === 0 && tagsToRemove.length === 0) {
+      console.log('标签没有变化，无需更新');
+      return true;
+    }
+    
+    // 3. 添加新标签
+    const addPromises = tagsToAdd.map((tagId: number) => {
+      console.log(`添加标签 ${tagId} 到任务 ${taskId}`);
+      return addTaskTag(taskId, tagId);
+    });
+    
+    // 4. 移除旧标签
+    const removePromises = tagsToRemove.map((tagId: number) => {
+      console.log(`从任务 ${taskId} 移除标签 ${tagId}`);
+      return removeTaskTag(taskId, tagId);
+    });
+    
+    // 5. 等待所有操作完成
+    await Promise.all([...addPromises, ...removePromises]);
+    console.log('标签更新完成');
+    
+    return true;
+  } catch (error) {
+    console.error('更新任务标签失败:', error);
+    ElMessage.error('Failed to update task tags');
+    return false;
+  }
+};
+
+// 监听路由参数变化
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      isLoadingTask.value = true;
+      
+      // 并行加载数据，不清空现有状态
+      Promise.all([
+        fetchTags(), 
+        fetchUsers()
+      ]).then(() => {
+        tagsLoaded.value = true;
+        return fetchTaskDetail();
+      }).then(() => {
+        isLoadingTask.value = false;
+      }).catch(error => {
+        console.error('加载任务数据失败:', error);
+        isLoadingTask.value = false;
+      });
+    }
+  },
+  { immediate: false } // 不立即执行，因为onMounted已经处理了初始加载
+)
+
+// 清除标签缓存 - 保留但实现更温和的清理
+const cleanTagCache = () => {
+  console.log('重置标签加载状态');
+  // 只重置加载状态，不清空数据
+  tagsLoaded.value = false;
+}
 </script>
 
 <style scoped>
@@ -1698,8 +1865,7 @@ watch(() => taskForm.status, (newStatus, oldStatus) => {
 .tag-option {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  gap: 8px;
   padding: 5px 0;
 }
 
@@ -1710,7 +1876,7 @@ watch(() => taskForm.status, (newStatus, oldStatus) => {
   padding: 3px 10px;
   margin-right: 5px;
   border-radius: 4px;
-  max-width: calc(100% - 70px);
+  max-width: calc(100% - 10px);
   min-width: 50px;
   flex: 0 1 auto;
 }

@@ -794,10 +794,10 @@ const getStatusLabel = (status: number) => {
 // 获取状态标签类型
 const getStatusType = (status: number) => {
   switch (status) {
-    case 0: return 'info'     // Preparation
-    case 1: return 'success'  // In Progress
-    case 2: return 'warning'  // Completed
-    case 3: return 'danger'   // Archived
+    case 0: return 'primary'     // Preparation
+    case 1: return 'warning'  // In Progress
+    case 2: return 'success'  // Completed
+    case 3: return 'info'   // Archived
     default: return 'info'
   }
 }

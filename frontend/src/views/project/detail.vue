@@ -1005,6 +1005,7 @@ const handleAddTask = () => {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  white-space: nowrap;
 }
 
 .detail-card {
@@ -1039,7 +1040,11 @@ const handleAddTask = () => {
 
 /* 表单样式优化 */
 :deep(.el-form) {
-  padding: 10px;
+  padding-left: 50px;
+  padding-right: 50px;
+  padding-top: 30px;
+  padding-bottom: 30px;
+
 }
 
 :deep(.el-form-item) {

@@ -929,10 +929,10 @@ const getPriorityText = (priority: number): string => {
 
 const getStatusType = (status: number): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
   const types: Record<number, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
-    0: 'info',       // 待处理
+    0: 'primary',       // 待处理
     1: 'warning',    // 进行中
     2: 'success',    // 已完成
-    3: 'danger'      // 已取消
+    3: 'info'      // 已取消
   }
   return types[status] || 'primary'
 }
