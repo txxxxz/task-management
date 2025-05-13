@@ -324,7 +324,7 @@
           </div>
           
           <div class="action-buttons">
-            <el-button @click="currentStep = 1">Back to Modify</el-button>
+            <el-button @click="currentStep = 1">Back to Edit</el-button>
             <el-button type="primary" @click="handleSubmit" :loading="loading">Submit</el-button>
           </div>
         </div>
@@ -635,7 +635,7 @@ const handleNext = async () => {
       await formRef.value.validate()
       // 验证成功后，进入第二步
     } catch (error) {
-      ElMessage.error('请完成必填信息')
+      ElMessage.error('Please complete the required information')
       return
     }
   } else if (currentStep.value === 1) {
@@ -655,7 +655,7 @@ const handleNext = async () => {
       // 直接进入第三步，不执行上传
     } catch (error) {
       console.error('文件验证失败:', error)
-      ElMessage.error('文件验证失败')
+      ElMessage.error('File validation failed')
       return
     } finally {
       loading.value = false
@@ -700,7 +700,7 @@ const handleSubmit = async () => {
         console.log('任务更新成功')
       } catch (updateError: any) {
         console.error('更新任务失败:', updateError)
-        ElMessage.error('更新失败: ' + (updateError.message || '未知错误'))
+        ElMessage.error('Update task failed:' + (updateError.message || 'Unknown error'))
         return
       }
     } else {
@@ -717,12 +717,12 @@ const handleSubmit = async () => {
             return
           }
         } else {
-          ElMessage.error('创建失败')
+          ElMessage.error('Create task failed')
           return
         }
       } catch (createError: any) {
         console.error('创建任务失败:', createError)
-        ElMessage.error('创建失败: ' + (createError.message || '未知错误'))
+        ElMessage.error('Create task failed:' + (createError.message || 'Unknown error'))
         return
       }
     }
@@ -757,20 +757,20 @@ const handleSubmit = async () => {
             console.log('单文件上传响应:', response.data)
           }
           
-          ElMessage.success('附件上传成功')
+          ElMessage.success('Uploaded successfully')
         } catch (uploadError) {
-          console.error('附件上传失败:', uploadError)
-          ElMessage.warning('任务已创建，但部分附件上传失败')
+          console.error('Attachment upload failed:', uploadError)
+          ElMessage.warning('Task created, but some attachments failed to upload')
         }
       }
     }
     
-    ElMessage.success(taskId ? '更新成功' : '创建成功')
+    ElMessage.success(taskId ? 'Update successfully' : 'Create successfully')
     router.push('/list')
     
   } catch (error: any) {
     console.error('操作失败:', error)
-    ElMessage.error('操作失败: ' + (error.message || ''))
+    ElMessage.error('Operation failed:' + (error.message || ''))
   } finally {
     loading.value = false
   }

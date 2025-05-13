@@ -8,7 +8,8 @@
     "src/layouts/AdminLayout.vue",
     "src/views/admin/UserManagement.vue",
     "src/api/employee.ts",
-    "src/types/employee.ts"
+    "src/types/employee.ts",
+    "src/components/TagSelect.vue"
   ],
   "compilerOptions": {
     "composite": true,

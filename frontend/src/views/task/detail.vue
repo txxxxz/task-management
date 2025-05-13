@@ -1313,7 +1313,7 @@ const handleDelete = async () => {
     
     loading.value = true;
     await deleteTask(route.params.id as string);
-    ElMessage.success('删除成功');
+    ElMessage.success('Deleted successfully');
     router.push('/list');
   } catch (err: any) {
     if (err !== 'cancel') {

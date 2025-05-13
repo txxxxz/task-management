@@ -44,11 +44,11 @@
     <select id="getUserTaskStats" resultType="java.util.Map">
         SELECT 
             COUNT(DISTINCT t.id) as total,
-            SUM(CASE WHEN t.status = 0 THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN t.status = 1 THEN 1 ELSE 0 END) as inProgress,
-            SUM(CASE WHEN t.status = 2 THEN 1 ELSE 0 END) as completed,
-            SUM(CASE WHEN t.status = 3 THEN 1 ELSE 0 END) as cancelled,
-            SUM(CASE WHEN DATE(t.deadline) = CURDATE() AND t.status != 2 THEN 1 ELSE 0 END) as todayExpired
+            COUNT(DISTINCT CASE WHEN t.status = 0 THEN t.id ELSE NULL END) as pending,
+            COUNT(DISTINCT CASE WHEN t.status = 1 THEN t.id ELSE NULL END) as inProgress,
+            COUNT(DISTINCT CASE WHEN t.status = 2 THEN t.id ELSE NULL END) as completed,
+            COUNT(DISTINCT CASE WHEN t.status = 3 THEN t.id ELSE NULL END) as cancelled,
+            COUNT(DISTINCT CASE WHEN DATE(t.deadline) = CURDATE() AND t.status != 2 THEN t.id ELSE NULL END) as todayExpired
         FROM 
             tb_task t
         LEFT JOIN 
@@ -92,6 +92,7 @@
         WHERE (t.create_user = #{userId} OR tm.user_id = #{userId})
         AND DATE(t.deadline) = CURDATE()
         AND t.status != 2
+        AND t.status != 3
     </select>
 
     <select id="getUserTodayExpiredTasks" resultType="com.taskManagement.dto.TaskDTO">
@@ -107,18 +108,20 @@
         WHERE (t.create_user = #{userId} OR tm.user_id = #{userId})
         AND DATE(t.deadline) = CURDATE()
         AND t.status != 2
+        AND t.status != 3
         ORDER BY t.create_time DESC
         LIMIT #{offset}, #{pageSize}
     </select>
     
     <select id="getTaskPriorityDistribution" resultType="java.util.Map">
         SELECT 
-            SUM(CASE WHEN t.priority = 0 THEN 1 ELSE 0 END) as low,
-            SUM(CASE WHEN t.priority = 1 THEN 1 ELSE 0 END) as medium,
-            SUM(CASE WHEN t.priority = 2 THEN 1 ELSE 0 END) as high,
-            SUM(CASE WHEN t.priority = 3 THEN 1 ELSE 0 END) as critical
+            COUNT(DISTINCT CASE WHEN t.priority = 1 THEN t.id ELSE NULL END) as low,
+            COUNT(DISTINCT CASE WHEN t.priority = 2 THEN t.id ELSE NULL END) as medium,
+            COUNT(DISTINCT CASE WHEN t.priority = 3 THEN t.id ELSE NULL END) as high,
+            COUNT(DISTINCT CASE WHEN t.priority = 4 THEN t.id ELSE NULL END) as critical
         FROM tb_task t
         LEFT JOIN tb_task_member tm ON t.id = tm.task_id
-        WHERE t.create_user = #{userId} OR tm.user_id = #{userId}
+        WHERE (t.create_user = #{userId} OR tm.user_id = #{userId})
+        AND (t.status = 0 OR t.status = 1)
     </select>
 </mapper> 

@@ -39,6 +39,10 @@ import { ElMessage } from 'element-plus'
 import { getTaskList } from '@/api/task'
 import type { TaskDetail } from '@/types/task'
 import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'  // 导入router
+
+// 初始化router
+const router = useRouter()
 
 // 是否显示已完成的任务
 const showCompletedTasks = ref(false)
@@ -173,6 +177,9 @@ const customPopupHtml = (task: any) => {
       <p><strong style="color: ${priorityColor}">Start Time:</strong> ${startDate}</p>
       <p><strong style="color: ${priorityColor}">End Time:</strong> ${endDate}</p>
       <p><strong style="color: ${priorityColor}">Description:</strong> ${description}</p>
+      <p class="click-hint" style="margin-top: 8px; font-style: italic; text-align: center; color: #909399; font-size: 12px;">
+        点击任务条查看详细信息
+      </p>
     </div>
   `
 }
@@ -850,9 +857,8 @@ const injectTodayHighlightStyles = () => {
       stroke: transparent !important; /* 透明边框 */
       opacity: 1 !important;
       visibility: visible !important;
-      display: block !important;
-      z-index: 999 !important;
-      pointer-events: auto !important;
+      /* 进度条边缘添加发光效果 */
+      filter: drop-shadow(0 0 2px rgba(245, 108, 108, 0.8)) !important;
     }
     
     .gantt .bar-wrapper.priority-high .bar-progress {
@@ -860,9 +866,8 @@ const injectTodayHighlightStyles = () => {
       stroke: transparent !important; /* 透明边框 */
       opacity: 1 !important;
       visibility: visible !important;
-      display: block !important;
-      z-index: 999 !important;
-      pointer-events: auto !important;
+      /* 进度条边缘添加发光效果 */
+      filter: drop-shadow(0 0 2px rgba(250, 173, 20, 0.8)) !important;
     }
     
     .gantt .bar-wrapper.priority-medium .bar-progress {
@@ -870,9 +875,8 @@ const injectTodayHighlightStyles = () => {
       stroke: transparent !important; /* 透明边框 */
       opacity: 1 !important;
       visibility: visible !important;
-      display: block !important;
-      z-index: 999 !important;
-      pointer-events: auto !important;
+      /* 进度条边缘添加发光效果 */
+      filter: drop-shadow(0 0 2px rgba(91, 143, 249, 0.8)) !important;
     }
     
     .gantt .bar-wrapper.priority-low .bar-progress {
@@ -880,9 +884,8 @@ const injectTodayHighlightStyles = () => {
       stroke: transparent !important; /* 透明边框 */
       opacity: 1 !important;
       visibility: visible !important;
-      display: block !important;
-      z-index: 999 !important;
-      pointer-events: auto !important;
+      /* 进度条边缘添加发光效果 */
+      filter: drop-shadow(0 0 2px rgba(54, 207, 201, 0.8)) !important;
     }
     
     /* 进度条增强可见性 */
@@ -1096,6 +1099,12 @@ const initGantt = () => {
         console.log('任务点击:', task)
         // 点击任务后强制显示进度条
         setTimeout(() => ensureProgressBarDisplay(), 50)
+        
+        // 跳转到任务详情页，使用task.id作为参数
+        if (task && task.id) {
+          console.log('跳转到任务详情页，任务ID:', task.id)
+          router.push(`/task/detail/${task.id}`)
+        }
       },
       on_date_change: (task: any, start: string, end: string) => {
         console.log('日期变更:', task, start, end)
@@ -1493,7 +1502,19 @@ onActivated(() => {
 
 /* 甘特图自定义样式 */
 .gantt .bar-wrapper:hover .bar {
-  fill-opacity: 0.8;
+  fill-opacity: 0.9;
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* 设置甘特图中的任务条鼠标指针样式为可点击 */
+.gantt .bar-wrapper {
+  cursor: pointer;
+}
+
+.gantt .bar-wrapper .bar {
+  transition: all 0.2s ease;
 }
 
 /* 优先级相关样式 - 应用推荐的颜色系统 */

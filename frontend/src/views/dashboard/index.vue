@@ -52,7 +52,7 @@
             </div>
           </template>
           <div class="chart-container">
-            <v-chart :option="priorityOption" autoresize />
+            <v-chart :option="priorityOption" autoresize @click="handlePieChartClick" />
           </div>
         </el-card>
       </el-col>
@@ -268,6 +268,29 @@ const handleStatusCardClick = (status: string) => {
         query: { status: statusItem.statusCode }
       })
     }
+  }
+}
+
+// 处理饼图点击事件
+const handlePieChartClick = (params: any) => {
+  // 获取点击的优先级名称
+  const priorityName = params.name
+  
+  // 优先级映射
+  const priorityMap: Record<string, number> = {
+    'Critical': 0,
+    'High': 1,
+    'Medium': 2,
+    'Low': 3
+  }
+  
+  // 如果是有效的优先级名称
+  if (priorityName in priorityMap) {
+    // 跳转到任务列表页面，并传递优先级参数
+    router.push({
+      path: '/list',
+      query: { priority: priorityMap[priorityName] }
+    })
   }
 }
 

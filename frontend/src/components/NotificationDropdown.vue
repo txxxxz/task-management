@@ -64,7 +64,7 @@
               link 
               @click="goToTask(item.relatedId)"
             >
-              View Task
+              View
             </el-button>
             <el-button 
               v-else-if="item.type === 'comment_mention'" 
@@ -72,7 +72,7 @@
               link 
               @click="goToComment(item.relatedId)"
             >
-              View Comment
+              View
             </el-button>
           </div>
         </div>
