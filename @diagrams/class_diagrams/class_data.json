@@ -1,0 +1,1663 @@
+[
+  {
+    "name": "Tag",
+    "fields": [
+      [
+        "String",
+        "name"
+      ],
+      [
+        "List<Long>",
+        "taskIds"
+      ],
+      [
+        "String",
+        "description"
+      ],
+      [
+        "String",
+        "color"
+      ],
+      [
+        "LocalDateTime",
+        "createTime"
+      ],
+      [
+        "LocalDateTime",
+        "updateTime"
+      ],
+      [
+        "Long",
+        "createUser"
+      ],
+      [
+        "Long",
+        "updateUser"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "Notification",
+    "fields": [
+      [
+        "String",
+        "type"
+      ],
+      [
+        "String",
+        "content"
+      ],
+      [
+        "Long",
+        "userId"
+      ],
+      [
+        "Integer",
+        "isRead"
+      ],
+      [
+        "Long",
+        "relatedId"
+      ],
+      [
+        "Long",
+        "createUser"
+      ],
+      [
+        "Long",
+        "updateUser"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "BaseEntity",
+    "fields": [
+      [
+        "Long",
+        "id"
+      ],
+      [
+        "LocalDateTime",
+        "createTime"
+      ],
+      [
+        "LocalDateTime",
+        "updateTime"
+      ],
+      [
+        "Long",
+        "createUser"
+      ],
+      [
+        "Long",
+        "updateUser"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "TaskAttachment",
+    "fields": [
+      [
+        "Long",
+        "taskId"
+      ],
+      [
+        "String",
+        "fileName"
+      ],
+      [
+        "String",
+        "fileType"
+      ],
+      [
+        "Long",
+        "fileSize"
+      ],
+      [
+        "String",
+        "filePath"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "User",
+    "fields": [
+      [
+        "String",
+        "username"
+      ],
+      [
+        "String",
+        "password"
+      ],
+      [
+        "String",
+        "email"
+      ],
+      [
+        "String",
+        "phone"
+      ],
+      [
+        "String",
+        "avatar"
+      ],
+      [
+        "Integer",
+        "status"
+      ],
+      [
+        "Integer",
+        "role"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "TaskTag",
+    "fields": [
+      [
+        "Long",
+        "id"
+      ],
+      [
+        "Long",
+        "taskId"
+      ],
+      [
+        "Long",
+        "tagId"
+      ],
+      [
+        "LocalDateTime",
+        "createTime"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "ProjectMember",
+    "fields": [
+      [
+        "Long",
+        "id"
+      ],
+      [
+        "Long",
+        "projectId"
+      ],
+      [
+        "Long",
+        "userId"
+      ],
+      [
+        "LocalDateTime",
+        "createTime"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "Comment",
+    "fields": [
+      [
+        "String",
+        "content"
+      ],
+      [
+        "Long",
+        "taskId"
+      ],
+      [
+        "Long",
+        "parentId"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "Task",
+    "fields": [
+      [
+        "String",
+        "name"
+      ],
+      [
+        "String",
+        "description"
+      ],
+      [
+        "Long",
+        "projectId"
+      ],
+      [
+        "Integer",
+        "status"
+      ],
+      [
+        "Integer",
+        "priority"
+      ],
+      [
+        "LocalDateTime",
+        "startTime"
+      ],
+      [
+        "LocalDateTime",
+        "deadline"
+      ],
+      [
+        "LocalDateTime",
+        "completedTime"
+      ],
+      [
+        "Integer",
+        "commentCount"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "ProjectAttachment",
+    "fields": [
+      [
+        "Long",
+        "projectId"
+      ],
+      [
+        "String",
+        "fileName"
+      ],
+      [
+        "String",
+        "fileType"
+      ],
+      [
+        "Long",
+        "fileSize"
+      ],
+      [
+        "String",
+        "filePath"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "Project",
+    "fields": [
+      [
+        "String",
+        "name"
+      ],
+      [
+        "String",
+        "description"
+      ],
+      [
+        "Integer",
+        "status"
+      ],
+      [
+        "LocalDateTime",
+        "startTime"
+      ],
+      [
+        "LocalDateTime",
+        "endTime"
+      ],
+      [
+        "Integer",
+        "priority"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "TaskMember",
+    "fields": [
+      [
+        "Long",
+        "id"
+      ],
+      [
+        "Long",
+        "taskId"
+      ],
+      [
+        "Long",
+        "userId"
+      ],
+      [
+        "LocalDateTime",
+        "createTime"
+      ]
+    ],
+    "methods": [],
+    "type": "entity"
+  },
+  {
+    "name": "NotificationController",
+    "fields": [],
+    "methods": [
+      [
+        "GetMapping",
+        "ResponseEntity<Map<String, Object>>",
+        "getUserNotifications"
+      ],
+      [
+        "PutMapping",
+        "ResponseEntity<NotificationDTO>",
+        "markAsRead"
+      ],
+      [
+        "PutMapping",
+        "ResponseEntity<Integer>",
+        "markAllAsRead"
+      ],
+      [
+        "GetMapping",
+        "ResponseEntity<Integer>",
+        "getUnreadCount"
+      ]
+    ],
+    "type": "controller"
+  },
+  {
+    "name": "TagController",
+    "fields": [],
+    "methods": [
+      [
+        "PostMapping",
+        "Result<TagDTO>",
+        "createTag"
+      ],
+      [
+        "PutMapping",
+        "Result<TagDTO>",
+        "updateTag"
+      ],
+      [
+        "DeleteMapping",
+        "Result<Boolean>",
+        "deleteTag"
+      ],
+      [
+        "GetMapping",
+        "Result<TagDTO>",
+        "getTagById"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<TagDTO>>",
+        "getTagList"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<TagDTO>>",
+        "getTagsByProjectId"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<TagDTO>>",
+        "searchTags"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<TagDTO>>",
+        "getTagsByTaskId"
+      ],
+      [
+        "PostMapping",
+        "Result<Boolean>",
+        "addTaskTag"
+      ],
+      [
+        "DeleteMapping",
+        "Result<Boolean>",
+        "removeTaskTag"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<TagDTO>>",
+        "getAllTags"
+      ]
+    ],
+    "type": "controller"
+  },
+  {
+    "name": "CommentController",
+    "fields": [],
+    "methods": [],
+    "type": "controller"
+  },
+  {
+    "name": "TaskStatsController",
+    "fields": [],
+    "methods": [],
+    "type": "controller"
+  },
+  {
+    "name": "TaskController",
+    "fields": [],
+    "methods": [],
+    "type": "controller"
+  },
+  {
+    "name": "TaskMemberController",
+    "fields": [],
+    "methods": [
+      [
+        "GetMapping",
+        "Result<List<String>>",
+        "getTaskMembers"
+      ],
+      [
+        "PostMapping",
+        "Result<String>",
+        "addTaskMember"
+      ],
+      [
+        "PostMapping",
+        "Result<String>",
+        "batchAddTaskMembers"
+      ],
+      [
+        "DeleteMapping",
+        "Result<String>",
+        "removeTaskMember"
+      ],
+      [
+        "GetMapping",
+        "Result<Map<String, Object>>",
+        "getTasksByMember"
+      ]
+    ],
+    "type": "controller"
+  },
+  {
+    "name": "ProjectController",
+    "fields": [],
+    "methods": [
+      [
+        "GetMapping",
+        "Result<PageResult<ProjectVO>>",
+        "getProjectList"
+      ],
+      [
+        "GetMapping",
+        "Result<ProjectVO>",
+        "getProjectDetail"
+      ],
+      [
+        "PostMapping",
+        "Result<ProjectVO>",
+        "createProject"
+      ],
+      [
+        "PutMapping",
+        "Result<ProjectVO>",
+        "updateProject"
+      ],
+      [
+        "DeleteMapping",
+        "Result<Void>",
+        "deleteProject"
+      ],
+      [
+        "GetMapping",
+        "Result<List<String>>",
+        "getProjectMembers"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<UserVO>>",
+        "searchProjectMembers"
+      ],
+      [
+        "PostMapping",
+        "Result<Void>",
+        "addProjectMember"
+      ],
+      [
+        "DeleteMapping",
+        "Result<Void>",
+        "removeProjectMember"
+      ],
+      [
+        "GetMapping",
+        "Result<List<ProjectAttachmentDTO>>",
+        "getProjectAttachments"
+      ],
+      [
+        "GetMapping",
+        "Result<List<TaskVO>>",
+        "getProjectTasks"
+      ],
+      [
+        "PostMapping",
+        "Result<String>",
+        "uploadProjectAttachment"
+      ],
+      [
+        "PostMapping",
+        "Result<List<String>>",
+        "batchUploadProjectAttachments"
+      ],
+      [
+        "DeleteMapping",
+        "Result<Void>",
+        "deleteProjectAttachment"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<ProjectVO>>",
+        "getAllProjects"
+      ]
+    ],
+    "type": "controller"
+  },
+  {
+    "name": "FileController",
+    "fields": [],
+    "methods": [
+      [
+        "PostMapping",
+        "Result<String>",
+        "uploadFile"
+      ],
+      [
+        "PostMapping",
+        "Result<List<String>>",
+        "batchUploadFiles"
+      ],
+      [
+        "PostMapping",
+        "Result<String>",
+        "uploadTaskFile"
+      ],
+      [
+        "PostMapping",
+        "Result<List<String>>",
+        "batchUploadTaskFiles"
+      ],
+      [
+        "PostMapping",
+        "Result<String>",
+        "uploadProjectFile"
+      ],
+      [
+        "PostMapping",
+        "Result<List<String>>",
+        "batchUploadProjectFiles"
+      ],
+      [
+        "PostMapping",
+        "Result<String>",
+        "uploadAvatar"
+      ],
+      [
+        "PostMapping",
+        "Result<String>",
+        "uploadTaskAttachment"
+      ],
+      [
+        "PostMapping",
+        "Result<List<String>>",
+        "batchUploadTaskAttachments"
+      ],
+      [
+        "GetMapping",
+        "void",
+        "downloadDecryptedFile"
+      ],
+      [
+        "GetMapping",
+        "void",
+        "previewDecryptedFile"
+      ]
+    ],
+    "type": "controller"
+  },
+  {
+    "name": "MemberController",
+    "fields": [],
+    "methods": [
+      [
+        "GetMapping",
+        "Result<PageResult<UserVO>>",
+        "getMemberList"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<UserVO>>",
+        "getLeaderList"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<UserVO>>",
+        "searchLeaders"
+      ]
+    ],
+    "type": "controller"
+  },
+  {
+    "name": "UserController",
+    "fields": [],
+    "methods": [
+      [
+        "PostMapping",
+        "Result<LoginVO>",
+        "login"
+      ],
+      [
+        "PostMapping",
+        "Result<UserVO>",
+        "register"
+      ],
+      [
+        "GetMapping",
+        "Result<UserVO>",
+        "getCurrentUser"
+      ],
+      [
+        "GetMapping",
+        "Result<Boolean>",
+        "checkUsername"
+      ],
+      [
+        "PostMapping",
+        "Result<String>",
+        "logout"
+      ],
+      [
+        "PutMapping",
+        "Result<UserVO>",
+        "updateUserInfo"
+      ],
+      [
+        "PutMapping",
+        "Result<String>",
+        "changePassword"
+      ],
+      [
+        "PostMapping",
+        "Result<String>",
+        "uploadAvatar"
+      ],
+      [
+        "GetMapping",
+        "Result<PageResult<UserVO>>",
+        "getUserList"
+      ],
+      [
+        "PostMapping",
+        "Result<UserVO>",
+        "createUser"
+      ],
+      [
+        "PutMapping",
+        "Result<UserVO>",
+        "updateUser"
+      ],
+      [
+        "DeleteMapping",
+        "Result<String>",
+        "deleteUser"
+      ]
+    ],
+    "type": "controller"
+  },
+  {
+    "name": "Tag",
+    "fields": [
+      [
+        "string",
+        "id"
+      ],
+      [
+        "string",
+        "name"
+      ],
+      [
+        "string",
+        "color"
+      ],
+      [
+        "string",
+        "projectId"
+      ],
+      [
+        "string",
+        "taskId"
+      ],
+      [
+        "string",
+        "description"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "string",
+        "updateTime"
+      ],
+      [
+        "boolean",
+        "isNew"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "TagListResponse",
+    "fields": [
+      [
+        "number",
+        "total"
+      ],
+      [
+        "Tag[]",
+        "items"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "Notification",
+    "fields": [
+      [
+        "number",
+        "id"
+      ],
+      [
+        "'task_update' | 'comment_mention'",
+        "type"
+      ],
+      [
+        "string",
+        "content"
+      ],
+      [
+        "number",
+        "userId"
+      ],
+      [
+        "number",
+        "isRead"
+      ],
+      [
+        "number",
+        "relatedId"
+      ],
+      [
+        "string",
+        "createTime"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "BaseModel",
+    "fields": [
+      [
+        "number",
+        "id"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "string",
+        "updateTime"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "User",
+    "fields": [
+      [
+        "number",
+        "id"
+      ],
+      [
+        "string",
+        "username"
+      ],
+      [
+        "string",
+        "email"
+      ],
+      [
+        "string",
+        "avatar"
+      ],
+      [
+        "number",
+        "status"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "number",
+        "createUser"
+      ],
+      [
+        "string",
+        "updateTime"
+      ],
+      [
+        "number",
+        "updateUser"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "Project",
+    "fields": [
+      [
+        "number",
+        "id"
+      ],
+      [
+        "string",
+        "name"
+      ],
+      [
+        "string",
+        "description"
+      ],
+      [
+        "number",
+        "status"
+      ],
+      [
+        "number",
+        "priority"
+      ],
+      [
+        "string",
+        "startTime"
+      ],
+      [
+        "string",
+        "endTime"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "number",
+        "createUser"
+      ],
+      [
+        "string",
+        "updateTime"
+      ],
+      [
+        "number",
+        "updateUser"
+      ],
+      [
+        "string[]",
+        "members"
+      ],
+      [
+        "string[]",
+        "attachments"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "ProjectForm",
+    "fields": [
+      [
+        "string",
+        "name"
+      ],
+      [
+        "string",
+        "description"
+      ],
+      [
+        "string",
+        "startTime"
+      ],
+      [
+        "string",
+        "endTime"
+      ],
+      [
+        "string[]",
+        "members"
+      ],
+      [
+        "string[]",
+        "attachments"
+      ],
+      [
+        "number",
+        "status"
+      ],
+      [
+        "number",
+        "priority"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "Task",
+    "fields": [
+      [
+        "number",
+        "id"
+      ],
+      [
+        "number",
+        "projectId"
+      ],
+      [
+        "string",
+        "name"
+      ],
+      [
+        "string",
+        "description"
+      ],
+      [
+        "number",
+        "status"
+      ],
+      [
+        "number",
+        "priority"
+      ],
+      [
+        "string",
+        "startTime"
+      ],
+      [
+        "string",
+        "endTime"
+      ],
+      [
+        "number",
+        "assignee"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "number",
+        "createUser"
+      ],
+      [
+        "string",
+        "updateTime"
+      ],
+      [
+        "number",
+        "updateUser"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "Tag",
+    "fields": [
+      [
+        "string",
+        "name"
+      ],
+      [
+        "string",
+        "color"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "Comment",
+    "fields": [
+      [
+        "string",
+        "content"
+      ],
+      [
+        "number",
+        "taskId"
+      ],
+      [
+        "number | null",
+        "parentId"
+      ],
+      [
+        "{",
+        "creator"
+      ],
+      [
+        "number",
+        "id"
+      ],
+      [
+        "string",
+        "username"
+      ],
+      [
+        "string",
+        "avatar"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "Attachment",
+    "fields": [
+      [
+        "string",
+        "filename"
+      ],
+      [
+        "string",
+        "fileUrl"
+      ],
+      [
+        "number",
+        "taskId"
+      ],
+      [
+        "number",
+        "uploaderId"
+      ],
+      [
+        "User",
+        "uploader"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "UserVO",
+    "fields": [
+      [
+        "number",
+        "id"
+      ],
+      [
+        "string",
+        "username"
+      ],
+      [
+        "string",
+        "email"
+      ],
+      [
+        "string",
+        "phone"
+      ],
+      [
+        "string",
+        "avatar"
+      ],
+      [
+        "number",
+        "status"
+      ],
+      [
+        "number",
+        "role"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "string",
+        "updateTime"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "LoginVO",
+    "fields": [
+      [
+        "string",
+        "token"
+      ],
+      [
+        "UserVO",
+        "user"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "LoginDTO",
+    "fields": [
+      [
+        "string",
+        "username"
+      ],
+      [
+        "string",
+        "password"
+      ],
+      [
+        "number",
+        "role"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "RegisterDTO",
+    "fields": [
+      [
+        "string",
+        "username"
+      ],
+      [
+        "string",
+        "password"
+      ],
+      [
+        "string",
+        "email"
+      ],
+      [
+        "string",
+        "phone"
+      ],
+      [
+        "number",
+        "role"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "UserInfo",
+    "fields": [
+      [
+        "string      // 接口可能返回string或number，统一在前端使用string",
+        "id"
+      ],
+      [
+        "string",
+        "username"
+      ],
+      [
+        "string",
+        "email"
+      ],
+      [
+        "string",
+        "phone"
+      ],
+      [
+        "string",
+        "avatar"
+      ],
+      [
+        "boolean  // 布尔值表示用户启用状态",
+        "status"
+      ],
+      [
+        "number",
+        "role"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "string",
+        "updateTime"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "LoginParams",
+    "fields": [
+      [
+        "string",
+        "username"
+      ],
+      [
+        "string",
+        "password"
+      ],
+      [
+        "number",
+        "role"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "RegisterParams",
+    "fields": [
+      [
+        "string",
+        "email"
+      ],
+      [
+        "string",
+        "phone"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "LoginResponse",
+    "fields": [
+      [
+        "string",
+        "token"
+      ],
+      [
+        "UserVO",
+        "user"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "Project",
+    "fields": [
+      [
+        "number",
+        "id"
+      ],
+      [
+        "string",
+        "name"
+      ],
+      [
+        "string",
+        "description"
+      ],
+      [
+        "number // 0-筹备中，1-进行中，2-已完成，3-已归档",
+        "status"
+      ],
+      [
+        "number // 1-低，2-中，3-高，4-紧急",
+        "priority"
+      ],
+      [
+        "string",
+        "startTime"
+      ],
+      [
+        "string",
+        "endTime"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "number",
+        "createUser"
+      ],
+      [
+        "string",
+        "updateTime"
+      ],
+      [
+        "number",
+        "updateUser"
+      ],
+      [
+        "string[]",
+        "members"
+      ],
+      [
+        "string[]",
+        "attachments"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "TaskDetail",
+    "fields": [
+      [
+        "string",
+        "id"
+      ],
+      [
+        "string",
+        "number"
+      ],
+      [
+        "string",
+        "name"
+      ],
+      [
+        "string",
+        "title"
+      ],
+      [
+        "string",
+        "description"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "string",
+        "dueTime"
+      ],
+      [
+        "string  // 后端返回的截止时间字段",
+        "deadline"
+      ],
+      [
+        "string",
+        "startTime"
+      ],
+      [
+        "number // 1-低，2-中，3-高，4-紧急",
+        "priority"
+      ],
+      [
+        "number // 0-待处理，1-进行中，2-已完成，3-已取消",
+        "status"
+      ],
+      [
+        "string[]",
+        "members"
+      ],
+      [
+        "string[]",
+        "tags"
+      ],
+      [
+        "TaskFile[]",
+        "files"
+      ],
+      [
+        "TaskComment[]",
+        "comments"
+      ],
+      [
+        "string",
+        "projectId"
+      ],
+      [
+        "string",
+        "projectName"
+      ],
+      [
+        "string[]",
+        "attachments"
+      ],
+      [
+        "number // 评论数量",
+        "commentCount"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "TaskFile",
+    "fields": [
+      [
+        "string",
+        "id"
+      ],
+      [
+        "string",
+        "name"
+      ],
+      [
+        "string",
+        "url"
+      ],
+      [
+        "number",
+        "size"
+      ],
+      [
+        "string",
+        "uploader"
+      ],
+      [
+        "string",
+        "uploadTime"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "TaskComment",
+    "fields": [
+      [
+        "number",
+        "id"
+      ],
+      [
+        "number",
+        "taskId"
+      ],
+      [
+        "string",
+        "content"
+      ],
+      [
+        "number | null",
+        "parentId"
+      ],
+      [
+        "string",
+        "createTime"
+      ],
+      [
+        "number | string",
+        "createUser"
+      ],
+      [
+        "string",
+        "createUserName"
+      ],
+      [
+        "string",
+        "createUserAvatar"
+      ],
+      [
+        "TaskComment[]",
+        "children"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "CreateTaskParams",
+    "fields": [
+      [
+        "string",
+        "name"
+      ],
+      [
+        "string",
+        "description"
+      ],
+      [
+        "string // ISO格式：YYYY-MM-DDTHH:mm:ss (原deadline字段)",
+        "dueTime"
+      ],
+      [
+        "string // ISO格式：YYYY-MM-DDTHH:mm:ss",
+        "startTime"
+      ],
+      [
+        "number // 1-低，2-中，3-高，4-紧急",
+        "priority"
+      ],
+      [
+        "string[]",
+        "members"
+      ],
+      [
+        "string[] | number[]",
+        "tagIds"
+      ],
+      [
+        "string",
+        "projectId"
+      ],
+      [
+        "string[]",
+        "attachments"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "UpdateTaskParams",
+    "fields": [
+      [
+        "number // 0-待处理，1-进行中，2-已完成，3-已取消",
+        "status"
+      ],
+      [
+        "string",
+        "projectId"
+      ],
+      [
+        "string[] | number[]",
+        "tagIds"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "CommentParams",
+    "fields": [
+      [
+        "string",
+        "taskId"
+      ],
+      [
+        "string",
+        "content"
+      ],
+      [
+        "string",
+        "replyTo"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  },
+  {
+    "name": "TaskQueryParams",
+    "fields": [
+      [
+        "string",
+        "keyword"
+      ],
+      [
+        "number // 0-待处理，1-进行中，2-已完成，3-已取消",
+        "status"
+      ],
+      [
+        "number // 1-低，2-中，3-高，4-紧急",
+        "priority"
+      ],
+      [
+        "string",
+        "projectId"
+      ],
+      [
+        "string",
+        "startTime"
+      ],
+      [
+        "string",
+        "endTime"
+      ],
+      [
+        "string // 截止时间开始",
+        "dueStartTime"
+      ],
+      [
+        "string  // 截止时间结束",
+        "dueEndTime"
+      ],
+      [
+        "string // 成员用户名",
+        "member"
+      ],
+      [
+        "string   // 标签IDs，逗号分隔",
+        "tags"
+      ],
+      [
+        "number",
+        "page"
+      ],
+      [
+        "number",
+        "pageSize"
+      ]
+    ],
+    "methods": [],
+    "type": "interface"
+  }
+]

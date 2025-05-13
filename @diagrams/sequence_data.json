@@ -1,0 +1,760 @@
+[
+  {
+    "scenario": "user_authentication",
+    "title": "用户认证流程",
+    "methods": [
+      {
+        "className": "UserController",
+        "methodName": "login",
+        "httpMethod": "PostMapping",
+        "path": "/auth//login",
+        "serviceCalls": [
+          [
+            "user",
+            "login"
+          ],
+          [
+            "user",
+            "register"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "checkUsernameExist"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "changePassword"
+          ],
+          [
+            "user",
+            "uploadAvatar"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "getUserList"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "register"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "deleteUser"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "updateUserStatus"
+          ],
+          [
+            "user",
+            "getUserById"
+          ]
+        ]
+      },
+      {
+        "className": "UserController",
+        "methodName": "register",
+        "httpMethod": "PostMapping",
+        "path": "/auth//register",
+        "serviceCalls": [
+          [
+            "user",
+            "register"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "checkUsernameExist"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "changePassword"
+          ],
+          [
+            "user",
+            "uploadAvatar"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "getUserList"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "register"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "deleteUser"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "updateUserStatus"
+          ],
+          [
+            "user",
+            "getUserById"
+          ]
+        ]
+      },
+      {
+        "className": "UserController",
+        "methodName": "getCurrentUser",
+        "httpMethod": "GetMapping",
+        "path": "/auth//user/info",
+        "serviceCalls": [
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "checkUsernameExist"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "changePassword"
+          ],
+          [
+            "user",
+            "uploadAvatar"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "getUserList"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "register"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "deleteUser"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "updateUserStatus"
+          ],
+          [
+            "user",
+            "getUserById"
+          ]
+        ]
+      },
+      {
+        "className": "UserController",
+        "methodName": "logout",
+        "httpMethod": "PostMapping",
+        "path": "/auth//logout",
+        "serviceCalls": [
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "changePassword"
+          ],
+          [
+            "user",
+            "uploadAvatar"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "getUserList"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "register"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "deleteUser"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "getUserById"
+          ],
+          [
+            "user",
+            "updateUserInfo"
+          ],
+          [
+            "user",
+            "updateUserStatus"
+          ],
+          [
+            "user",
+            "getUserById"
+          ]
+        ]
+      }
+    ],
+    "apiCalls": [],
+    "diagramPath": "@diagrams/sequence_user_authentication.png"
+  },
+  {
+    "scenario": "task_management",
+    "title": "任务管理流程",
+    "methods": [],
+    "apiCalls": [],
+    "diagramPath": "@diagrams/sequence_task_management.png"
+  },
+  {
+    "scenario": "project_management",
+    "title": "项目管理流程",
+    "methods": [
+      {
+        "className": "ProjectController",
+        "methodName": "createProject",
+        "httpMethod": "PostMapping",
+        "path": "/projects",
+        "serviceCalls": [
+          [
+            "project",
+            "createProject"
+          ],
+          [
+            "project",
+            "updateProject"
+          ],
+          [
+            "project",
+            "deleteProject"
+          ],
+          [
+            "project",
+            "getProjectMembers"
+          ],
+          [
+            "project",
+            "searchProjectMembers"
+          ],
+          [
+            "project",
+            "addProjectMember"
+          ],
+          [
+            "project",
+            "removeProjectMember"
+          ],
+          [
+            "project",
+            "getProjectAttachments"
+          ],
+          [
+            "task",
+            "getTaskVOListByProjectId"
+          ],
+          [
+            "project",
+            "uploadProjectAttachment"
+          ],
+          [
+            "project",
+            "batchUploadProjectAttachments"
+          ],
+          [
+            "project",
+            "getAllProjects"
+          ]
+        ]
+      },
+      {
+        "className": "ProjectController",
+        "methodName": "getProjectDetail",
+        "httpMethod": "GetMapping",
+        "path": "/projects//{id}",
+        "serviceCalls": [
+          [
+            "project",
+            "getProjectDetail"
+          ],
+          [
+            "project",
+            "createProject"
+          ],
+          [
+            "project",
+            "updateProject"
+          ],
+          [
+            "project",
+            "deleteProject"
+          ],
+          [
+            "project",
+            "getProjectMembers"
+          ],
+          [
+            "project",
+            "searchProjectMembers"
+          ],
+          [
+            "project",
+            "addProjectMember"
+          ],
+          [
+            "project",
+            "removeProjectMember"
+          ],
+          [
+            "project",
+            "getProjectAttachments"
+          ],
+          [
+            "task",
+            "getTaskVOListByProjectId"
+          ],
+          [
+            "project",
+            "uploadProjectAttachment"
+          ],
+          [
+            "project",
+            "batchUploadProjectAttachments"
+          ],
+          [
+            "project",
+            "getAllProjects"
+          ]
+        ]
+      },
+      {
+        "className": "ProjectController",
+        "methodName": "updateProject",
+        "httpMethod": "PutMapping",
+        "path": "/projects//{id}",
+        "serviceCalls": [
+          [
+            "project",
+            "updateProject"
+          ],
+          [
+            "project",
+            "deleteProject"
+          ],
+          [
+            "project",
+            "getProjectMembers"
+          ],
+          [
+            "project",
+            "searchProjectMembers"
+          ],
+          [
+            "project",
+            "addProjectMember"
+          ],
+          [
+            "project",
+            "removeProjectMember"
+          ],
+          [
+            "project",
+            "getProjectAttachments"
+          ],
+          [
+            "task",
+            "getTaskVOListByProjectId"
+          ],
+          [
+            "project",
+            "uploadProjectAttachment"
+          ],
+          [
+            "project",
+            "batchUploadProjectAttachments"
+          ],
+          [
+            "project",
+            "getAllProjects"
+          ]
+        ]
+      },
+      {
+        "className": "ProjectController",
+        "methodName": "deleteProject",
+        "httpMethod": "DeleteMapping",
+        "path": "/projects//{id}",
+        "serviceCalls": [
+          [
+            "project",
+            "deleteProject"
+          ],
+          [
+            "project",
+            "getProjectMembers"
+          ],
+          [
+            "project",
+            "searchProjectMembers"
+          ],
+          [
+            "project",
+            "addProjectMember"
+          ],
+          [
+            "project",
+            "removeProjectMember"
+          ],
+          [
+            "project",
+            "getProjectAttachments"
+          ],
+          [
+            "task",
+            "getTaskVOListByProjectId"
+          ],
+          [
+            "project",
+            "uploadProjectAttachment"
+          ],
+          [
+            "project",
+            "batchUploadProjectAttachments"
+          ],
+          [
+            "project",
+            "getAllProjects"
+          ]
+        ]
+      }
+    ],
+    "apiCalls": [],
+    "diagramPath": "@diagrams/sequence_project_management.png"
+  },
+  {
+    "scenario": "task_comment",
+    "title": "任务评论流程",
+    "methods": [],
+    "apiCalls": [],
+    "diagramPath": "@diagrams/sequence_task_comment.png"
+  },
+  {
+    "scenario": "file_upload",
+    "title": "文件上传流程",
+    "methods": [
+      {
+        "className": "FileController",
+        "methodName": "uploadFile",
+        "httpMethod": "PostMapping",
+        "path": "/files//upload",
+        "serviceCalls": [
+          [
+            "file",
+            "uploadProjectFile"
+          ],
+          [
+            "file",
+            "uploadProjectFiles"
+          ],
+          [
+            "file",
+            "uploadTaskFile"
+          ],
+          [
+            "file",
+            "uploadTaskFiles"
+          ],
+          [
+            "file",
+            "uploadProjectFile"
+          ],
+          [
+            "file",
+            "uploadProjectFiles"
+          ],
+          [
+            "file",
+            "uploadAvatar"
+          ],
+          [
+            "file",
+            "uploadTaskFile"
+          ],
+          [
+            "file",
+            "uploadTaskFiles"
+          ],
+          [
+            "file",
+            "getObjectKeyFromUrl"
+          ],
+          [
+            "file",
+            "getFileMetadata"
+          ],
+          [
+            "file",
+            "getDecryptedFile"
+          ],
+          [
+            "file",
+            "getObjectKeyFromUrl"
+          ],
+          [
+            "file",
+            "getFileMetadata"
+          ],
+          [
+            "file",
+            "getDecryptedFile"
+          ]
+        ]
+      },
+      {
+        "className": "FileController",
+        "methodName": "uploadTaskFile",
+        "httpMethod": "PostMapping",
+        "path": "/files//task/upload",
+        "serviceCalls": [
+          [
+            "file",
+            "uploadTaskFile"
+          ],
+          [
+            "file",
+            "uploadTaskFiles"
+          ],
+          [
+            "file",
+            "uploadProjectFile"
+          ],
+          [
+            "file",
+            "uploadProjectFiles"
+          ],
+          [
+            "file",
+            "uploadAvatar"
+          ],
+          [
+            "file",
+            "uploadTaskFile"
+          ],
+          [
+            "file",
+            "uploadTaskFiles"
+          ],
+          [
+            "file",
+            "getObjectKeyFromUrl"
+          ],
+          [
+            "file",
+            "getFileMetadata"
+          ],
+          [
+            "file",
+            "getDecryptedFile"
+          ],
+          [
+            "file",
+            "getObjectKeyFromUrl"
+          ],
+          [
+            "file",
+            "getFileMetadata"
+          ],
+          [
+            "file",
+            "getDecryptedFile"
+          ]
+        ]
+      },
+      {
+        "className": "FileController",
+        "methodName": "uploadProjectFile",
+        "httpMethod": "PostMapping",
+        "path": "/files//project/upload",
+        "serviceCalls": [
+          [
+            "file",
+            "uploadProjectFile"
+          ],
+          [
+            "file",
+            "uploadProjectFiles"
+          ],
+          [
+            "file",
+            "uploadAvatar"
+          ],
+          [
+            "file",
+            "uploadTaskFile"
+          ],
+          [
+            "file",
+            "uploadTaskFiles"
+          ],
+          [
+            "file",
+            "getObjectKeyFromUrl"
+          ],
+          [
+            "file",
+            "getFileMetadata"
+          ],
+          [
+            "file",
+            "getDecryptedFile"
+          ],
+          [
+            "file",
+            "getObjectKeyFromUrl"
+          ],
+          [
+            "file",
+            "getFileMetadata"
+          ],
+          [
+            "file",
+            "getDecryptedFile"
+          ]
+        ]
+      }
+    ],
+    "apiCalls": [],
+    "diagramPath": "@diagrams/sequence_file_upload.png"
+  }
+]

@@ -1,0 +1,28 @@
+// Task Management System Use Case Diagram
+digraph {
+	A1 [label=Admin color=lightblue shape=ellipse style=filled]
+	A2 [label="Team Leader" color=lightgreen shape=ellipse style=filled]
+	A3 [label=Member color=lightyellow shape=ellipse style=filled]
+	UC1 [label="User Management" shape=oval]
+	UC2 [label="Task Management" shape=oval]
+	UC3 [label="Project Management" shape=oval]
+	UC4 [label="Collaboration & Communication" shape=oval]
+	UC5 [label="Visualization & Reporting" shape=oval]
+	UC6 [label="File Management" shape=oval]
+	UC7 [label="Authentication & Authorization" shape=oval]
+	UC8 [label="System Settings" shape=oval]
+	UC9 [label=Notifications shape=oval]
+	A1 -> UC1
+	A1 -> UC7
+	A1 -> UC8
+	A1 -> UC6
+	A2 -> UC2
+	A2 -> UC3
+	A2 -> UC4
+	A2 -> UC5
+	A2 -> UC9
+	A3 -> UC2
+	A3 -> UC4
+	A3 -> UC6
+	A3 -> UC9
+}
